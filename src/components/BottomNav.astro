@@ -23,7 +23,7 @@ const { pathname } = Astro.props;
         aria-current={isActivePath(pathname, item.href) ? "page" : undefined}
       >
         <NavIcon name={item.icon} />
-        <span>{item.label}</span>
+        <span>{"mobileLabel" in item ? item.mobileLabel : item.label}</span>
         <small lang="en">{item.labelEn}</small>
       </a>
     ))
@@ -48,8 +48,8 @@ const { pathname } = Astro.props;
         max(var(--space-2), env(safe-area-inset-bottom))
         max(var(--space-2), env(safe-area-inset-left));
       border-top: 1px solid var(--space-border);
-      background: rgba(23, 16, 32, 0.94);
-      backdrop-filter: blur(18px);
+      background: rgba(239, 249, 255, 0.92);
+      backdrop-filter: blur(14px);
     }
 
     .bottom-nav__link {
@@ -60,21 +60,30 @@ const { pathname } = Astro.props;
       justify-content: center;
       flex-direction: column;
       gap: var(--space-1);
-      border-radius: var(--radius-sm);
-      color: var(--space-text-faint);
+      border-radius: var(--radius-md);
+      color: var(--space-ink-muted);
       font-size: 0.68rem;
       font-weight: 650;
       text-decoration: none;
     }
 
     .bottom-nav__link.is-active {
-      background: rgba(239, 120, 165, 0.1);
-      color: var(--space-pink-soft);
+      background: linear-gradient(
+        135deg,
+        var(--space-surface-primary),
+        var(--space-surface-blue)
+      );
+      color: var(--space-primary-strong);
+      box-shadow: var(--space-shadow-glow);
     }
 
     .bottom-nav__link small {
       font-size: 0.58rem;
       font-weight: 500;
+    }
+
+    .bottom-nav__link.is-active :global(.nav-icon) {
+      stroke-width: 2.1;
     }
   }
 </style>

@@ -1,33 +1,27 @@
 # Personal Space
 
-目標網域 / Target domain: `space.k-y.cc`
+公開網站 / Public site: [space.k-y.cc](https://space.k-y.cc)
 
 ## 中文
 
-Personal Space 是一個由單一擁有者管理的個人出版空間，把短札、長篇文章與經整理的主題專題放在同一個清晰、可搜尋的閱讀介面。公開內容與私人來源收件箱保持明確分隔。
+Personal Space 是一個簡潔的個人內容展示介面，使用三個清晰分類：
 
-### 內容模型
+- **短內容 / Shorts** — Story、Comment、Note。
+- **長內容 / Longform** — Post、Article、Review。
+- **新聞整理 / Briefings** — 經整理並附有來源的新聞摘要。
 
-1. **短札 / Note** — 簡短個人文字，標題可省略。
-2. **文章 / Article** — 需要標題的長篇個人文字。
-3. **專題 / Edition** — 經擁有者審閱、標明來源的 AI 輔助主題摘要。
-4. **來源項目 / Source Item** — 只保留在私人收件箱的外部來源資料。
-5. **事件群組 / Story Cluster** — 描述同一事件的一組去重來源項目。
+目前介面採用原創 **Clear Sky Feed** 視覺系統，以淡天藍、晴空青、
+薄荷青與少量日光黃構成清新、青春而俐落的信息流。所有圖標、SVG
+與 CSS 裝飾均為原創抽象圖形，不使用第三方角色或受版權保護資產。
 
-公開動態只顯示短札、文章與已完成的專題；原始來源資料不會直接進入公開動態。
+技術基礎：
 
-### Phase 0
-
-目前版本是部署於 Cloudflare Workers 的 Astro 全端基礎架構，包括：
-
-- 嚴格 TypeScript；
-- 繁體中文主文與英文輔助文；
-- 響應式導覽與預留頁面；
-- 公開與擁有者路由的失敗關閉界線；
-- 全域安全回應標頭；
-- 格式、lint、型別、測試、建置及 Wrangler 驗證腳本。
-
-Phase 0 刻意不加入 D1、R2、Queue、Cron、AI 或資料擷取功能。
+- Astro full-stack；
+- TypeScript strict mode；
+- Cloudflare Workers 與 Static Assets；
+- 響應式桌面／手機導覽；
+- ESLint、Prettier、Vitest、Astro typecheck；
+- GitHub Actions 與 Cloudflare Workers Builds。
 
 ### 本地開發
 
@@ -40,23 +34,22 @@ npm run check
 npm run preview
 ```
 
-公開 repo 只存放程式碼、migration、通用範例及可公開文件。個人文章、私人短札、草稿、憑證、AI key 與個人媒體都不得提交到 Git。
-
-詳見 [`docs/INDEX.md`](docs/INDEX.md) 與 [`docs/04-delivery/PHASE_0_STATUS.md`](docs/04-delivery/PHASE_0_STATUS.md)。
+公開 repository 只應包含應用程式碼、通用測試及公開安全文件。私人內容、
+草稿、憑證、存取 token、部署識別資料和本地規劃文件不得提交到 Git。
 
 ## English
 
-Personal Space is a single-owner publishing home for short Notes, long-form Articles, and reviewed, source-backed Editions. Public reading surfaces stay separate from the private source Inbox.
+Personal Space is a focused personal publishing interface organized into
+Shorts, Longform, and source-backed Briefings.
 
-Phase 0 provides an Astro full-stack foundation for Cloudflare Workers with strict TypeScript, a Traditional Chinese-first interface with English support, responsive navigation, fail-closed owner routes, global security headers, and repeatable quality checks. It intentionally includes no D1, R2, Queue, Cron, AI, or ingestion dependency.
+The current interface uses the original **Clear Sky Feed** visual system: a
+fresh, crisp information feed built from pale sky blue, cyan, teal, and
+restrained sunlight-yellow accents. All icons, SVGs, and CSS decorations are
+original abstract graphics.
 
-Requirements: Node.js 22.22.3 or newer and npm 10 or newer.
+The application uses Astro, strict TypeScript, Cloudflare Workers with Static
+Assets, responsive navigation, GitHub Actions, and Cloudflare Workers Builds.
 
-```bash
-npm install
-npm run dev
-npm run check
-npm run preview
-```
-
-Only application code, migrations, generic examples, and public-safe documentation belong in this repository. Personal writing, drafts, credentials, AI keys, and private media must stay in Cloudflare storage or ignored local files.
+Only application code, general tests, and public-safe documentation belong in
+this repository. Private content, drafts, credentials, access tokens,
+deployment identifiers, and local planning material must remain outside Git.

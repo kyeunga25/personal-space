@@ -20,8 +20,6 @@ const {
   titleEn,
   description = SITE.description,
   descriptionEn = SITE.descriptionEn,
-  section = title ?? "閱讀空間",
-  sectionEn = titleEn ?? "Reading space",
 } = Astro.props;
 const pageTitle = title
   ? `${title}${titleEn ? ` ${titleEn}` : ""} · ${SITE.name}`
@@ -35,7 +33,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={`${description} ${descriptionEn}`} />
-    <meta name="theme-color" content="#171020" />
+    <meta name="theme-color" content="#eef8ff" />
     <link rel="canonical" href={canonicalURL} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{pageTitle}</title>
@@ -50,7 +48,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       <main id="main-content" tabindex="-1">
         <slot />
       </main>
-      <ContextRail section={section} sectionEn={sectionEn} />
+      <ContextRail />
     </div>
     <BottomNav pathname={Astro.url.pathname} />
   </body>

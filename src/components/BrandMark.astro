@@ -1,61 +1,94 @@
 ---
 interface Props {
+  avatar?: boolean;
   compact?: boolean;
 }
 
-const { compact = false } = Astro.props;
+const { avatar = false, compact = false } = Astro.props;
 ---
 
-<span class:list={["brand-mark", { "brand-mark--compact": compact }]}>
+<span
+  class:list={[
+    "brand-mark",
+    { "brand-mark--avatar": avatar, "brand-mark--compact": compact },
+  ]}
+>
   <svg viewBox="0 0 32 32" aria-hidden="true">
     <path
       class="brand-mark__star"
-      d="M16 2.5c.8 6.7 3.8 10.3 10.5 13.5-6.7 3.2-9.7 6.8-10.5 13.5C15.2 22.8 12.2 19.2 5.5 16 12.2 12.8 15.2 9.2 16 2.5Z"
+      d="M12.1 4.1c.45 3.95 2.2 6.05 6.1 7.9-3.9 1.85-5.65 3.95-6.1 7.9-.45-3.95-2.2-6.05-6.1-7.9 3.9-1.85 5.65-3.95 6.1-7.9Z"
     ></path>
-    <circle class="brand-mark__core" cx="16" cy="16" r="3.25"></circle>
+    <path
+      class="brand-mark__orbit"
+      d="M4.2 20.5c1.8 4 8.7 4.8 15.6 1.7 6.9-3.1 11.1-8.8 9.3-12.8-1-2.3-3.8-3.4-7.2-3.2"
+    ></path>
+    <circle class="brand-mark__core" cx="22.4" cy="20.7" r="2.15"></circle>
+    <path
+      class="brand-mark__spark"
+      d="M25.5 23.8c.23 2.05 1.14 3.14 3.16 4.1-2.02.96-2.93 2.05-3.16 4.1-.23-2.05-1.14-3.14-3.16-4.1 2.02-.96 2.93-2.05 3.16-4.1Z"
+    ></path>
   </svg>
 </span>
 
 <style>
   .brand-mark {
     display: inline-grid;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 3rem;
+    height: 3rem;
     flex: 0 0 auto;
     place-items: center;
-    border: 1px solid var(--space-border-strong);
-    border-radius: var(--radius-md);
-    background:
-      radial-gradient(
-        circle at 64% 30%,
-        rgba(239, 120, 165, 0.22),
-        transparent 38%
-      ),
-      var(--space-night-850);
-    box-shadow: var(--space-glow-gold);
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: var(--space-surface-strong);
   }
 
   .brand-mark--compact {
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: var(--radius-sm);
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
   svg {
-    width: 1.65rem;
-    height: 1.65rem;
+    width: 2.6rem;
+    height: 2.6rem;
+    overflow: visible;
   }
 
   .brand-mark--compact svg {
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .brand-mark--avatar {
+    width: clamp(7rem, 11vw, 8.75rem);
+    height: clamp(7rem, 11vw, 8.75rem);
+    border-width: 1.5px;
+    border-color: var(--space-primary);
+    box-shadow:
+      0 0 0 0.35rem rgba(246, 252, 255, 0.78),
+      var(--space-shadow-glow);
+  }
+
+  .brand-mark--avatar svg {
+    width: 72%;
+    height: 72%;
   }
 
   .brand-mark__star {
-    fill: var(--space-gold);
+    fill: var(--space-yellow);
+  }
+
+  .brand-mark__orbit {
+    fill: none;
+    stroke: var(--space-primary);
+    stroke-linecap: round;
+    stroke-width: 1.3;
   }
 
   .brand-mark__core {
-    fill: var(--space-pink);
+    fill: var(--space-primary);
+  }
+
+  .brand-mark__spark {
+    fill: var(--space-blue);
   }
 </style>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { primaryNavigation } from "../src/config/navigation";
+import { mobileNavigation, primaryNavigation } from "../src/config/navigation";
 import { isActivePath, readableSlug } from "../src/lib/navigation";
 
 describe("navigation helpers", () => {
@@ -10,12 +10,12 @@ describe("navigation helpers", () => {
   });
 
   it("matches nested paths without prefix collisions", () => {
-    expect(isActivePath("/articles/example", "/articles")).toBe(true);
-    expect(isActivePath("/article", "/articles")).toBe(false);
+    expect(isActivePath("/longform/example", "/longform")).toBe(true);
+    expect(isActivePath("/long", "/longform")).toBe(false);
   });
 
   it("normalizes trailing slashes", () => {
-    expect(isActivePath("/editions/", "/editions")).toBe(true);
+    expect(isActivePath("/briefings/", "/briefings")).toBe(true);
   });
 
   it("keeps primary routes unique", () => {
@@ -29,6 +29,16 @@ describe("navigation helpers", () => {
       expect(item.label.trim().length).toBeGreaterThan(0);
       expect(item.labelEn.trim().length).toBeGreaterThan(0);
     }
+  });
+
+  it("keeps the five primary mobile destinations in display order", () => {
+    expect(mobileNavigation.map(({ href }) => href)).toEqual([
+      "/",
+      "/shorts",
+      "/longform",
+      "/briefings",
+      "/search",
+    ]);
   });
 
   it("turns public slugs into readable labels", () => {
