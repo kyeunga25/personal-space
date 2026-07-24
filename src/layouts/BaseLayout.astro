@@ -1,0 +1,57 @@
+---
+import BottomNav from "../components/BottomNav.astro";
+import ContextRail from "../components/ContextRail.astro";
+import MobileHeader from "../components/MobileHeader.astro";
+import SiteRail from "../components/SiteRail.astro";
+import { SITE } from "../config/site";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  titleEn?: string;
+  description?: string;
+  descriptionEn?: string;
+  section?: string;
+  sectionEn?: string;
+}
+
+const {
+  title,
+  titleEn,
+  description = SITE.description,
+  descriptionEn = SITE.descriptionEn,
+  section = title ?? "閱讀空間",
+  sectionEn = titleEn ?? "Reading space",
+} = Astro.props;
+const pageTitle = title
+  ? `${title}${titleEn ? ` ${titleEn}` : ""} · ${SITE.name}`
+  : SITE.name;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={`${description} ${descriptionEn}`} />
+    <meta name="theme-color" content="#171020" />
+    <link rel="canonical" href={canonicalURL} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content"
+      >跳至主要內容 <span lang="en">Skip to content</span></a
+    >
+    <MobileHeader />
+    <div class="app-shell">
+      <SiteRail pathname={Astro.url.pathname} />
+      <main id="main-content" tabindex="-1">
+        <slot />
+      </main>
+      <ContextRail section={section} sectionEn={sectionEn} />
+    </div>
+    <BottomNav pathname={Astro.url.pathname} />
+  </body>
+</html>

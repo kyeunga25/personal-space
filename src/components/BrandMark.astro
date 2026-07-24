@@ -1,0 +1,61 @@
+---
+interface Props {
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+---
+
+<span class:list={["brand-mark", { "brand-mark--compact": compact }]}>
+  <svg viewBox="0 0 32 32" aria-hidden="true">
+    <path
+      class="brand-mark__star"
+      d="M16 2.5c.8 6.7 3.8 10.3 10.5 13.5-6.7 3.2-9.7 6.8-10.5 13.5C15.2 22.8 12.2 19.2 5.5 16 12.2 12.8 15.2 9.2 16 2.5Z"
+    ></path>
+    <circle class="brand-mark__core" cx="16" cy="16" r="3.25"></circle>
+  </svg>
+</span>
+
+<style>
+  .brand-mark {
+    display: inline-grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-md);
+    background:
+      radial-gradient(
+        circle at 64% 30%,
+        rgba(239, 120, 165, 0.22),
+        transparent 38%
+      ),
+      var(--space-night-850);
+    box-shadow: var(--space-glow-gold);
+  }
+
+  .brand-mark--compact {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-sm);
+  }
+
+  svg {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .brand-mark--compact svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .brand-mark__star {
+    fill: var(--space-gold);
+  }
+
+  .brand-mark__core {
+    fill: var(--space-pink);
+  }
+</style>

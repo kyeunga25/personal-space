@@ -1,0 +1,187 @@
+---
+import { primaryNavigation } from "../config/navigation";
+import { SITE } from "../config/site";
+import { isActivePath } from "../lib/navigation";
+import BrandMark from "./BrandMark.astro";
+import NavIcon from "./NavIcon.astro";
+
+interface Props {
+  pathname: string;
+}
+
+const { pathname } = Astro.props;
+---
+
+<aside class="site-rail" aria-label="主要導覽 Primary navigation">
+  <a class="site-rail__brand" href="/" aria-label={`${SITE.name} 首頁 Home`}>
+    <BrandMark />
+    <span>
+      <strong>{SITE.name}</strong>
+      <small>{SITE.domain}</small>
+    </span>
+  </a>
+
+  <nav class="site-rail__navigation" aria-label="閱讀導覽 Reading navigation">
+    <ul>
+      {
+        primaryNavigation.map((item) => (
+          <li>
+            <a
+              class:list={[
+                "site-rail__link",
+                { "is-active": isActivePath(pathname, item.href) },
+              ]}
+              href={item.href}
+              aria-current={
+                isActivePath(pathname, item.href) ? "page" : undefined
+              }
+            >
+              <NavIcon name={item.icon} />
+              <span class="site-rail__label">
+                <span>{item.label}</span>
+                <small lang="en">{item.labelEn}</small>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="site-rail__footer">
+    <span class="status-light" aria-hidden="true"></span>
+    <span>Phase 0 基礎架構 <small lang="en">Foundation</small></span>
+  </div>
+</aside>
+
+<style>
+  .site-rail {
+    position: sticky;
+    top: var(--space-6);
+    display: flex;
+    height: calc(100svh - (var(--space-6) * 2));
+    min-height: 38rem;
+    flex-direction: column;
+    padding: var(--space-5);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-lg);
+    background: rgba(30, 20, 41, 0.78);
+    box-shadow: var(--space-shadow);
+    backdrop-filter: blur(18px);
+  }
+
+  .site-rail__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--space-text);
+    text-decoration: none;
+  }
+
+  .site-rail__brand span {
+    min-width: 0;
+  }
+
+  .site-rail__brand strong,
+  .site-rail__brand small {
+    display: block;
+  }
+
+  .site-rail__brand strong {
+    font-size: var(--font-size-1);
+    letter-spacing: -0.02em;
+  }
+
+  .site-rail__brand small {
+    margin-top: var(--space-1);
+    overflow: hidden;
+    color: var(--space-text-faint);
+    font-size: var(--font-size--1);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .site-rail__navigation {
+    margin-top: var(--space-6);
+  }
+
+  ul {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .site-rail__link {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-3);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--space-text-muted);
+    font-size: var(--font-size-0);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      color var(--motion-fast) ease,
+      background-color var(--motion-fast) ease,
+      border-color var(--motion-fast) ease;
+  }
+
+  .site-rail__link:hover {
+    border-color: var(--space-border);
+    background: rgba(255, 247, 239, 0.04);
+    color: var(--space-text);
+  }
+
+  .site-rail__link.is-active {
+    border-color: rgba(239, 120, 165, 0.24);
+    background: linear-gradient(
+      90deg,
+      rgba(198, 61, 93, 0.2),
+      rgba(117, 81, 142, 0.12)
+    );
+    color: var(--space-pink-soft);
+  }
+
+  .site-rail__label,
+  .site-rail__label span,
+  .site-rail__label small {
+    display: block;
+  }
+
+  .site-rail__label small {
+    margin-top: 0.08rem;
+    color: var(--space-text-faint);
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+
+  .site-rail__footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: auto;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--space-border);
+    color: var(--space-text-faint);
+    font-size: var(--font-size--1);
+  }
+
+  .status-light {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--space-gold);
+    box-shadow: 0 0 12px rgba(242, 199, 92, 0.5);
+  }
+
+  @media (max-width: 47.99rem) {
+    .site-rail {
+      display: none;
+    }
+  }
+</style>

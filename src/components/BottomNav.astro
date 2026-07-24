@@ -1,0 +1,80 @@
+---
+import { mobileNavigation } from "../config/navigation";
+import { isActivePath } from "../lib/navigation";
+import NavIcon from "./NavIcon.astro";
+
+interface Props {
+  pathname: string;
+}
+
+const { pathname } = Astro.props;
+---
+
+<nav class="bottom-nav" aria-label="流動版導覽 Mobile navigation">
+  {
+    mobileNavigation.map((item) => (
+      <a
+        class:list={[
+          "bottom-nav__link",
+          { "is-active": isActivePath(pathname, item.href) },
+        ]}
+        href={item.href}
+        aria-label={`${item.label} ${item.labelEn}`}
+        aria-current={isActivePath(pathname, item.href) ? "page" : undefined}
+      >
+        <NavIcon name={item.icon} />
+        <span>{item.label}</span>
+        <small lang="en">{item.labelEn}</small>
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .bottom-nav {
+    display: none;
+  }
+
+  @media (max-width: 47.99rem) {
+    .bottom-nav {
+      position: fixed;
+      z-index: var(--z-navigation);
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      padding: var(--space-2) max(var(--space-2), env(safe-area-inset-right))
+        max(var(--space-2), env(safe-area-inset-bottom))
+        max(var(--space-2), env(safe-area-inset-left));
+      border-top: 1px solid var(--space-border);
+      background: rgba(23, 16, 32, 0.94);
+      backdrop-filter: blur(18px);
+    }
+
+    .bottom-nav__link {
+      display: flex;
+      min-width: 0;
+      min-height: 3rem;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: var(--space-1);
+      border-radius: var(--radius-sm);
+      color: var(--space-text-faint);
+      font-size: 0.68rem;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .bottom-nav__link.is-active {
+      background: rgba(239, 120, 165, 0.1);
+      color: var(--space-pink-soft);
+    }
+
+    .bottom-nav__link small {
+      font-size: 0.58rem;
+      font-weight: 500;
+    }
+  }
+</style>

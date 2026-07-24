@@ -1,0 +1,62 @@
+---
+import { SITE } from "../config/site";
+import BrandMark from "./BrandMark.astro";
+import NavIcon from "./NavIcon.astro";
+---
+
+<header class="mobile-header">
+  <a
+    class="mobile-header__brand"
+    href="/"
+    aria-label={`${SITE.name} 首頁 Home`}
+  >
+    <BrandMark compact />
+    <span>{SITE.name}</span>
+  </a>
+  <a class="mobile-header__search" href="/search" aria-label="搜尋 Search">
+    <NavIcon name="search" />
+  </a>
+</header>
+
+<style>
+  .mobile-header {
+    display: none;
+  }
+
+  @media (max-width: 47.99rem) {
+    .mobile-header {
+      position: sticky;
+      z-index: var(--z-navigation);
+      top: 0;
+      display: flex;
+      min-height: 4rem;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2) var(--page-gutter);
+      border-bottom: 1px solid var(--space-border);
+      background: rgba(16, 11, 24, 0.9);
+      backdrop-filter: blur(18px);
+    }
+
+    .mobile-header__brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      color: var(--space-text);
+      font-size: var(--font-size-0);
+      font-weight: 750;
+      text-decoration: none;
+    }
+
+    .mobile-header__search {
+      display: grid;
+      width: 2.5rem;
+      height: 2.5rem;
+      place-items: center;
+      border: 1px solid var(--space-border);
+      border-radius: var(--radius-sm);
+      color: var(--space-text-muted);
+      text-decoration: none;
+    }
+  }
+</style>

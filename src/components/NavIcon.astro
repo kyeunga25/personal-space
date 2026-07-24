@@ -1,0 +1,98 @@
+---
+import type { NavigationIcon } from "../config/navigation";
+
+interface Props {
+  name: NavigationIcon;
+}
+
+const { name } = Astro.props;
+---
+
+<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+  {
+    name === "home" && (
+      <>
+        <path d="m4 10.5 8-6.5 8 6.5" />
+        <path d="M6.5 9.5V20h11V9.5M10 20v-5h4v5" />
+      </>
+    )
+  }
+  {
+    name === "stream" && (
+      <>
+        <path d="M5 5h14M5 12h14M5 19h9" />
+        <circle cx="18" cy="19" r="1.25" />
+      </>
+    )
+  }
+  {
+    name === "note" && (
+      <>
+        <path d="M6 3.5h8l4 4V20H6z" />
+        <path d="M14 3.5V8h4M9 12h6M9 16h4" />
+      </>
+    )
+  }
+  {
+    name === "article" && (
+      <>
+        <rect x="4" y="3.5" width="16" height="17" rx="2" />
+        <path d="M8 8h8M8 12h8M8 16h5" />
+      </>
+    )
+  }
+  {
+    name === "edition" && (
+      <>
+        <path d="M5 4.5h12a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2z" />
+        <path d="M8 8h8M8 12h6M8 16h4" />
+        <path d="M5 17.5a2 2 0 0 1 2-2h12" />
+      </>
+    )
+  }
+  {
+    name === "channel" && (
+      <>
+        <circle cx="12" cy="12" r="2" />
+        <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13" />
+      </>
+    )
+  }
+  {
+    name === "archive" && (
+      <>
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M8 3v4M16 3v4M4 9h16M8 13h3M8 16h6" />
+      </>
+    )
+  }
+  {
+    name === "search" && (
+      <>
+        <circle cx="10.5" cy="10.5" r="5.5" />
+        <path d="m15 15 4.5 4.5" />
+      </>
+    )
+  }
+  {
+    name === "about" && (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 11v6M12 7.5v.25" />
+      </>
+    )
+  }
+</svg>
+
+<style>
+  .nav-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.65;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>

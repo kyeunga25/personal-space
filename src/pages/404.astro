@@ -1,0 +1,32 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+Astro.response.status = 404;
+---
+
+<BaseLayout
+  title="找不到頁面"
+  titleEn="Not found"
+  description="找不到你要求的頁面。"
+  descriptionEn="The requested page could not be found."
+  section="找不到頁面"
+  sectionEn="Not found"
+>
+  <section class="page-intro">
+    <p class="page-kicker">404</p>
+    <h1>
+      這條路暫時安靜下來了。 <small lang="en">This path has gone quiet.</small>
+    </h1>
+    <p>頁面可能已移動，或者尚未存在。</p>
+    <p class="en-subline" lang="en">
+      The page may have moved, or it may not exist yet.
+    </p>
+    <div class="button-row">
+      <a class="button button--primary" href="/"
+        >返回首頁 <span lang="en">Home</span></a
+      >
+      <a class="button" href="/search">搜尋空間 <span lang="en">Search</span></a
+      >
+    </div>
+  </section>
+</BaseLayout>

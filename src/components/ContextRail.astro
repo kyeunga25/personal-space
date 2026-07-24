@@ -1,0 +1,100 @@
+---
+interface Props {
+  section?: string;
+  sectionEn?: string;
+}
+
+const { section = "閱讀空間", sectionEn = "Reading space" } = Astro.props;
+---
+
+<aside class="context-rail" aria-label="頁面資訊 Page context">
+  <section>
+    <p class="context-rail__label">
+      目前位置 · <span lang="en">Current section</span>
+    </p>
+    <h2>{section} <small lang="en">{sectionEn}</small></h2>
+    <p>Phase 0 提供導覽與閱讀框架，內容會在後續階段加入。</p>
+    <p class="en-subline" lang="en">
+      Phase 0 provides the navigation and reading frame. Content arrives in
+      later phases.
+    </p>
+  </section>
+
+  <section>
+    <p class="context-rail__label">
+      快速前往 · <span lang="en">Quick paths</span>
+    </p>
+    <ul>
+      <li><a href="/notes">短篇短札 <span lang="en">Notes</span></a></li>
+      <li><a href="/articles">長篇文章 <span lang="en">Articles</span></a></li>
+      <li><a href="/editions">策劃專題 <span lang="en">Editions</span></a></li>
+      <li><a href="/archive">日期封存 <span lang="en">Archive</span></a></li>
+    </ul>
+  </section>
+</aside>
+
+<style>
+  .context-rail {
+    position: sticky;
+    top: var(--space-6);
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+  }
+
+  section {
+    padding: var(--space-5);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-md);
+    background: rgba(38, 24, 49, 0.64);
+  }
+
+  section:first-child {
+    box-shadow: var(--space-glow-pink);
+  }
+
+  .context-rail__label {
+    margin: 0 0 var(--space-2);
+    color: var(--space-gold);
+    font-size: var(--font-size--1);
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: var(--font-size-2);
+  }
+
+  p {
+    margin: var(--space-3) 0 0;
+    color: var(--space-text-muted);
+    font-size: var(--font-size--1);
+    line-height: 1.65;
+  }
+
+  ul {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    color: var(--space-text-muted);
+    font-size: var(--font-size-0);
+    text-underline-offset: 0.25em;
+  }
+
+  a:hover {
+    color: var(--space-gold-soft);
+  }
+
+  @media (max-width: 68.74rem) {
+    .context-rail {
+      display: none;
+    }
+  }
+</style>

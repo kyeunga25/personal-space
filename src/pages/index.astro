@@ -1,0 +1,147 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout section="首頁" sectionEn="Home">
+  <div class="page-stack">
+    <section class="page-intro home-intro">
+      <p class="page-kicker">
+        自主而安靜的個人出版 · <span lang="en">Calm, self-owned publishing</span
+        >
+      </p>
+      <h1>讓值得保留的想法，安靜地屬於你。</h1>
+      <p class="home-intro__title-en" lang="en">
+        A quiet place for ideas that deserve to stay yours.
+      </p>
+      <p>
+        Personal Space
+        把短札、長篇文章與有明確來源的有限專題，整理到一個清晰而可搜尋的家。
+      </p>
+      <p class="en-subline" lang="en">
+        Personal Space brings short notes, long-form writing, and finite
+        source-backed editions into one clear, searchable home.
+      </p>
+      <div class="button-row">
+        <a class="button button--primary" href="/stream"
+          >閱讀動態 <span lang="en">Stream</span></a
+        >
+        <a class="button" href="/search"
+          >搜尋封存 <span lang="en">Search</span></a
+        >
+      </div>
+    </section>
+
+    <section class="content-band" aria-labelledby="content-shapes-heading">
+      <h2 id="content-shapes-heading">
+        三種各有節奏的閱讀方式 <small lang="en">Three reading rhythms</small>
+      </h2>
+      <p>每種內容都保留自己的用途，不會全部混進一條嘈雜的資訊流。</p>
+      <p class="en-subline" lang="en">
+        Each content shape keeps its own purpose instead of collapsing into one
+        noisy feed.
+      </p>
+      <ul class="feature-list">
+        <li>
+          <strong>短札 <small lang="en">Notes</small></strong>
+          <span
+            >簡短的個人想法與小故事，只在有幫助時使用標題。<small lang="en"
+              >Compact personal thoughts and small stories, with titles only
+              when they help.</small
+            ></span
+          >
+        </li>
+        <li>
+          <strong>文章 <small lang="en">Articles</small></strong>
+          <span
+            >節奏安靜、層次清楚，並留有思考空間的長篇文字。<small lang="en"
+              >Long-form writing with a calm measure, clear hierarchy, and room
+              to think.</small
+            ></span
+          >
+        </li>
+        <li>
+          <strong>專題 <small lang="en">Editions</small></strong>
+          <span
+            >有結構、有來源的主題摘要，與原始收集資料清楚分隔。<small lang="en"
+              >Structured, source-backed topic digests kept separate from raw
+              incoming material.</small
+            ></span
+          >
+        </li>
+      </ul>
+    </section>
+
+    <section class="foundation-note" aria-labelledby="foundation-heading">
+      <div>
+        <p class="foundation-note__label">Phase 0 · 基礎階段</p>
+        <h2 id="foundation-heading">
+          閱讀框架已經就位。 <small lang="en">The frame is ready.</small>
+        </h2>
+      </div>
+      <p>
+        導覽、路由、響應式版面、無障礙基礎與 Cloudflare Workers
+        發布均已準備好；出版資料與擁有者工具會在 Phase 1 開始。
+        <small lang="en"
+          >Navigation, routes, responsive layout, accessibility foundations, and
+          Cloudflare Workers delivery are ready. Publishing data and owner tools
+          begin in Phase 1.</small
+        >
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .home-intro h1 {
+    max-width: 14ch;
+  }
+
+  .home-intro__title-en {
+    max-width: 32rem;
+    margin-top: calc(var(--space-2) * -1);
+    color: var(--space-pink-soft);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-1);
+  }
+
+  .foundation-note {
+    display: grid;
+    grid-template-columns: minmax(10rem, 0.7fr) minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: start;
+    padding: clamp(1.5rem, 5vw, 2.5rem);
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-md);
+    background:
+      linear-gradient(120deg, rgba(198, 61, 93, 0.12), transparent 48%),
+      rgba(38, 24, 49, 0.62);
+    box-shadow: var(--space-glow-gold);
+  }
+
+  .foundation-note__label {
+    margin: 0 0 var(--space-2);
+    color: var(--space-gold);
+    font-size: var(--font-size--1);
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .foundation-note h2 {
+    margin: 0;
+    font-size: var(--font-size-2);
+  }
+
+  .foundation-note > p {
+    margin: 0;
+    color: var(--space-text-muted);
+    line-height: 1.72;
+  }
+
+  @media (max-width: 37.5rem) {
+    .foundation-note {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+  }
+</style>

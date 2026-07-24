@@ -1,0 +1,64 @@
+---
+import type { PlaceholderRoute } from "../config/route-content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+type Props = PlaceholderRoute;
+
+const { title, description, planned } = Astro.props;
+---
+
+<BaseLayout
+  title={title.zhHant}
+  titleEn={title.en}
+  description={description.zhHant}
+  descriptionEn={description.en}
+  section={title.zhHant}
+  sectionEn={title.en}
+>
+  <div class="page-stack">
+    <section class="page-intro">
+      <p class="page-kicker">
+        基礎頁面 · <span lang="en">Foundation route</span>
+      </p>
+      <h1>{title.zhHant} <small lang="en">{title.en}</small></h1>
+      <p>{description.zhHant}</p>
+      <p class="en-subline" lang="en">{description.en}</p>
+      <div class="button-row">
+        <a class="button button--primary" href="/"
+          >返回首頁 <span lang="en">Home</span></a
+        >
+        {
+          title.en !== "Stream" && (
+            <a class="button" href="/stream">
+              開啟動態 <span lang="en">Stream</span>
+            </a>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="content-band" aria-labelledby="planned-heading">
+      <h2 id="planned-heading">
+        此頁面後續功能 <small lang="en">Planned</small>
+      </h2>
+      <p>路由與響應式介面已準備好；實際產品功能會按實作階段逐步加入。</p>
+      <p class="en-subline" lang="en">
+        The route and responsive shell are ready. Product behavior lands in its
+        scheduled implementation phase.
+      </p>
+      <ul class="feature-list">
+        {
+          planned.map((item, index) => (
+            <li>
+              <strong>{String(index + 1).padStart(2, "0")}</strong>
+              <span>
+                {item.zhHant}
+                <small lang="en">{item.en}</small>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
