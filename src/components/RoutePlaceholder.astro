@@ -4,7 +4,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 type Props = PlaceholderRoute;
 
-const { title, description, planned } = Astro.props;
+const { title, description } = Astro.props;
 ---
 
 <BaseLayout
@@ -16,10 +16,7 @@ const { title, description, planned } = Astro.props;
   sectionEn={title.en}
 >
   <div class="page-stack">
-    <section class="page-intro">
-      <p class="page-kicker">
-        基礎頁面 · <span lang="en">Foundation route</span>
-      </p>
+    <header class="route-header">
       <h1>{title.zhHant} <small lang="en">{title.en}</small></h1>
       <p>{description.zhHant}</p>
       <p class="en-subline" lang="en">{description.en}</p>
@@ -28,37 +25,24 @@ const { title, description, planned } = Astro.props;
           >返回首頁 <span lang="en">Home</span></a
         >
         {
-          title.en !== "Stream" && (
-            <a class="button" href="/stream">
-              開啟動態 <span lang="en">Stream</span>
+          title.en !== "Shorts" && (
+            <a class="button" href="/shorts">
+              瀏覽短內容 <span lang="en">Shorts</span>
             </a>
           )
         }
       </div>
-    </section>
+    </header>
 
-    <section class="content-band" aria-labelledby="planned-heading">
-      <h2 id="planned-heading">
-        此頁面後續功能 <small lang="en">Planned</small>
+    <section class="route-empty" aria-labelledby="empty-heading">
+      <h2 id="empty-heading">
+        暫未有公開內容 <small lang="en">No public entries yet</small>
       </h2>
-      <p>路由與響應式介面已準備好；實際產品功能會按實作階段逐步加入。</p>
+      <p>這個分類目前保持安靜；有適合公開的內容時會在這裡出現。</p>
       <p class="en-subline" lang="en">
-        The route and responsive shell are ready. Product behavior lands in its
-        scheduled implementation phase.
+        This section is quiet for now. Public entries will appear here when
+        available.
       </p>
-      <ul class="feature-list">
-        {
-          planned.map((item, index) => (
-            <li>
-              <strong>{String(index + 1).padStart(2, "0")}</strong>
-              <span>
-                {item.zhHant}
-                <small lang="en">{item.en}</small>
-              </span>
-            </li>
-          ))
-        }
-      </ul>
     </section>
   </div>
 </BaseLayout>

@@ -1,0 +1,246 @@
+---
+import NavIcon from "./NavIcon.astro";
+
+type FeedKind = "briefing" | "longform" | "short";
+
+interface Props {
+  date: string;
+  dateTime: string;
+  excerpt: string;
+  excerptEn: string;
+  href: string;
+  kind: FeedKind;
+  label: string;
+  labelEn: string;
+  title: string;
+  titleEn: string;
+}
+
+const {
+  date,
+  dateTime,
+  excerpt,
+  excerptEn,
+  href,
+  kind,
+  label,
+  labelEn,
+  title,
+  titleEn,
+} = Astro.props;
+---
+
+<article class:list={["feed-item", `feed-item--${kind}`]}>
+  <a href={href}>
+    <span class="feed-item__icon" aria-hidden="true">
+      <NavIcon name={kind} />
+    </span>
+    <span class="feed-item__content">
+      <span class="feed-item__meta">
+        <span class="feed-item__kind">
+          {label}
+          <small lang="en">{labelEn}</small>
+        </span>
+        <time datetime={dateTime}>{date}</time>
+      </span>
+      <strong>{title}</strong>
+      <span class="feed-item__title-en" lang="en">{titleEn}</span>
+      <span class="feed-item__excerpt">{excerpt}</span>
+      <span class="feed-item__excerpt-en" lang="en">{excerptEn}</span>
+    </span>
+    <svg class="feed-item__chevron" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m9 5 7 7-7 7"></path>
+    </svg>
+  </a>
+</article>
+
+<style>
+  .feed-item {
+    border-bottom: 1px solid var(--space-border);
+  }
+
+  .feed-item > a {
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr) 1.5rem;
+    gap: var(--space-4);
+    align-items: center;
+    min-height: 10rem;
+    padding: var(--space-5) clamp(1.25rem, 4vw, 2rem);
+    color: var(--space-ink);
+    text-decoration: none;
+    transition:
+      background-color var(--motion-fast) ease,
+      box-shadow var(--motion-fast) ease;
+  }
+
+  .feed-item > a:hover {
+    background: var(--space-surface-hover);
+    box-shadow: inset 3px 0 var(--space-primary);
+  }
+
+  .feed-item__icon {
+    display: grid;
+    width: 4.35rem;
+    height: 4.35rem;
+    place-items: center;
+    border: 1px solid var(--space-primary-soft);
+    border-radius: var(--radius-md);
+    background: var(--space-surface-primary);
+    color: var(--space-primary);
+    box-shadow: var(--space-shadow-glow);
+    clip-path: polygon(
+      0.65rem 0,
+      100% 0,
+      100% calc(100% - 0.65rem),
+      calc(100% - 0.65rem) 100%,
+      0 100%
+    );
+  }
+
+  .feed-item--longform .feed-item__icon {
+    border-color: var(--space-blue-soft);
+    background: var(--space-surface-blue);
+    color: var(--space-blue);
+  }
+
+  .feed-item--briefing .feed-item__icon {
+    border-color: var(--space-teal-soft);
+    background: var(--space-surface-teal);
+    color: var(--space-teal);
+  }
+
+  .feed-item__icon :global(.nav-icon) {
+    width: 1.65rem;
+    height: 1.65rem;
+    stroke-width: 1.8;
+  }
+
+  .feed-item__content,
+  .feed-item__content > span,
+  .feed-item__content > strong {
+    display: block;
+    min-width: 0;
+  }
+
+  .feed-item__meta {
+    display: flex !important;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+
+  .feed-item__kind {
+    color: var(--space-primary);
+    font-weight: 700;
+  }
+
+  .feed-item--longform .feed-item__kind {
+    color: var(--space-blue-strong);
+  }
+
+  .feed-item--briefing .feed-item__kind {
+    color: var(--space-teal-strong);
+  }
+
+  .feed-item__kind small {
+    margin-left: 0.25em;
+    font-size: 0.85em;
+    font-weight: 560;
+  }
+
+  .feed-item strong {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-2);
+    letter-spacing: -0.025em;
+    line-height: 1.32;
+  }
+
+  .feed-item__title-en {
+    margin-top: var(--space-1);
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    font-weight: 620;
+  }
+
+  .feed-item__excerpt {
+    margin-top: var(--space-2);
+    color: var(--space-ink-muted);
+    line-height: 1.55;
+  }
+
+  .feed-item__excerpt-en {
+    margin-top: 0.15rem;
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    line-height: 1.48;
+  }
+
+  .feed-item__chevron {
+    width: 1.35rem;
+    height: 1.35rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+  }
+
+  .feed-item--short .feed-item__chevron {
+    color: var(--space-primary);
+  }
+
+  .feed-item--longform .feed-item__chevron {
+    color: var(--space-blue);
+  }
+
+  .feed-item--briefing .feed-item__chevron {
+    color: var(--space-teal);
+  }
+
+  @media (max-width: 47.99rem) {
+    .feed-item > a {
+      grid-template-columns: 3.4rem minmax(0, 1fr) 1.2rem;
+      gap: var(--space-3);
+      min-height: 9.5rem;
+      padding-block: var(--space-5);
+    }
+
+    .feed-item__icon {
+      width: 3.25rem;
+      height: 3.25rem;
+    }
+
+    .feed-item__icon :global(.nav-icon) {
+      width: 1.35rem;
+      height: 1.35rem;
+    }
+
+    .feed-item__meta {
+      align-items: flex-start;
+    }
+
+    .feed-item__meta time {
+      flex: 0 0 auto;
+      font-size: 0.75rem;
+    }
+
+    .feed-item strong {
+      font-size: var(--font-size-1);
+    }
+
+    .feed-item__content > .feed-item__title-en,
+    .feed-item__content > .feed-item__excerpt-en {
+      display: none;
+    }
+
+    .feed-item__excerpt {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      font-size: var(--font-size--1);
+    }
+  }
+</style>

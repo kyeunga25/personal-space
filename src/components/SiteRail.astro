@@ -50,31 +50,35 @@ const { pathname } = Astro.props;
 
   <div class="site-rail__footer">
     <span class="status-light" aria-hidden="true"></span>
-    <span>Phase 0 基礎架構 <small lang="en">Foundation</small></span>
+    <span>Clear Sky <small lang="en">v0.3.0</small></span>
   </div>
 </aside>
 
 <style>
   .site-rail {
     position: sticky;
-    top: var(--space-6);
+    top: 0;
     display: flex;
-    height: calc(100svh - (var(--space-6) * 2));
-    min-height: 38rem;
+    height: 100svh;
     flex-direction: column;
-    padding: var(--space-5);
-    border: 1px solid var(--space-border);
-    border-radius: var(--radius-lg);
-    background: rgba(30, 20, 41, 0.78);
-    box-shadow: var(--space-shadow);
-    backdrop-filter: blur(18px);
+    overflow-y: auto;
+    padding: var(--space-6) var(--space-5);
+    border-right: 1px solid var(--space-border-strong);
+    background:
+      radial-gradient(
+        circle at 10% 92%,
+        rgba(242, 183, 24, 0.16),
+        transparent 13rem
+      ),
+      rgba(237, 249, 255, 0.64);
+    backdrop-filter: blur(20px);
   }
 
   .site-rail__brand {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    color: var(--space-text);
+    color: var(--space-ink);
     text-decoration: none;
   }
 
@@ -89,25 +93,25 @@ const { pathname } = Astro.props;
 
   .site-rail__brand strong {
     font-size: var(--font-size-1);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.035em;
   }
 
   .site-rail__brand small {
     margin-top: var(--space-1);
     overflow: hidden;
-    color: var(--space-text-faint);
+    color: var(--space-primary-strong);
     font-size: var(--font-size--1);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .site-rail__navigation {
-    margin-top: var(--space-6);
+    margin-top: var(--space-7);
   }
 
   ul {
     display: grid;
-    gap: var(--space-1);
+    gap: var(--space-2);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -115,36 +119,35 @@ const { pathname } = Astro.props;
 
   .site-rail__link {
     display: flex;
-    min-height: 2.75rem;
+    min-height: 3.15rem;
     align-items: center;
     gap: var(--space-3);
     padding: 0 var(--space-3);
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    color: var(--space-text-muted);
+    border-radius: var(--radius-md);
+    color: var(--space-ink);
     font-size: var(--font-size-0);
     font-weight: 600;
     text-decoration: none;
     transition:
       color var(--motion-fast) ease,
       background-color var(--motion-fast) ease,
-      border-color var(--motion-fast) ease;
+      transform var(--motion-fast) ease;
   }
 
   .site-rail__link:hover {
-    border-color: var(--space-border);
-    background: rgba(255, 247, 239, 0.04);
-    color: var(--space-text);
+    background: var(--space-surface-hover);
+    color: var(--space-primary-strong);
+    transform: translateX(2px);
   }
 
   .site-rail__link.is-active {
-    border-color: rgba(239, 120, 165, 0.24);
     background: linear-gradient(
-      90deg,
-      rgba(198, 61, 93, 0.2),
-      rgba(117, 81, 142, 0.12)
+      135deg,
+      var(--space-primary),
+      var(--space-blue)
     );
-    color: var(--space-pink-soft);
+    color: #ffffff;
+    box-shadow: var(--space-shadow-glow);
   }
 
   .site-rail__label,
@@ -153,9 +156,13 @@ const { pathname } = Astro.props;
     display: block;
   }
 
+  .site-rail__link.is-active .site-rail__label small {
+    color: rgba(255, 255, 255, 0.78);
+  }
+
   .site-rail__label small {
     margin-top: 0.08rem;
-    color: var(--space-text-faint);
+    color: var(--space-ink-faint);
     font-size: 0.68rem;
     font-weight: 500;
   }
@@ -167,7 +174,7 @@ const { pathname } = Astro.props;
     margin-top: auto;
     padding-top: var(--space-4);
     border-top: 1px solid var(--space-border);
-    color: var(--space-text-faint);
+    color: var(--space-ink-faint);
     font-size: var(--font-size--1);
   }
 
@@ -175,8 +182,8 @@ const { pathname } = Astro.props;
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 50%;
-    background: var(--space-gold);
-    box-shadow: 0 0 12px rgba(242, 199, 92, 0.5);
+    background: var(--space-yellow);
+    box-shadow: 0 0 0 0.22rem var(--space-surface-yellow);
   }
 
   @media (max-width: 47.99rem) {

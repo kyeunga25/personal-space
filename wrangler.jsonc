@@ -20,8 +20,4 @@
     "enabled": true,
     "head_sampling_rate": 1,
   },
-
-  // Phase 1 adds D1 and R2 bindings after production resources exist.
-  // Later phases add Queues and Cron Triggers; no placeholder IDs or secrets
-  // are committed here.
 }

@@ -1,34 +1,47 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --space-night-950: #100b18;
-  --space-night-900: #171020;
-  --space-night-850: #1e1429;
-  --space-panel: #261831;
-  --space-panel-raised: #30203c;
+  --space-canvas: #eef8ff;
+  --space-canvas-blue: #e3f3ff;
+  --space-canvas-sun: #fff9e8;
+  --space-canvas-mint: #eafaf7;
+  --space-surface: rgba(250, 253, 255, 0.62);
+  --space-surface-strong: rgba(252, 254, 255, 0.84);
+  --space-surface-hover: rgba(221, 242, 255, 0.74);
+  --space-surface-primary: rgba(213, 237, 255, 0.82);
+  --space-surface-blue: rgba(224, 245, 255, 0.86);
+  --space-surface-teal: rgba(221, 248, 243, 0.84);
+  --space-surface-yellow: rgba(255, 247, 208, 0.82);
+  --space-surface-mint: var(--space-surface-teal);
 
-  --space-text: #fff7ef;
-  --space-text-muted: #d9cad5;
-  --space-text-faint: #a996a7;
+  --space-ink: #0b1948;
+  --space-ink-muted: #40577c;
+  --space-ink-faint: #7185a3;
 
-  --space-red: #c63d5d;
-  --space-red-strong: #e04b69;
-  --space-pink: #ef78a5;
-  --space-pink-soft: #f6b0ca;
-  --space-gold: #f2c75c;
-  --space-gold-soft: #ffe5a0;
-  --space-nebula: #75518e;
+  --space-primary: #126cf3;
+  --space-primary-strong: #0954ce;
+  --space-primary-soft: #9ed3ff;
+  --space-blue: #16a4e8;
+  --space-blue-strong: #087fc4;
+  --space-blue-soft: #a9ddf6;
+  --space-teal: #0aa78f;
+  --space-teal-strong: #087c70;
+  --space-teal-soft: #9edfd4;
+  --space-yellow: #f2b718;
+  --space-yellow-soft: #f9dfa0;
 
-  --space-border: rgba(255, 238, 246, 0.14);
-  --space-border-strong: rgba(255, 229, 160, 0.3);
-  --space-shadow: 0 18px 50px rgba(3, 1, 8, 0.36);
-  --space-glow-pink: 0 0 40px rgba(239, 120, 165, 0.18);
-  --space-glow-gold: 0 0 30px rgba(242, 199, 92, 0.15);
+  --space-border: rgba(22, 114, 190, 0.18);
+  --space-border-strong: rgba(17, 103, 192, 0.34);
+  --space-shadow-soft: 0 18px 44px rgba(22, 98, 164, 0.1);
+  --space-shadow-glow: 0 10px 26px rgba(18, 108, 243, 0.12);
+  --space-focus: 0 0 0 3px #f4fbff, 0 0 0 6px rgba(18, 108, 243, 0.58);
 
   --font-ui:
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     "PingFang TC", "Noto Sans TC", "Noto Sans JP", sans-serif;
   --font-reading: ui-serif, "Songti TC", "Noto Serif TC", Georgia, serif;
+  --font-family-body: var(--font-ui);
+  --font-family-display: var(--font-ui);
 
   --font-size--1: clamp(0.76rem, 0.73rem + 0.12vw, 0.84rem);
   --font-size-0: clamp(0.94rem, 0.9rem + 0.14vw, 1.02rem);
@@ -46,14 +59,37 @@
   --space-7: 3rem;
   --space-8: 4.5rem;
 
-  --radius-sm: 0.625rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
+  --radius-sm: 0.4rem;
+  --radius-md: 0.7rem;
+  --radius-lg: 0.95rem;
   --radius-pill: 999px;
 
-  --page-gutter: clamp(1rem, 3vw, 2rem);
-  --content-measure: 46rem;
+  --page-gutter: clamp(1rem, 2.5vw, 1.75rem);
+  --content-measure: 44rem;
   --motion-fast: 160ms;
-  --motion-medium: 240ms;
+  --motion-medium: 280ms;
+  --motion-slow: 16s;
   --z-navigation: 20;
+
+  /* Compatibility aliases for legacy route styles. */
+  --space-text: var(--space-ink);
+  --space-text-muted: var(--space-ink-muted);
+  --space-text-faint: var(--space-ink-faint);
+  --space-violet: var(--space-primary);
+  --space-violet-strong: var(--space-primary-strong);
+  --space-violet-soft: var(--space-primary-soft);
+  --space-surface-violet: var(--space-surface-primary);
+  --space-pink: var(--space-teal);
+  --space-pink-strong: var(--space-teal-strong);
+  --space-pink-soft: var(--space-teal-soft);
+  --space-surface-pink: var(--space-surface-teal);
+  --space-coral: var(--space-teal);
+  --space-coral-soft: var(--space-teal-soft);
+  --space-canvas-pink: var(--space-canvas-sun);
+  --space-gold: var(--space-yellow);
+  --space-gold-soft: var(--space-yellow);
+  --space-red: var(--space-primary);
+  --space-red-strong: var(--space-primary-strong);
+  --space-border-legacy: var(--space-border);
+  --space-shadow: var(--space-shadow-soft);
 }

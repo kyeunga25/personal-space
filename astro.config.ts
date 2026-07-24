@@ -7,8 +7,6 @@ export default defineConfig({
   adapter: cloudflare({
     imageService: "compile",
   }),
-  // Phase 0 does not use sessions. This local-only driver prevents the
-  // adapter from auto-provisioning a KV binding before authentication exists.
   session: {
     driver: sessionDrivers.lruCache({ max: 1 }),
   },

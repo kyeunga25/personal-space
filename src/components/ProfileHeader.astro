@@ -1,0 +1,342 @@
+---
+import BrandMark from "./BrandMark.astro";
+---
+
+<section class="profile-header" aria-labelledby="profile-title">
+  <div class="profile-header__cover" aria-hidden="true">
+    <span class="profile-header__star profile-header__star--one"></span>
+    <span class="profile-header__star profile-header__star--two"></span>
+    <span class="profile-header__star profile-header__star--three"></span>
+    <span class="profile-header__rhythm"></span>
+  </div>
+
+  <div class="profile-header__identity">
+    <BrandMark avatar />
+    <div class="profile-header__copy">
+      <h1 id="profile-title">
+        我的空間 <small lang="en">My Space</small>
+      </h1>
+      <p>嗨，這裡是我整理想法、作品與興趣的地方。</p>
+      <p class="profile-header__english" lang="en">
+        A soft, colorful place for what I notice, make, and want to keep.
+      </p>
+    </div>
+  </div>
+
+  <nav class="profile-tabs" aria-label="內容分類 Content categories">
+    <a class="is-active" href="/shorts">
+      <span>短內容</span>
+      <small lang="en">Shorts</small>
+    </a>
+    <a href="/longform">
+      <span>長內容</span>
+      <small lang="en">Longform</small>
+    </a>
+    <a href="/briefings">
+      <span>新聞整理</span>
+      <small lang="en">Briefings</small>
+    </a>
+  </nav>
+</section>
+
+<style>
+  .profile-header {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--space-border-strong);
+    background:
+      radial-gradient(
+        circle at 76% 28%,
+        rgba(242, 183, 24, 0.2),
+        transparent 14rem
+      ),
+      linear-gradient(
+        135deg,
+        rgba(210, 238, 255, 0.88),
+        rgba(235, 249, 255, 0.78) 54%,
+        rgba(255, 250, 225, 0.72)
+      );
+  }
+
+  .profile-header__cover {
+    position: absolute;
+    z-index: 0;
+    inset: 0 0 auto;
+    height: 19rem;
+    overflow: hidden;
+    background:
+      linear-gradient(
+        151deg,
+        transparent 0 37%,
+        rgba(255, 255, 255, 0.72) 37.2% 43%,
+        transparent 43.2% 49%,
+        rgba(18, 108, 243, 0.14) 49.2% 49.55%,
+        transparent 49.8%
+      ),
+      linear-gradient(
+        145deg,
+        transparent 0 61%,
+        rgba(242, 183, 24, 0.42) 61.2% 61.5%,
+        transparent 61.7%
+      );
+  }
+
+  .profile-header__cover::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 12rem;
+    height: 11rem;
+    background-image: radial-gradient(
+      circle,
+      rgba(22, 164, 232, 0.32) 0 1.15px,
+      transparent 1.45px
+    );
+    background-size: 0.62rem 0.62rem;
+    content: "";
+    mask-image: linear-gradient(225deg, black, transparent 76%);
+    opacity: 0.64;
+  }
+
+  .profile-header__star {
+    position: absolute;
+    width: 1.75rem;
+    height: 1.75rem;
+    background: var(--space-primary-soft);
+    clip-path: polygon(
+      50% 0,
+      61% 39%,
+      100% 50%,
+      61% 61%,
+      50% 100%,
+      39% 61%,
+      0 50%,
+      39% 39%
+    );
+  }
+
+  .profile-header__star--one {
+    top: 2.75rem;
+    left: 36%;
+  }
+
+  .profile-header__star--two {
+    top: 1rem;
+    right: 5%;
+    width: 4rem;
+    height: 4rem;
+    background: rgba(255, 255, 255, 0.76);
+  }
+
+  .profile-header__star--three {
+    right: 43%;
+    bottom: 2.2rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    background: var(--space-yellow);
+  }
+
+  .profile-header__rhythm {
+    position: absolute;
+    top: 2rem;
+    left: 1.5rem;
+    width: 6.5rem;
+    height: 3.5rem;
+    background: repeating-linear-gradient(
+      to right,
+      rgba(18, 108, 243, 0.3) 0 0.28rem,
+      transparent 0.28rem 0.56rem
+    );
+    clip-path: polygon(
+      0 80%,
+      10% 42%,
+      20% 64%,
+      30% 22%,
+      40% 48%,
+      50% 0,
+      60% 34%,
+      70% 56%,
+      80% 25%,
+      90% 66%,
+      100% 44%,
+      100% 100%,
+      0 100%
+    );
+  }
+
+  .profile-header__identity {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: center;
+    padding: var(--space-8) clamp(1.5rem, 4vw, 2.25rem) var(--space-7);
+  }
+
+  .profile-header__copy {
+    min-width: 0;
+  }
+
+  h1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin: 0;
+    color: var(--space-ink);
+    font-size: var(--font-size-3);
+    letter-spacing: -0.045em;
+    line-height: 1.08;
+  }
+
+  h1 small {
+    color: var(--space-blue-strong);
+    font-size: 0.62em;
+    font-weight: 720;
+    letter-spacing: -0.02em;
+  }
+
+  .profile-header__copy > p {
+    max-width: 35rem;
+    margin: var(--space-3) 0 0;
+    color: var(--space-ink);
+    font-size: var(--font-size-1);
+    font-weight: 690;
+    line-height: 1.55;
+  }
+
+  .profile-header__copy .profile-header__english {
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    font-weight: 490;
+    line-height: 1.5;
+  }
+
+  .profile-tabs {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-height: 4.6rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--space-border);
+    background: rgba(246, 252, 255, 0.44);
+    backdrop-filter: blur(12px);
+  }
+
+  .profile-tabs a {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    color: var(--space-ink-muted);
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      background-color var(--motion-fast) ease,
+      color var(--motion-fast) ease;
+  }
+
+  .profile-tabs a::after {
+    position: absolute;
+    right: 10%;
+    bottom: -1px;
+    left: 10%;
+    height: 3px;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    content: "";
+  }
+
+  .profile-tabs a:hover {
+    background: var(--space-surface-hover);
+    color: var(--space-primary-strong);
+  }
+
+  .profile-tabs a.is-active {
+    color: var(--space-primary-strong);
+    background: linear-gradient(
+      135deg,
+      rgba(205, 235, 255, 0.68),
+      rgba(239, 250, 255, 0.42)
+    );
+  }
+
+  .profile-tabs a.is-active::after {
+    background: linear-gradient(90deg, var(--space-primary), var(--space-blue));
+  }
+
+  .profile-tabs small {
+    font-size: 0.78em;
+    font-weight: 560;
+  }
+
+  @media (max-width: 47.99rem) {
+    .profile-header__cover {
+      height: 16rem;
+    }
+
+    .profile-header__cover::before {
+      right: -1rem;
+      width: 10rem;
+      height: 9rem;
+    }
+
+    .profile-header__rhythm {
+      top: 3.5rem;
+      left: 0.75rem;
+      width: 5rem;
+      height: 4rem;
+    }
+
+    .profile-header__identity {
+      display: block;
+      padding: 7.25rem var(--page-gutter) var(--space-6);
+    }
+
+    .profile-header__identity :global(.brand-mark--avatar) {
+      display: grid;
+      margin: 0 auto;
+    }
+
+    .profile-header__copy {
+      padding-top: var(--space-6);
+    }
+
+    h1 {
+      display: none;
+    }
+
+    .profile-header__copy > p {
+      max-width: 22ch;
+      font-size: var(--font-size-2);
+      font-weight: 790;
+      line-height: 1.42;
+    }
+
+    .profile-header__copy .profile-header__english {
+      max-width: 34ch;
+      font-size: var(--font-size-0);
+      font-weight: 470;
+      line-height: 1.55;
+    }
+
+    .profile-tabs {
+      min-height: 4.75rem;
+      margin-inline: var(--space-3);
+      overflow: hidden;
+      border: 1px solid var(--space-border-strong);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .profile-tabs a {
+      flex-direction: column;
+      gap: 0;
+      padding-inline: var(--space-2);
+      font-size: var(--font-size-0);
+    }
+  }
+</style>

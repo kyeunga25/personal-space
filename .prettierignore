@@ -1,9 +1,7 @@
 .astro
 .wrangler
-AGENTS.md
-CODEX_MASTER_PROMPT.md
-config/wrangler.example.jsonc
 dist
+config
 docs
 examples
 node_modules
