@@ -1,0 +1,76 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "personal-space",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2026-07-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "routes": [
+    {
+      "pattern": "space.k-y.cc",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "personal-space-prod",
+      "database_id": "<PRODUCTION_DATABASE_ID>",
+      "preview_database_id": "<PREVIEW_DATABASE_ID>",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "personal-space-media",
+      "preview_bucket_name": "personal-space-media-preview"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "INGEST_QUEUE",
+        "queue": "space-ingest"
+      },
+      {
+        "binding": "EDITORIAL_QUEUE",
+        "queue": "space-editorial"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "space-ingest",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "dead_letter_queue": "space-ingest-dlq"
+      },
+      {
+        "queue": "space-editorial",
+        "max_batch_size": 5,
+        "max_batch_timeout": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "space-editorial-dlq"
+      }
+    ]
+  },
+  "triggers": {
+    "crons": [
+      "30 19 * * *",
+      "30 9 * * *",
+      "0 11 * * *",
+      "0 13 * * 0"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "OWNER_TIMEZONE": "Asia/Hong_Kong",
+    "AI_PROVIDER": "mock"
+  }
+}
