@@ -31,7 +31,7 @@ Phase 0 刻意不加入 D1、R2、Queue、Cron、AI 或資料擷取功能。
 
 ### 本地開發
 
-需要 Node.js 22.12 或更新版本，以及 npm 10 或更新版本。
+需要 Node.js 22.22.3 或更新版本，以及 npm 10 或更新版本。
 
 ```bash
 npm install
@@ -50,7 +50,7 @@ Personal Space is a single-owner publishing home for short Notes, long-form Arti
 
 Phase 0 provides an Astro full-stack foundation for Cloudflare Workers with strict TypeScript, a Traditional Chinese-first interface with English support, responsive navigation, fail-closed owner routes, global security headers, and repeatable quality checks. It intentionally includes no D1, R2, Queue, Cron, AI, or ingestion dependency.
 
-Requirements: Node.js 22.12 or newer and npm 10 or newer.
+Requirements: Node.js 22.22.3 or newer and npm 10 or newer.
 
 ```bash
 npm install
