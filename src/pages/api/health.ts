@@ -5,7 +5,6 @@ export const GET: APIRoute = () => {
     {
       service: "personal-space",
       status: "ok",
-      phase: 0,
     },
     {
       headers: {
