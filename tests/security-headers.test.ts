@@ -34,4 +34,12 @@ describe("security response headers", () => {
       "frame-ancestors 'none'",
     );
   });
+
+  it("keeps workers.dev and version previews out of search indexes", () => {
+    const response = withSecurityHeaders(new Response("preview"), {
+      noIndex: true,
+    });
+
+    expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+  });
 });

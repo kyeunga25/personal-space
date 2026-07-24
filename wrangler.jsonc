@@ -4,7 +4,14 @@
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-07-23",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "workers_dev": true,
+  "workers_dev": false,
+  "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "space.k-y.cc",
+      "custom_domain": true,
+    },
+  ],
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist",
@@ -14,7 +21,7 @@
     "head_sampling_rate": 1,
   },
 
-  // Phase 1 adds D1 and R2 bindings after preview resources exist.
+  // Phase 1 adds D1 and R2 bindings after production resources exist.
   // Later phases add Queues and Cron Triggers; no placeholder IDs or secrets
-  // are committed here. Add the custom domain only after preview validation.
+  // are committed here.
 }

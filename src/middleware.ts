@@ -4,6 +4,10 @@ import { isProtectedPath } from "./server/auth/route-policy";
 import { withSecurityHeaders } from "./server/http/security-headers";
 
 export const onRequest = defineMiddleware(async ({ url }, next) => {
+  const securityOptions = {
+    noIndex: url.hostname.endsWith(".workers.dev"),
+  };
+
   if (isProtectedPath(url.pathname)) {
     return withSecurityHeaders(
       new Response("Not found", {
@@ -14,8 +18,9 @@ export const onRequest = defineMiddleware(async ({ url }, next) => {
           "X-Robots-Tag": "noindex, nofollow",
         },
       }),
+      securityOptions,
     );
   }
 
-  return withSecurityHeaders(await next());
+  return withSecurityHeaders(await next(), securityOptions);
 });

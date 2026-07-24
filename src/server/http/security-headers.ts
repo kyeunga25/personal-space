@@ -20,11 +20,22 @@ export const SECURITY_HEADERS = {
   "X-Frame-Options": "DENY",
 } as const;
 
-export function withSecurityHeaders(response: Response): Response {
+interface SecurityHeaderOptions {
+  noIndex?: boolean;
+}
+
+export function withSecurityHeaders(
+  response: Response,
+  { noIndex = false }: SecurityHeaderOptions = {},
+): Response {
   const headers = new Headers(response.headers);
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
+  }
+
+  if (noIndex) {
+    headers.set("X-Robots-Tag", "noindex, nofollow");
   }
 
   return new Response(response.body, {
