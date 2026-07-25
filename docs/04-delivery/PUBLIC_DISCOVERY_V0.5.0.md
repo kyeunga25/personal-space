@@ -1,6 +1,7 @@
 # Public Discovery v0.5.0
 
-Status: local acceptance passed; production release pending.
+Status: local acceptance and remote migration passed; production promotion
+pending.
 
 ## Included
 
@@ -54,10 +55,13 @@ indexes without storing deployment or account identifiers in source control.
 ## Production gates
 
 1. Complete the owner-only Cloudflare Access configuration required by v0.4.0.
-2. Apply all pending D1 migrations in order.
-3. Confirm private Worker secrets and bindings without writing their values to
+2. Confirm private Worker secrets and bindings without writing their values to
    the repository.
-4. Upload a non-active Worker version and verify the public routes, feeds,
+3. Upload a non-active Worker version and verify the public routes, feeds,
    security headers, and owner route protection.
-5. Promote only the exact verified version, then check the live custom domain,
+4. Promote only the exact verified version, then check the live custom domain,
    GitHub checks, and final Git refs.
+
+Remote D1 migrations through `0002_public_discovery.sql` were applied and
+verified on 2026-07-26. The v0.5.0 release candidate was uploaded without
+receiving production traffic.
