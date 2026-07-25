@@ -1,7 +1,10 @@
 import type { APIRoute } from "astro";
 
 import { errorResponse, jsonResponse } from "../../../../server/http/json";
-import { validateImage } from "../../../../server/media/image-validation";
+import {
+  MAX_IMAGE_BYTES,
+  validateImage,
+} from "../../../../server/media/image-validation";
 import { getBindings } from "../../../../server/platform/bindings";
 import type { MediaRecord } from "../../../../server/publishing/domain";
 import { D1PublishingRepository } from "../../../../server/publishing/repository";
@@ -22,6 +25,13 @@ export const POST: APIRoute = async ({ request }) => {
     ) {
       return jsonResponse(
         { error: "請選擇圖片、填寫替代文字並設定可見度。" },
+        { status: 400 },
+      );
+    }
+
+    if (file.size === 0 || file.size > MAX_IMAGE_BYTES) {
+      return jsonResponse(
+        { error: "圖片檔案大小不符合限制。" },
         { status: 400 },
       );
     }

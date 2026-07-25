@@ -1,3 +1,5 @@
+import { UserFacingError } from "../errors";
+
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_IMAGE_DIMENSION = 6000;
 
@@ -74,7 +76,7 @@ export function validateImage(
   declaredMimeType: string,
 ): ValidatedImage {
   if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_BYTES) {
-    throw new Error("圖片檔案大小不符合限制。");
+    throw new UserFacingError("圖片檔案大小不符合限制。");
   }
 
   let result: ValidatedImage | null = null;
@@ -89,7 +91,7 @@ export function validateImage(
   }
 
   if (!result) {
-    throw new Error("只接受檔頭正確的 PNG 或 JPEG 圖片。");
+    throw new UserFacingError("只接受檔頭正確的 PNG 或 JPEG 圖片。");
   }
 
   if (
@@ -98,7 +100,7 @@ export function validateImage(
     result.width > MAX_IMAGE_DIMENSION ||
     result.height > MAX_IMAGE_DIMENSION
   ) {
-    throw new Error("圖片尺寸不符合限制。");
+    throw new UserFacingError("圖片尺寸不符合限制。");
   }
 
   return result;

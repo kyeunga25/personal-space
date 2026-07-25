@@ -21,6 +21,6 @@ export const POST: APIRoute = async ({ params }) => {
     const post = await service.restoreRevision(params.id, params.revisionId);
     return jsonResponse({ post });
   } catch (error) {
-    return errorResponse(error, 404);
+    return errorResponse(error);
   }
 };

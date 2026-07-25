@@ -1,4 +1,5 @@
 import { createExcerpt, renderMarkdown } from "../content/markdown";
+import { UserFacingError } from "../errors";
 import type {
   PostRecord,
   SavePostData,
@@ -50,10 +51,10 @@ export class PublishingService {
       ? await this.repository.findOwnerPost(input.id)
       : null;
     if (input.id && !previous) {
-      throw new Error("找不到要更新的內容。");
+      throw new UserFacingError("找不到要更新的內容。", 404);
     }
     if (previous && previous.kind !== input.kind) {
-      throw new Error("內容類型不能在建立後更改。");
+      throw new UserFacingError("內容類型不能在建立後更改。");
     }
 
     const id = previous?.id ?? input.id ?? crypto.randomUUID();
@@ -64,14 +65,14 @@ export class PublishingService {
       status === "scheduled" ? normalizeOptional(input.scheduledAt) : null;
 
     if (status !== "draft" && bodyMd.length === 0) {
-      throw new Error("發佈、排程或封存前必須有內容。");
+      throw new UserFacingError("發佈、排程或封存前必須有內容。");
     }
     if (input.kind === "article" && status !== "draft" && !title) {
-      throw new Error("文章在發佈或排程前必須有標題。");
+      throw new UserFacingError("文章在發佈或排程前必須有標題。");
     }
     if (status === "scheduled") {
       if (!scheduledAt || new Date(scheduledAt).getTime() <= now.getTime()) {
-        throw new Error("排程時間必須晚於現在。");
+        throw new UserFacingError("排程時間必須晚於現在。");
       }
     }
 
@@ -136,7 +137,7 @@ export class PublishingService {
       this.repository.findRevision(revisionId),
     ]);
     if (!post || !revision || revision.postId !== post.id) {
-      throw new Error("找不到要還原的修訂版本。");
+      throw new UserFacingError("找不到要還原的修訂版本。", 404);
     }
     return this.repository.restoreRevision(
       post,
