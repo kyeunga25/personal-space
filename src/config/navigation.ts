@@ -22,19 +22,18 @@ export interface NavigationItem {
 
 export const primaryNavigation = [
   { href: "/", icon: "home", label: "首頁", labelEn: "Home" },
-  { href: "/shorts", icon: "short", label: "短內容", labelEn: "Shorts" },
+  { href: "/notes", icon: "note", label: "筆記", labelEn: "Notes" },
   {
-    href: "/longform",
-    icon: "longform",
-    label: "長內容",
-    labelEn: "Longform",
+    href: "/articles",
+    icon: "article",
+    label: "文章",
+    labelEn: "Articles",
   },
   {
-    href: "/briefings",
-    icon: "briefing",
-    label: "新聞整理",
-    labelEn: "Briefings",
-    mobileLabel: "新聞",
+    href: "/stream",
+    icon: "stream",
+    label: "動態",
+    labelEn: "Stream",
   },
   { href: "/archive", icon: "archive", label: "封存", labelEn: "Archive" },
   { href: "/search", icon: "search", label: "搜尋", labelEn: "Search" },
@@ -42,5 +41,5 @@ export const primaryNavigation = [
 ] as const satisfies readonly NavigationItem[];
 
 export const mobileNavigation = primaryNavigation.filter(({ href }) =>
-  ["/", "/shorts", "/longform", "/briefings", "/search"].includes(href),
+  ["/", "/notes", "/articles", "/stream", "/search"].includes(href),
 );

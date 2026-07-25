@@ -3,3 +3,4 @@ Allow: /
 Disallow: /studio/
 Disallow: /private/
 Disallow: /api/studio/
+Sitemap: https://space.k-y.cc/sitemap.xml

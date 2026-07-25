@@ -1,18 +1,3 @@
 ---
-import PostListPage from "../../components/PostListPage.astro";
-import { getBindings } from "../../server/platform/bindings";
-import { D1PublishingRepository } from "../../server/publishing/repository";
-
-const posts = await new D1PublishingRepository(
-  getBindings().DB,
-).listPublicPosts("article", new Date().toISOString());
+return Astro.redirect("/articles", 308);
 ---
-
-<PostListPage
-  title="長內容"
-  titleEn="Longform"
-  description="文章、評論與較長的作品，保留完整閱讀節奏。"
-  descriptionEn="Articles, reviews, and longer work with a focused reading rhythm."
-  kind="article"
-  posts={posts}
-/>

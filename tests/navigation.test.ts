@@ -10,12 +10,12 @@ describe("navigation helpers", () => {
   });
 
   it("matches nested paths without prefix collisions", () => {
-    expect(isActivePath("/longform/example", "/longform")).toBe(true);
-    expect(isActivePath("/long", "/longform")).toBe(false);
+    expect(isActivePath("/articles/example", "/articles")).toBe(true);
+    expect(isActivePath("/article", "/articles")).toBe(false);
   });
 
   it("normalizes trailing slashes", () => {
-    expect(isActivePath("/briefings/", "/briefings")).toBe(true);
+    expect(isActivePath("/stream/", "/stream")).toBe(true);
   });
 
   it("keeps primary routes unique", () => {
@@ -34,9 +34,9 @@ describe("navigation helpers", () => {
   it("keeps the five primary mobile destinations in display order", () => {
     expect(mobileNavigation.map(({ href }) => href)).toEqual([
       "/",
-      "/shorts",
-      "/longform",
-      "/briefings",
+      "/notes",
+      "/articles",
+      "/stream",
       "/search",
     ]);
   });

@@ -3,28 +3,28 @@ import NavIcon from "./NavIcon.astro";
 
 const contentGroups = [
   {
-    href: "/shorts",
-    icon: "short",
+    href: "/notes",
+    icon: "note",
     className: "short",
-    label: "短內容",
-    labelEn: "Shorts",
-    types: "Story · Comment · Note",
+    label: "筆記",
+    labelEn: "Notes",
+    types: "Short thoughts · Updates",
   },
   {
-    href: "/longform",
-    icon: "longform",
+    href: "/articles",
+    icon: "article",
     className: "longform",
-    label: "長內容",
-    labelEn: "Longform",
-    types: "Post · Article · Review",
+    label: "文章",
+    labelEn: "Articles",
+    types: "Essays · Reviews · Guides",
   },
   {
-    href: "/briefings",
-    icon: "briefing",
+    href: "/stream",
+    icon: "stream",
     className: "briefing",
-    label: "AI 整理",
-    labelEn: "Briefings",
-    types: "Daily · Scheduled · Topic watch",
+    label: "動態",
+    labelEn: "Stream",
+    types: "Newest · Chronological",
   },
 ] as const;
 ---
