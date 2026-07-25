@@ -1,0 +1,57 @@
+---
+import StudioBottomNav from "../components/studio/StudioBottomNav.astro";
+import StudioNav from "../components/studio/StudioNav.astro";
+import { SITE } from "../config/site";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#eef8ff" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} · Studio · {SITE.name}</title>
+  </head>
+  <body class="studio-body">
+    <a class="skip-link" href="#studio-main">跳至編輯區 Skip to editor</a>
+    <div class="studio-shell">
+      <StudioNav pathname={Astro.url.pathname} />
+      <main id="studio-main" tabindex="-1"><slot /></main>
+    </div>
+    <StudioBottomNav />
+  </body>
+</html>
+
+<style is:global>
+  .studio-body {
+    background: var(--space-canvas);
+  }
+  .studio-shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-height: 100svh;
+    grid-template-columns: 18rem minmax(0, 1fr);
+  }
+  .studio-shell > main {
+    min-width: 0;
+    background: rgba(252, 254, 255, 0.75);
+  }
+  @media (max-width: 47.99rem) {
+    .studio-shell {
+      display: block;
+    }
+    .studio-shell > main {
+      padding-bottom: 5.5rem;
+    }
+  }
+</style>

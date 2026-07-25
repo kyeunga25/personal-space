@@ -1,0 +1,179 @@
+---
+import { SITE } from "../../config/site";
+import { isActivePath } from "../../lib/navigation";
+import BrandMark from "../BrandMark.astro";
+import StudioIcon from "./StudioIcon.astro";
+
+interface Props {
+  pathname: string;
+}
+
+const { pathname } = Astro.props;
+const items = [
+  { href: "/studio", icon: "dashboard", label: "總覽", labelEn: "Dashboard" },
+  {
+    href: "/studio/notes/new",
+    icon: "note",
+    label: "快速筆記",
+    labelEn: "Quick Note",
+  },
+  {
+    href: "/studio/articles/new",
+    icon: "article",
+    label: "文章",
+    labelEn: "Articles",
+  },
+  { href: "/studio#media", icon: "media", label: "媒體", labelEn: "Media" },
+] as const;
+---
+
+<aside class="studio-nav" aria-label="Studio 導覽 Studio navigation">
+  <a class="studio-nav__brand" href="/">
+    <BrandMark compact />
+    <span><strong>{SITE.name}</strong><small>{SITE.domain}</small></span>
+  </a>
+  <nav>
+    <ul>
+      {
+        items.map((item) => {
+          const active =
+            item.href === "/studio/articles/new"
+              ? pathname.includes("/studio/articles") ||
+                pathname.includes("/studio/posts")
+              : isActivePath(pathname, item.href.split("#")[0] ?? item.href);
+          return (
+            <li>
+              <a
+                class:list={{ "is-active": active }}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+              >
+                <StudioIcon name={item.icon} />
+                <span>
+                  <>
+                    <strong>{item.label}</strong>
+                    <small lang="en">{item.labelEn}</small>
+                  </>
+                </span>
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </nav>
+  <footer>
+    <span aria-hidden="true"></span>Clear Sky <small>Studio v1</small>
+  </footer>
+</aside>
+
+<style>
+  .studio-nav {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100svh;
+    flex-direction: column;
+    padding: var(--space-6) var(--space-4);
+    border-right: 1px solid var(--space-border-strong);
+    background: rgba(238, 248, 255, 0.84);
+    backdrop-filter: blur(18px);
+  }
+
+  .studio-nav__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-inline: var(--space-2);
+    color: var(--space-ink);
+    text-decoration: none;
+  }
+
+  .studio-nav__brand span,
+  .studio-nav__brand strong,
+  .studio-nav__brand small {
+    display: block;
+  }
+
+  .studio-nav__brand strong {
+    font-size: var(--font-size-1);
+    letter-spacing: -0.03em;
+  }
+  .studio-nav__brand small {
+    color: var(--space-primary-strong);
+    font-size: var(--font-size--1);
+  }
+
+  nav {
+    margin-top: var(--space-7);
+  }
+  ul {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  nav a {
+    display: flex;
+    min-height: 4rem;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    color: var(--space-ink);
+    text-decoration: none;
+  }
+  nav a:hover {
+    background: var(--space-surface-hover);
+    color: var(--space-primary-strong);
+  }
+  nav a.is-active {
+    background: linear-gradient(
+      135deg,
+      var(--space-primary),
+      var(--space-blue)
+    );
+    color: white;
+    box-shadow: var(--space-shadow-glow);
+  }
+  nav a > span,
+  nav strong,
+  nav small {
+    display: block;
+  }
+  nav strong {
+    font-size: var(--font-size-0);
+  }
+  nav small {
+    margin-top: 0.08rem;
+    color: var(--space-ink-faint);
+    font-size: 0.7rem;
+    font-weight: 520;
+  }
+  nav a.is-active small {
+    color: rgba(255, 255, 255, 0.78);
+  }
+  footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: auto;
+    padding: var(--space-4) var(--space-2) 0;
+    border-top: 1px solid var(--space-border);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+  footer > span {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--space-yellow);
+  }
+
+  @media (max-width: 47.99rem) {
+    .studio-nav {
+      display: none;
+    }
+  }
+</style>

@@ -48,9 +48,14 @@ const { pathname } = Astro.props;
     </ul>
   </nav>
 
+  <a class="site-rail__studio" href="/studio">
+    <NavIcon name="article" />
+    <span>Studio <small lang="en">Owner publishing</small></span>
+  </a>
+
   <div class="site-rail__footer">
     <span class="status-light" aria-hidden="true"></span>
-    <span>Clear Sky <small lang="en">v0.3.0</small></span>
+    <span>Clear Sky <small lang="en">v0.4.0</small></span>
   </div>
 </aside>
 
@@ -176,6 +181,39 @@ const { pathname } = Astro.props;
     border-top: 1px solid var(--space-border);
     color: var(--space-ink-faint);
     font-size: var(--font-size--1);
+  }
+
+  .site-rail__studio {
+    display: flex;
+    min-height: 3.2rem;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.46);
+    color: var(--space-ink);
+    font-size: var(--font-size--1);
+    font-weight: 720;
+    text-decoration: none;
+  }
+
+  .site-rail__studio:hover {
+    border-color: var(--space-primary-soft);
+    background: var(--space-surface-hover);
+    color: var(--space-primary-strong);
+  }
+
+  .site-rail__studio span,
+  .site-rail__studio small {
+    display: block;
+  }
+
+  .site-rail__studio small {
+    color: var(--space-ink-faint);
+    font-size: 0.65rem;
+    font-weight: 520;
   }
 
   .status-light {
