@@ -1,6 +1,6 @@
 # Source Editions v0.6.0
 
-Status: local acceptance passed; remote migration and production promotion
+Status: local acceptance and remote migration passed; production promotion
 pending.
 
 ## Included
@@ -77,5 +77,8 @@ therefore remain an owner review decision rather than a repository default.
   generation, editing, publishing, RSS, sitemap, scheduled execution, desktop
   rendering at 1440px, mobile rendering at 390px, console errors, and horizontal
   overflow.
-- Remote migration, non-active Worker version upload, GitHub checks, Access
-  configuration, and production promotion remain separate release gates.
+- Remote migration `0003_sources_editions.sql` was applied and verified on
+  2026-07-26. All five expected tables exist, no migration remains pending, and
+  no source, source item, or Edition row was seeded.
+- Non-active Worker version upload, Access configuration, and production
+  promotion remain separate release gates.

@@ -5,7 +5,7 @@
 目前程式版本 / Current code version: **v0.6.0**
 
 截至 2026-07-26，正式網站仍運行已驗證的 v0.3.0。遠端資料庫 migrations
-已套用至 v0.5.0；v0.4.0 至 v0.6.0 仍會等候私人 Cloudflare Access 設定及
+已套用至 v0.6.0；v0.4.0 至 v0.6.0 仍會等候私人 Cloudflare Access 設定及
 正式提升完成後才啟用。公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
 
 ## 中文
@@ -84,7 +84,7 @@ Articles, with chronological, searchable, and archived public discovery.
 
 The current code version is **v0.6.0**. As verified on 2026-07-26, production
 continues to serve the stable v0.3.0 release and remote database migrations are
-applied through v0.5.0. The v0.4.0 through v0.6.0 updates will remain inactive
+applied through v0.6.0. The v0.4.0 through v0.6.0 updates will remain inactive
 until private Cloudflare Access configuration and final promotion are complete.
 
 The current interface uses the original **Clear Sky Feed** visual system: a
