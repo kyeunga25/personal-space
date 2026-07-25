@@ -1,7 +1,7 @@
 # Source Editions v0.6.0
 
-Status: local acceptance and remote migration passed; production promotion
-pending.
+Status: local acceptance, remote migration, GitHub checks, and non-active
+release candidate passed; production promotion pending.
 
 ## Included
 
@@ -80,5 +80,9 @@ therefore remain an owner review decision rather than a repository default.
 - Remote migration `0003_sources_editions.sql` was applied and verified on
   2026-07-26. All five expected tables exist, no migration remains pending, and
   no source, source item, or Edition row was seeded.
-- Non-active Worker version upload, Access configuration, and production
-  promotion remain separate release gates.
+- GitHub `verify` passed for draft PR #8, which remains mergeable and stacked on
+  the v0.5.0 discovery branch.
+- Worker candidate `v0.6.0-rc.1` was uploaded from the verified application code
+  without creating a deployment. The candidate has preview support, is not in
+  the active deployment, and production remains on one version at 100% traffic.
+- Access configuration and production promotion remain separate release gates.
