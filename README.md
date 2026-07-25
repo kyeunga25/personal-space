@@ -54,7 +54,12 @@ npm run preview
 
 公開 Wrangler 設定只宣告程式使用的 binding。最新版 Wrangler 可在部署時自動
 配置所需資源；實際名稱及 identifiers 應只保留在 Cloudflare 的私人環境，不應
-回寫到公開 repository。
+回寫到公開 repository。自動配置可能在部署工作目錄內寫入 identifiers，因此每次
+提交前都必須重新檢查 `git diff`，不可提交這類變更。
+
+正式發布次序固定為：先建立不會接管流量的 Worker version 並確認 bindings，
+再套用遠端 D1 migration 及設定 Access secrets，最後才提升為正式部署。未完成
+這些條件時，正式站繼續使用上一個已驗證版本。
 
 公開 repository 只應包含應用程式碼、通用測試及公開安全文件。私人內容、
 草稿、憑證、存取 token、部署識別資料和本地規劃文件不得提交到 Git。
@@ -86,7 +91,15 @@ D1 migration. Never commit real account identifiers or credentials.
 
 The public Wrangler configuration declares binding names only. Current Wrangler
 can provision the backing resources during deployment, while their real names
-and identifiers remain in the private Cloudflare environment.
+and identifiers remain in the private Cloudflare environment. Automatic
+provisioning can write identifiers into the deployment workspace, so every
+commit must be checked with `git diff` to prevent those values from entering the
+repository.
+
+Production releases follow a fixed order: upload a non-active Worker version
+and confirm its bindings, apply the remote D1 migration and Access secrets, and
+only then promote the verified version. Production stays on the previous
+verified release until every gate is ready.
 
 Only application code, general tests, and public-safe documentation belong in
 this repository. Private content, drafts, credentials, access tokens,
