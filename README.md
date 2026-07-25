@@ -2,10 +2,10 @@
 
 公開網站 / Public site: [space.k-y.cc](https://space.k-y.cc)
 
-目前程式版本 / Current code version: **v0.5.0**
+目前程式版本 / Current code version: **v0.6.0**
 
 截至 2026-07-26，正式網站仍運行已驗證的 v0.3.0。遠端資料庫 migrations
-已套用至 v0.5.0；v0.4.0 及 v0.5.0 仍會等候私人 Cloudflare Access 設定及
+已套用至 v0.5.0；v0.4.0 至 v0.6.0 仍會等候私人 Cloudflare Access 設定及
 正式提升完成後才啟用。公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
 
 ## 中文
@@ -14,6 +14,7 @@ Personal Space 是一個簡潔、由自己管理的個人發佈空間，公開�
 
 - **筆記 / Notes** — 短小、即時的內容。
 - **文章 / Articles** — 有完整結構的長篇內容。
+- **每日整理 / Editions** — 由公開 feed 收集、去重並經站主審閱的來源摘要。
 - **動態、搜尋與封存 / Stream, Search, Archive** — 以時間、關鍵字、分類及標籤尋回公開內容。
 
 v0.4.0 加入只供站主使用的 Studio 發佈流程，以及公開的 Note 與 Article
@@ -23,6 +24,11 @@ v0.4.0 加入只供站主使用的 Studio 發佈流程，以及公開的 Note �
 v0.5.0 加入 D1 FTS5 公開搜尋、時間動態、香港時間月份封存、分類／標籤頁、
 RSS feeds 及 sitemap。首頁只會讀取真實公開內容；私人、未列出、草稿及未到期
 排程內容不會出現在搜尋、封存、feeds 或 sitemap。
+
+v0.6.0 加入私人來源管理、RSS／Atom 安全擷取、相近標題去重及每日 Edition
+審閱流程。Cloudflare Cron Triggers 每日兩次同步已啟用來源，並在香港時間晚上
+建立草稿；只有站主明確發佈的 Edition 才會出現在公開頁、獨立 RSS 及 sitemap。
+repository 不預設加入第三方來源，來源條款及使用權需由站主在加入前確認。
 
 目前介面採用原創 **Clear Sky Feed** 視覺系統，以淡天藍、晴空青、
 薄荷青與少量日光黃構成清新、青春而俐落的信息流。所有圖標、SVG
@@ -37,7 +43,8 @@ RSS feeds 及 sitemap。首頁只會讀取真實公開內容；私人、未列�
 - Cloudflare Access 驗證及應用程式層站主核對；
 - Note／Article 草稿、預覽、發佈、排程、封存及修訂還原；
 - 公開全文搜尋、分類／標籤篩選、香港時間封存及時間動態；
-- RSS、獨立 Note／Article feeds 及公開 sitemap；
+- 來源同步、相近標題去重、Edition 草稿／審閱／發佈及 Cron automation；
+- RSS、獨立 Note／Article／Edition feeds 及公開 sitemap；
 - 響應式桌面／手機導覽；
 - ESLint、Prettier、Vitest、Astro typecheck；
 - GitHub Actions 與 Cloudflare Workers Builds。
@@ -75,11 +82,10 @@ npm run preview
 Personal Space is a focused, self-managed publishing space for Notes and
 Articles, with chronological, searchable, and archived public discovery.
 
-The current code version is **v0.5.0**. As verified on 2026-07-26, production
+The current code version is **v0.6.0**. As verified on 2026-07-26, production
 continues to serve the stable v0.3.0 release and remote database migrations are
-applied through v0.5.0. The v0.4.0 publishing and v0.5.0 discovery updates will
-remain inactive until private Cloudflare Access configuration and final
-promotion are complete.
+applied through v0.5.0. The v0.4.0 through v0.6.0 updates will remain inactive
+until private Cloudflare Access configuration and final promotion are complete.
 
 The current interface uses the original **Clear Sky Feed** visual system: a
 fresh, crisp information feed built from pale sky blue, cyan, teal, and
@@ -92,6 +98,10 @@ Actions, and Cloudflare Workers Builds. v0.4.0 adds an owner-only Studio with
 draft, preview, publish, scheduling, archive, and revision restore workflows.
 v0.5.0 adds public full-text search, taxonomy filters, a chronological stream,
 Hong Kong month archives, RSS feeds, and a public-only sitemap.
+v0.6.0 adds owner-managed RSS/Atom sources, guarded ingestion, title-based
+deduplication, reviewed daily Editions, scheduled draft generation, an Edition
+feed, and Edition sitemap entries. No third-party source is seeded by the
+repository; the owner must review source terms before adding a feed.
 
 For local Studio testing, copy `.dev.vars.example` to the ignored `.dev.vars`
 file and apply the local D1 migration first. Production requires
