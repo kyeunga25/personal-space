@@ -1,6 +1,111 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { formatHongKongDate } from "../../lib/dates";
+import { createExcerpt } from "../../server/content/markdown";
+import { D1EditionRepository } from "../../server/editions/repository";
+import { getBindings } from "../../server/platform/bindings";
+
+const editions = await new D1EditionRepository(
+  getBindings().DB,
+).listPublicEditions();
 ---
 
-<RoutePlaceholder {...placeholderRoutes.editions} />
+<BaseLayout
+  title="每日整理"
+  titleEn="Editions"
+  description="附有原文連結、經站主審閱後發佈的主題整理。"
+  descriptionEn="Owner-reviewed editions with links to original public sources."
+>
+  <div class="page-stack">
+    <header class="route-header">
+      <h1>每日整理 <small lang="en">Editions</small></h1><p>
+        從公開來源收集、去重，再由站主審閱後發佈。
+      </p><p class="en-subline" lang="en">
+        Collected from public feeds, deduplicated, and reviewed before
+        publishing.
+      </p>
+    </header>
+    <section class="edition-list" aria-label="已發佈 Editions">
+      {
+        editions.length === 0 ? (
+          <div class="edition-empty">
+            <>
+              <h2>暫時未有公開 Edition</h2>
+              <p>已發佈的整理會顯示在這裡。</p>
+            </>
+          </div>
+        ) : (
+          <ol>
+            {editions.map((edition) => (
+              <li>
+                <a href={`/editions/${edition.date}`}>
+                  <span>
+                    <small>{formatHongKongDate(edition.publishedAt)}</small>
+                    <strong>{edition.title}</strong>
+                    {edition.introMd && (
+                      <p>{createExcerpt(edition.introMd, 220)}</p>
+                    )}
+                  </span>
+                  <b>{edition.entries.length} 項</b>
+                </a>
+              </li>
+            ))}
+          </ol>
+        )
+      }
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .edition-list ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .edition-list li {
+    border-bottom: 1px solid var(--space-border);
+  }
+  .edition-list a {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-5);
+    align-items: center;
+    padding: clamp(1.5rem, 4vw, 2.25rem);
+    color: var(--space-ink);
+    text-decoration: none;
+  }
+  .edition-list a:hover {
+    background: var(--space-surface-hover);
+    box-shadow: inset 3px 0 var(--space-teal);
+  }
+  .edition-list small {
+    color: var(--space-teal-strong);
+    font-weight: 700;
+  }
+  .edition-list strong {
+    display: block;
+    margin-top: var(--space-2);
+    font-size: var(--font-size-2);
+  }
+  .edition-list p {
+    max-width: 42rem;
+    margin: var(--space-2) 0 0;
+    color: var(--space-ink-muted);
+    white-space: pre-line;
+  }
+  .edition-list b {
+    color: var(--space-primary-strong);
+    font-size: var(--font-size--1);
+  }
+  .edition-empty {
+    padding: var(--space-7);
+    text-align: center;
+  }
+  .edition-empty h2 {
+    margin: 0;
+  }
+  .edition-empty p {
+    color: var(--space-ink-muted);
+  }
+</style>

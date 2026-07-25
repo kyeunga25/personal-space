@@ -10,4 +10,9 @@ export default defineConfig({
   session: {
     driver: sessionDrivers.lruCache({ max: 1 }),
   },
+  vite: {
+    build: {
+      assetsInlineLimit: 0,
+    },
+  },
 });

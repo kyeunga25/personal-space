@@ -30,6 +30,12 @@ export const primaryNavigation = [
     labelEn: "Articles",
   },
   {
+    href: "/editions",
+    icon: "edition",
+    label: "整理",
+    labelEn: "Editions",
+  },
+  {
     href: "/stream",
     icon: "stream",
     label: "動態",

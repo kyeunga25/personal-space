@@ -1,0 +1,212 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { formatHongKongDate } from "../../lib/dates";
+import { createExcerpt, renderMarkdown } from "../../server/content/markdown";
+import { D1EditionRepository } from "../../server/editions/repository";
+import { getBindings } from "../../server/platform/bindings";
+
+const date = Astro.params.date ?? "";
+const edition = /^\d{4}-\d{2}-\d{2}$/.test(date)
+  ? await new D1EditionRepository(getBindings().DB).findPublicEditionByDate(
+      date,
+    )
+  : null;
+if (!edition) Astro.response.status = 404;
+const introHtml = edition ? renderMarkdown(edition.introMd) : "";
+---
+
+<BaseLayout
+  title={edition?.title ?? "找不到 Edition"}
+  titleEn="Edition"
+  description={edition?.introMd
+    ? createExcerpt(edition.introMd, 155)
+    : "公開來源整理。"}
+  descriptionEn="A reviewed edition with links to original public sources."
+  noIndex={!edition}
+>
+  <div class="page-stack">
+    {
+      edition ? (
+        <article class="edition-detail">
+          <>
+            <header>
+              <h1>{edition.title}</h1>
+              {introHtml && (
+                <div class="edition-intro prose" set:html={introHtml} />
+              )}
+            </header>
+            <ol>
+              {edition.entries.map((entry) => (
+                <li>
+                  <article>
+                    <div class="entry-meta">
+                      <span>{entry.sourceName}</span>
+                      <time datetime={entry.publishedAt ?? undefined}>
+                        {formatHongKongDate(entry.publishedAt)}
+                      </time>
+                    </div>
+                    <h2>
+                      <a
+                        href={entry.url}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                      >
+                        {entry.title}
+                      </a>
+                    </h2>
+                    {entry.summary && (
+                      <p>{createExcerpt(entry.summary, 280)}</p>
+                    )}
+                    {entry.annotation && (
+                      <blockquote>{entry.annotation}</blockquote>
+                    )}
+                    <a
+                      class="source-link"
+                      href={entry.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                    >
+                      閱讀原文 <span lang="en">Read source ↗</span>
+                    </a>
+                  </article>
+                </li>
+              ))}
+            </ol>
+            <footer class="source-notice">
+              <p>
+                摘錄及標題的版權屬原發布者；內容可能更新，請以連結原文為準。
+              </p>
+              <p lang="en">
+                Titles and excerpts remain the property of their publishers;
+                follow each source for the current version.
+              </p>
+            </footer>
+          </>
+        </article>
+      ) : (
+        <section class="edition-missing">
+          <>
+            <h1>找不到 Edition</h1>
+            <p>這份內容不存在或尚未公開。</p>
+            <a class="button" href="/editions">
+              返回 Editions
+            </a>
+          </>
+        </section>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .edition-detail > header {
+    padding: clamp(1.75rem, 5vw, 3.5rem) var(--page-gutter);
+    border-bottom: 1px solid var(--space-border-strong);
+    background: linear-gradient(
+      135deg,
+      rgba(222, 242, 255, 0.7),
+      rgba(255, 249, 220, 0.5)
+    );
+  }
+  .edition-date {
+    margin: 0;
+    color: var(--space-teal-strong);
+    font-weight: 720;
+  }
+  h1 {
+    max-width: 18ch;
+    margin: var(--space-3) 0 0;
+    font-size: var(--font-size-4);
+    letter-spacing: -0.045em;
+  }
+  .edition-intro {
+    max-width: 44rem;
+    margin-top: var(--space-5);
+    color: var(--space-ink-muted);
+  }
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: edition;
+  }
+  li {
+    counter-increment: edition;
+    border-bottom: 1px solid var(--space-border);
+  }
+  li > article {
+    position: relative;
+    padding: clamp(1.5rem, 4vw, 2.5rem) var(--page-gutter);
+  }
+  li > article::before {
+    position: absolute;
+    top: 1.6rem;
+    right: var(--page-gutter);
+    color: var(--space-border-strong);
+    font-size: var(--font-size-4);
+    font-weight: 780;
+    content: counter(edition, decimal-leading-zero);
+  }
+  .entry-meta {
+    display: flex;
+    gap: var(--space-4);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+  .entry-meta span {
+    color: var(--space-teal-strong);
+    font-weight: 720;
+  }
+  h2 {
+    max-width: 38rem;
+    margin: var(--space-3) 0 0;
+    font-size: var(--font-size-2);
+  }
+  h2 a {
+    color: var(--space-ink);
+    text-decoration: none;
+  }
+  h2 a:hover {
+    color: var(--space-primary-strong);
+  }
+  li p,
+  blockquote {
+    max-width: 42rem;
+    color: var(--space-ink-muted);
+  }
+  blockquote {
+    margin: var(--space-4) 0 0;
+    padding: var(--space-3) var(--space-4);
+    border-left: 3px solid var(--space-yellow);
+    background: var(--space-surface-yellow);
+  }
+  .source-link {
+    display: inline-block;
+    margin-top: var(--space-4);
+    color: var(--space-primary-strong);
+    font-weight: 700;
+  }
+  .source-notice {
+    padding: var(--space-5) var(--page-gutter);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+  .source-notice p {
+    margin: 0;
+  }
+  .source-notice p + p {
+    margin-top: var(--space-1);
+  }
+  .edition-missing {
+    padding: var(--space-8) var(--page-gutter);
+    text-align: center;
+  }
+  @media (max-width: 47.99rem) {
+    h1 {
+      font-size: var(--font-size-3);
+    }
+    li > article::before {
+      font-size: var(--font-size-2);
+    }
+  }
+</style>

@@ -1,0 +1,310 @@
+---
+import StudioLayout from "../../../layouts/StudioLayout.astro";
+import { formatHongKongDate } from "../../../lib/dates";
+import { createExcerpt } from "../../../server/content/markdown";
+import { D1EditionRepository } from "../../../server/editions/repository";
+import { getBindings } from "../../../server/platform/bindings";
+
+const id = Astro.params.id ?? "";
+const edition = await new D1EditionRepository(
+  getBindings().DB,
+).findOwnerEdition(id);
+if (!edition) {
+  Astro.response.status = 404;
+}
+---
+
+<StudioLayout title={edition?.title ?? "找不到 Edition"}>
+  <div class="edition-editor">
+    {
+      edition ? (
+        <form
+          method="post"
+          action={`/api/studio/editions/${encodeURIComponent(edition.id)}`}
+          data-edition-form
+          data-edition-id={edition.id}
+        >
+          <header>
+            <>
+              <div>
+                <>
+                  <p class="eyebrow">
+                    {edition.date} · {edition.status}
+                  </p>
+                  <h1>
+                    編輯 Edition <small>Edit edition</small>
+                  </h1>
+                </>
+              </div>
+              <a class="button" href="/studio/editions">
+                返回列表 Back
+              </a>
+            </>
+          </header>
+          <p class="editor-status" aria-live="polite" data-edition-status />
+          <section class="editor-fields">
+            <label>
+              標題{" "}
+              <>
+                <small>Title</small>
+                <input
+                  name="title"
+                  maxlength="180"
+                  value={edition.title}
+                  required
+                />
+              </>
+            </label>
+            <label>
+              引言{" "}
+              <>
+                <small>Introduction · Markdown</small>
+                <textarea name="introMd" rows="6" maxlength="5000">
+                  {edition.introMd}
+                </textarea>
+              </>
+            </label>
+          </section>
+          <section class="edition-items">
+            <h2>
+              內容項目 <small>Edition items</small>
+            </h2>
+            {edition.entries.length === 0 ? (
+              <p class="empty">
+                最近 36 小時未有新的來源項目；先到來源頁同步 feeds。
+              </p>
+            ) : (
+              <ol>
+                {edition.entries.map((entry) => (
+                  <li>
+                    <label class="item-toggle">
+                      <input
+                        type="checkbox"
+                        name="includedItemIds"
+                        value={entry.itemId}
+                        checked
+                      />
+                      <span>保留 Include</span>
+                    </label>
+                    <div>
+                      <strong>{entry.title}</strong>
+                      {entry.summary && (
+                        <p>{createExcerpt(entry.summary, 480)}</p>
+                      )}
+                      <small>
+                        {entry.sourceName} ·{" "}
+                        {formatHongKongDate(entry.publishedAt)}
+                      </small>
+                      <a
+                        href={entry.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        檢視原文 Source
+                      </a>
+                      <label class="annotation">
+                        編輯註解 <small>Annotation</small>
+                        <textarea
+                          name={`annotation:${entry.itemId}`}
+                          rows="3"
+                          maxlength="600"
+                        >
+                          {entry.annotation}
+                        </textarea>
+                      </label>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+          <footer class="editor-actions">
+            <>
+              <button class="button" type="submit" name="action" value="save">
+                儲存草稿 Save
+              </button>
+              <button
+                class="button button--primary"
+                type="submit"
+                name="action"
+                value="publish"
+              >
+                發佈 Publish
+              </button>
+              <button
+                class="button button--danger"
+                type="submit"
+                name="action"
+                value="archive"
+              >
+                封存 Archive
+              </button>
+            </>
+          </footer>
+        </form>
+      ) : (
+        <section class="not-found">
+          <>
+            <h1>找不到 Edition</h1>
+            <a class="button" href="/studio/editions">
+              返回列表 Back
+            </a>
+          </>
+        </section>
+      )
+    }
+  </div>
+</StudioLayout>
+
+<script>
+  import "../../../scripts/studio-edition";
+</script>
+
+<style>
+  .edition-editor {
+    width: min(100%, 72rem);
+    margin-inline: auto;
+    padding: clamp(1.5rem, 5vw, 4rem);
+  }
+  header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--space-border-strong);
+  }
+  .eyebrow {
+    margin: 0 0 var(--space-2);
+    color: var(--space-primary-strong);
+    font-weight: 720;
+  }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-3);
+  }
+  h1 small,
+  h2 small {
+    color: var(--space-primary);
+    font-size: 0.5em;
+  }
+  .editor-status {
+    min-height: 1.5rem;
+    color: var(--space-teal-strong);
+    font-weight: 650;
+  }
+  .editor-status[data-state="error"] {
+    color: #a23b3b;
+  }
+  .editor-fields {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.72);
+  }
+  label {
+    display: grid;
+    gap: var(--space-2);
+    color: var(--space-ink-muted);
+    font-weight: 680;
+  }
+  label small {
+    color: var(--space-ink-faint);
+  }
+  input[type="text"],
+  input:not([type]),
+  textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--space-ink);
+    font: inherit;
+  }
+  .edition-items {
+    overflow: hidden;
+    margin-top: var(--space-5);
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.72);
+  }
+  h2 {
+    margin: 0;
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--space-border);
+    background: var(--space-surface-blue);
+  }
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--space-border);
+  }
+  li:last-child {
+    border: 0;
+  }
+  .item-toggle {
+    align-content: start;
+  }
+  li strong {
+    font-size: var(--font-size-1);
+  }
+  li p {
+    max-width: 50rem;
+    color: var(--space-ink-muted);
+  }
+  li > div > small {
+    color: var(--space-ink-faint);
+  }
+  li a {
+    display: inline-block;
+    margin-left: var(--space-3);
+    color: var(--space-primary-strong);
+  }
+  .annotation {
+    margin-top: var(--space-4);
+  }
+  .empty,
+  .not-found {
+    padding: var(--space-7);
+    text-align: center;
+    color: var(--space-ink-muted);
+  }
+  .editor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+  }
+  .button--danger {
+    margin-left: auto;
+    border-color: rgba(162, 59, 59, 0.38);
+    color: #8b3030;
+  }
+  @media (max-width: 47.99rem) {
+    .edition-editor {
+      padding: var(--space-5) var(--space-4) 7rem;
+    }
+    header {
+      display: block;
+    }
+    header .button {
+      margin-top: var(--space-3);
+    }
+    li {
+      grid-template-columns: 1fr;
+    }
+    .button--danger {
+      margin-left: 0;
+    }
+  }
+</style>
