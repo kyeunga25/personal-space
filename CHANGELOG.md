@@ -14,6 +14,8 @@ yet deployed are marked explicitly.
 - 加入每日兩次來源同步和每晚草稿建立的 Cron Triggers；不需要額外 Queue 資源。
 - 加入 Edition RSS、sitemap 條目、短摘錄、原文連結及來源版權提示。
 - Studio scripts 維持同源外部檔案，保留不容許 inline script 的嚴格 CSP。
+- 完成公開 About 頁，並將舊 Channels placeholder 永久轉向目前的搜尋與主題篩選。
+- 將示例內容改成中性、可公開審閱的測試文字，不帶個人興趣或自動生成聲稱。
 
 - Added owner-only management and manual synchronization for public RSS/Atom
   sources.
@@ -28,6 +30,10 @@ yet deployed are marked explicitly.
 - Added an Edition RSS feed, sitemap entries, short excerpts, source links, and
   a publisher-rights notice.
 - Kept Studio scripts in same-origin external assets under the strict CSP.
+- Completed the public About page and permanently redirected the legacy
+  Channels placeholder to the current search and topic filters.
+- Replaced stale examples with neutral, reviewable test content without
+  personal-interest or automated-authorship claims.
 
 ## [0.5.0] - 未部署 / Unreleased
 

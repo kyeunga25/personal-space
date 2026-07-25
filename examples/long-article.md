@@ -1,24 +1,24 @@
 ---
 kind: article
-title: 一次個人旅行後的整理與感受
-slug: personal-trip-reflection-example
+title: 如何整理一項公開資料
+slug: organizing-public-information-example
 visibility: private
 status: draft
-category: travel
+category: guide
 tags:
-  - travel
-  - reflection
-excerpt: 一篇示範長文，展示標題、段落與標籤的使用方式。
+  - guide
+  - research
+excerpt: 一篇中性示範長文，展示如何記錄來源、方法與結論。
 ---
 
-## 出發前
+## 目的
 
-寫下背景、期待和準備。
+說明要整理的公開資料、適用範圍與預期讀者。
 
-## 途中
+## 方法
 
-記錄事件、照片和當下感受。
+列出使用的來源、核對日期與整理準則，不加入未經證實的內容。
 
-## 回來之後
+## 結果
 
-整理真正留下來的想法，以及下一次想改變的地方。
+總結已確認的資訊、仍待核對的項目，以及原始來源連結。
