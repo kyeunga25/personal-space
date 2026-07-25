@@ -1,0 +1,130 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { formatHongKongMonth } from "../lib/dates";
+import type { ArchiveMonth } from "../server/discovery/types";
+import type { PostRecord } from "../server/publishing/domain";
+import DiscoveryPostList from "./DiscoveryPostList.astro";
+
+interface Props {
+  currentMonth?: string | null;
+  months: ArchiveMonth[];
+  posts: PostRecord[];
+  title?: string;
+}
+
+const {
+  currentMonth = null,
+  months,
+  posts,
+  title = currentMonth ? formatHongKongMonth(currentMonth) : "全部封存",
+} = Astro.props;
+---
+
+<BaseLayout
+  title="封存"
+  titleEn="Archive"
+  description="依照香港時間與發布日期尋回公開內容。"
+  descriptionEn="Browse public writing by publication month in Hong Kong time."
+>
+  <div class="page-stack">
+    <header class="route-header">
+      <h1>封存 <small lang="en">Archive</small></h1>
+      <p>依照香港時間與發布日期尋回公開內容。</p>
+      <p class="en-subline" lang="en">
+        Browse public writing by publication month in Hong Kong time.
+      </p>
+    </header>
+
+    <nav class="archive-months" aria-label="月份封存 Monthly archive">
+      <a class:list={{ active: !currentMonth }} href="/archive">
+        全部 <small lang="en">All</small>
+      </a>
+      {
+        months.map((month) => {
+          const [year, monthNumber] = month.month.split("-");
+          return (
+            <a
+              class:list={{ active: currentMonth === month.month }}
+              href={`/archive/${year}/${monthNumber}`}
+            >
+              <span>{formatHongKongMonth(month.month)}</span>
+              <small>
+                {month.total} · 筆記 {month.noteCount} · 文章{" "}
+                {month.articleCount}
+              </small>
+            </a>
+          );
+        })
+      }
+    </nav>
+
+    <header class="archive-heading">
+      <h2>{title}</h2>
+      <p>{posts.length} 項公開內容 · {posts.length} public entries</p>
+    </header>
+    <DiscoveryPostList
+      posts={posts}
+      emptyDescription="這個月份暫未有公開內容。"
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .archive-months {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--page-gutter);
+    overflow-x: auto;
+    border-bottom: 1px solid var(--space-border-strong);
+    background: rgba(247, 252, 255, 0.7);
+    scrollbar-width: thin;
+  }
+
+  .archive-months a {
+    flex: 0 0 auto;
+    min-width: 9rem;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.66);
+    color: var(--space-ink-muted);
+    text-decoration: none;
+  }
+
+  .archive-months a.active {
+    border-color: var(--space-primary);
+    background: var(--space-surface-primary);
+    color: var(--space-primary-strong);
+  }
+
+  .archive-months span,
+  .archive-months small {
+    display: block;
+  }
+
+  .archive-months small {
+    margin-top: var(--space-1);
+    color: var(--space-ink-faint);
+    font-size: 0.72rem;
+  }
+
+  .archive-heading {
+    padding: var(--space-5) var(--page-gutter);
+    border-bottom: 1px solid var(--space-border);
+  }
+
+  .archive-heading h2,
+  .archive-heading p {
+    margin: 0;
+  }
+
+  .archive-heading h2 {
+    font-size: var(--font-size-2);
+  }
+
+  .archive-heading p {
+    margin-top: var(--space-2);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+</style>

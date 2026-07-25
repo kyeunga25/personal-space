@@ -6,6 +6,19 @@ import type {
   SavePostData,
   TaxonomyTerm,
 } from "./domain";
+import {
+  escapeFtsPhrase,
+  escapeLikePattern,
+  hktDateRange,
+} from "../discovery/filters";
+import type {
+  ArchiveMonth,
+  DiscoveryFilters,
+  DiscoveryKind,
+  DiscoveryPage,
+  PublicTaxonomy,
+  TaxonomyCount,
+} from "../discovery/types";
 
 interface PostRow {
   author_id: string;
@@ -72,6 +85,58 @@ const POST_SELECT = `
   LEFT JOIN categories c ON c.id = p.category_id
   LEFT JOIN post_tags pt ON pt.post_id = p.id
   LEFT JOIN tags t ON t.id = pt.tag_id
+`;
+
+const DISCOVERY_POST_SELECT = `
+  SELECT
+    p.*,
+    c.id AS category_id,
+    c.name AS category_name,
+    c.slug AS category_slug,
+    COALESCE(
+      (
+        SELECT json_group_array(
+          json_object('id', t.id, 'name', t.name, 'slug', t.slug)
+        )
+        FROM post_tags pt
+        JOIN tags t ON t.id = pt.tag_id
+        WHERE pt.post_id = p.id
+      ),
+      '[]'
+    ) AS tags_json
+  FROM posts p
+  LEFT JOIN categories c ON c.id = p.category_id
+`;
+
+const DISCOVERY_FTS_SELECT = `
+  SELECT
+    p.*,
+    c.id AS category_id,
+    c.name AS category_name,
+    c.slug AS category_slug,
+    bm25(posts_fts, 8.0, 4.0, 1.0) AS search_rank,
+    COALESCE(
+      (
+        SELECT json_group_array(
+          json_object('id', t.id, 'name', t.name, 'slug', t.slug)
+        )
+        FROM post_tags pt
+        JOIN tags t ON t.id = pt.tag_id
+        WHERE pt.post_id = p.id
+      ),
+      '[]'
+    ) AS tags_json
+  FROM posts_fts
+  JOIN posts p ON p.rowid = posts_fts.rowid
+  LEFT JOIN categories c ON c.id = p.category_id
+`;
+
+const PUBLIC_POST_STATE = `
+  p.visibility = 'public'
+  AND (
+    p.status = 'published'
+    OR (p.status = 'scheduled' AND p.scheduled_at <= ?)
+  )
 `;
 
 function parseTags(value: string): TaxonomyTerm[] {
@@ -209,6 +274,204 @@ export class D1PublishingRepository implements PublishingRepository {
          LIMIT ?`,
       )
       .bind(limit)
+      .all<PostRow>();
+    return result.results.map(mapPost);
+  }
+
+  async listPublicDiscovery(
+    filters: DiscoveryFilters,
+    now: string,
+  ): Promise<DiscoveryPage> {
+    const bindings: (number | string)[] = [now];
+    const conditions = [PUBLIC_POST_STATE];
+    const queryLength = Array.from(
+      new Intl.Segmenter("zh-Hant", { granularity: "grapheme" }).segment(
+        filters.query,
+      ),
+    ).length;
+    const useFts = queryLength >= 3;
+
+    if (filters.query) {
+      if (useFts) {
+        conditions.push("posts_fts MATCH ?");
+        bindings.push(escapeFtsPhrase(filters.query));
+      } else {
+        conditions.push(`(
+          COALESCE(p.title, '') LIKE ? ESCAPE '\\'
+          OR COALESCE(p.excerpt, '') LIKE ? ESCAPE '\\'
+          OR p.body_md LIKE ? ESCAPE '\\'
+        )`);
+        const pattern = `%${escapeLikePattern(filters.query)}%`;
+        bindings.push(pattern, pattern, pattern);
+      }
+    }
+
+    if (filters.kind !== "all") {
+      conditions.push("p.kind = ?");
+      bindings.push(filters.kind);
+    }
+    if (filters.category) {
+      conditions.push("c.slug = ?");
+      bindings.push(filters.category);
+    }
+    if (filters.tag) {
+      conditions.push(`EXISTS (
+        SELECT 1
+        FROM post_tags selected_pt
+        JOIN tags selected_tag ON selected_tag.id = selected_pt.tag_id
+        WHERE selected_pt.post_id = p.id AND selected_tag.slug = ?
+      )`);
+      bindings.push(filters.tag);
+    }
+
+    const { fromUtc, toExclusiveUtc } = hktDateRange(filters.from, filters.to);
+    const publicationTime = "COALESCE(p.published_at, p.scheduled_at)";
+    if (fromUtc) {
+      conditions.push(`${publicationTime} >= ?`);
+      bindings.push(fromUtc);
+    }
+    if (toExclusiveUtc) {
+      conditions.push(`${publicationTime} < ?`);
+      bindings.push(toExclusiveUtc);
+    }
+    if (filters.before && filters.beforeId) {
+      conditions.push(`(
+        ${publicationTime} < ?
+        OR (${publicationTime} = ? AND p.id < ?)
+      )`);
+      bindings.push(filters.before, filters.before, filters.beforeId);
+    }
+
+    const relevanceOrder =
+      useFts && filters.sort === "relevance" ? "search_rank ASC," : "";
+    bindings.push(filters.limit + 1);
+    const result = await this.database
+      .prepare(
+        `${useFts ? DISCOVERY_FTS_SELECT : DISCOVERY_POST_SELECT}
+         WHERE ${conditions.join(" AND ")}
+         ORDER BY ${relevanceOrder} ${publicationTime} DESC, p.id DESC
+         LIMIT ?`,
+      )
+      .bind(...bindings)
+      .all<PostRow>();
+
+    const hasMore = result.results.length > filters.limit;
+    const pageRows = hasMore
+      ? result.results.slice(0, filters.limit)
+      : result.results;
+    const posts = pageRows.map(mapPost);
+    const last = posts.at(-1);
+    const before = last?.publishedAt ?? last?.scheduledAt ?? null;
+
+    return {
+      nextCursor:
+        hasMore && last && before ? { before, beforeId: last.id } : null,
+      posts,
+    };
+  }
+
+  async listPublicArchiveMonths(now: string): Promise<ArchiveMonth[]> {
+    interface ArchiveMonthRow {
+      article_count: number;
+      month: string;
+      note_count: number;
+      total: number;
+    }
+
+    const result = await this.database
+      .prepare(
+        `SELECT
+           strftime(
+             '%Y-%m',
+             COALESCE(p.published_at, p.scheduled_at),
+             '+8 hours'
+           ) AS month,
+           COUNT(*) AS total,
+           SUM(CASE WHEN p.kind = 'note' THEN 1 ELSE 0 END) AS note_count,
+           SUM(CASE WHEN p.kind = 'article' THEN 1 ELSE 0 END) AS article_count
+         FROM posts p
+         WHERE ${PUBLIC_POST_STATE}
+         GROUP BY month
+         ORDER BY month DESC`,
+      )
+      .bind(now)
+      .all<ArchiveMonthRow>();
+
+    return result.results.map((row) => ({
+      articleCount: row.article_count,
+      month: row.month,
+      noteCount: row.note_count,
+      total: row.total,
+    }));
+  }
+
+  async listPublicTaxonomy(now: string): Promise<PublicTaxonomy> {
+    interface TaxonomyRow {
+      count: number;
+      name: string;
+      slug: string;
+    }
+
+    const [categories, tags] = await Promise.all([
+      this.database
+        .prepare(
+          `SELECT c.name, c.slug, COUNT(DISTINCT p.id) AS count
+           FROM categories c
+           JOIN posts p ON p.category_id = c.id
+           WHERE ${PUBLIC_POST_STATE}
+           GROUP BY c.id
+           ORDER BY c.name`,
+        )
+        .bind(now)
+        .all<TaxonomyRow>(),
+      this.database
+        .prepare(
+          `SELECT t.name, t.slug, COUNT(DISTINCT p.id) AS count
+           FROM tags t
+           JOIN post_tags pt ON pt.tag_id = t.id
+           JOIN posts p ON p.id = pt.post_id
+           WHERE ${PUBLIC_POST_STATE}
+           GROUP BY t.id
+           ORDER BY t.name`,
+        )
+        .bind(now)
+        .all<TaxonomyRow>(),
+    ]);
+
+    const mapTaxonomy = (rows: TaxonomyRow[]): TaxonomyCount[] =>
+      rows.map((row) => ({
+        count: row.count,
+        name: row.name,
+        slug: row.slug,
+      }));
+
+    return {
+      categories: mapTaxonomy(categories.results),
+      tags: mapTaxonomy(tags.results),
+    };
+  }
+
+  async listPublicFeedPosts(
+    kind: DiscoveryKind,
+    now: string,
+    limit = 50,
+  ): Promise<PostRecord[]> {
+    const bindings: (number | string)[] = [now];
+    const conditions = [PUBLIC_POST_STATE];
+    if (kind !== "all") {
+      conditions.push("p.kind = ?");
+      bindings.push(kind);
+    }
+    bindings.push(Math.min(Math.max(Math.trunc(limit), 1), 1000));
+
+    const result = await this.database
+      .prepare(
+        `${DISCOVERY_POST_SELECT}
+         WHERE ${conditions.join(" AND ")}
+         ORDER BY COALESCE(p.published_at, p.scheduled_at) DESC, p.id DESC
+         LIMIT ?`,
+      )
+      .bind(...bindings)
       .all<PostRow>();
     return result.results.map(mapPost);
   }

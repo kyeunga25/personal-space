@@ -1,6 +1,18 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import ArchivePage from "../../components/ArchivePage.astro";
+import { parseDiscoveryFilters } from "../../server/discovery/filters";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const repository = new D1PublishingRepository(getBindings().DB);
+const now = new Date().toISOString();
+const [months, result] = await Promise.all([
+  repository.listPublicArchiveMonths(now),
+  repository.listPublicDiscovery(
+    parseDiscoveryFilters(new URLSearchParams(), 50),
+    now,
+  ),
+]);
 ---
 
-<RoutePlaceholder {...placeholderRoutes.archive} />
+<ArchivePage {months} posts={result.posts} />

@@ -1,6 +1,35 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import DiscoveryFilters from "../../components/DiscoveryFilters.astro";
+import DiscoveryPostList from "../../components/DiscoveryPostList.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { parseDiscoveryFilters } from "../../server/discovery/filters";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const filters = parseDiscoveryFilters(Astro.url.searchParams, 30);
+const repository = new D1PublishingRepository(getBindings().DB);
+const now = new Date().toISOString();
+const [result, taxonomy] = await Promise.all([
+  repository.listPublicDiscovery(filters, now),
+  repository.listPublicTaxonomy(now),
+]);
 ---
 
-<RoutePlaceholder {...placeholderRoutes.search} />
+<BaseLayout
+  title="搜尋"
+  titleEn="Search"
+  description="搜尋公開文章與筆記；私人及不公開列出內容不會出現在結果中。"
+  descriptionEn="Search public Notes and Articles without exposing private or unlisted content."
+>
+  <div class="page-stack">
+    <header class="route-header">
+      <h1>搜尋 <small lang="en">Search</small></h1>
+      <p>搜尋標題、摘要與 Markdown 內容，並按類型、分類、標籤及日期篩選。</p>
+      <p class="en-subline" lang="en">
+        Search titles, excerpts, and writing with precise public filters.
+      </p>
+    </header>
+    <DiscoveryFilters action="/search" {filters} {taxonomy} />
+    <DiscoveryPostList posts={result.posts} />
+  </div>
+</BaseLayout>
