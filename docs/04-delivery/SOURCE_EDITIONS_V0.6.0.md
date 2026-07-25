@@ -14,6 +14,9 @@ release candidate passed; production promotion pending.
 - One reviewed Edition draft generated each Hong Kong calendar day.
 - Owner item selection, annotations, publishing, and archiving.
 - Public Edition index, detail pages, RSS feed, and sitemap entries.
+- Completed public About page and permanent redirects for legacy content names.
+- Neutral test examples that do not imply personal interests or automated
+  authorship.
 
 ## Routes
 
@@ -77,12 +80,14 @@ therefore remain an owner review decision rather than a repository default.
   generation, editing, publishing, RSS, sitemap, scheduled execution, desktop
   rendering at 1440px, mobile rendering at 390px, console errors, and horizontal
   overflow.
+- The completed About page and legacy Channels redirect passed the same 1440px
+  and 390px browser checks with no console error or horizontal overflow.
 - Remote migration `0003_sources_editions.sql` was applied and verified on
   2026-07-26. All five expected tables exist, no migration remains pending, and
   no source, source item, or Edition row was seeded.
 - GitHub `verify` passed for draft PR #8, which remains mergeable and stacked on
   the v0.5.0 discovery branch.
-- Worker candidate `v0.6.0-rc.1` was uploaded from the verified application code
+- Worker candidate `v0.6.0-rc.2` was uploaded from the verified application code
   without creating a deployment. The candidate has preview support, is not in
   the active deployment, and production remains on one version at 100% traffic.
 - Access configuration and production promotion remain separate release gates.
