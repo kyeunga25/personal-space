@@ -1,6 +1,151 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
-<RoutePlaceholder {...placeholderRoutes.about} />
+<BaseLayout
+  title="關於"
+  titleEn="About"
+  description="一個由站主管理、清楚分隔公開與私人內容的個人發佈空間。"
+  descriptionEn="An owner-managed publishing space with explicit public and private boundaries."
+>
+  <div class="page-stack about-page">
+    <header class="route-header">
+      <p class="eyebrow">Personal Space</p>
+      <h1>安靜、清楚的發佈空間 <small lang="en">About</small></h1>
+      <p>
+        Personal Space
+        用來發佈筆記、文章及經審閱的來源整理，讓內容可以按時間、主題與關鍵字重新找到。
+      </p>
+      <p class="en-subline" lang="en">
+        A focused home for Notes, Articles, and reviewed source Editions,
+        designed for calm reading and durable discovery.
+      </p>
+      <div class="button-row">
+        <a class="button button--primary" href="/stream">
+          閱讀最新內容 <span lang="en">Open Stream</span>
+        </a>
+        <a class="button" href="/search">
+          搜尋與主題 <span lang="en">Search</span>
+        </a>
+      </div>
+    </header>
+
+    <section class="about-grid" aria-label="產品原則 Product principles">
+      <article>
+        <span aria-hidden="true">01</span>
+        <h2>公開邊界 <small lang="en">Public by decision</small></h2>
+        <p>
+          只有明確發佈及設定為公開的內容會進入公開頁、搜尋、RSS 與
+          sitemap。草稿、私人及未列出內容不會被公開索引。
+        </p>
+      </article>
+      <article>
+        <span aria-hidden="true">02</span>
+        <h2>有限閱讀 <small lang="en">Finite reading</small></h2>
+        <p>
+          動態按時間排列，不設互動數字或演算法推薦；封存、分類與標籤提供穩定的返回路徑。
+        </p>
+      </article>
+      <article>
+        <span aria-hidden="true">03</span>
+        <h2>來源清楚 <small lang="en">Source-aware</small></h2>
+        <p>
+          Edition
+          只在站主審閱後公開，保留短摘錄、來源名稱及原文連結；內容與權利仍以原發布者為準。
+        </p>
+      </article>
+    </section>
+
+    <section class="about-system">
+      <div>
+        <p class="eyebrow">系統方式 · How it works</p>
+        <h2>簡單而可驗證</h2>
+      </div>
+      <div>
+        <p>
+          網站以 Astro 及 Cloudflare Workers 運行，公開文章資料存於
+          D1，經驗證的圖片存於 R2。私人 Studio 由 Cloudflare Access
+          與應用程式身分核對共同保護。
+        </p>
+        <p lang="en">
+          Built with Astro and Cloudflare Workers, with D1 for publishing data,
+          R2 for validated images, and an owner-only Studio protected at both
+          the Access and application layers.
+        </p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .eyebrow {
+    margin: 0 0 var(--space-2);
+    color: var(--space-teal-strong);
+    font-size: var(--font-size--1);
+    font-weight: 760;
+  }
+  .about-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--space-border-strong);
+    border-bottom: 1px solid var(--space-border-strong);
+  }
+  .about-grid article {
+    position: relative;
+    min-width: 0;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+  }
+  .about-grid article + article {
+    border-left: 1px solid var(--space-border);
+  }
+  .about-grid article > span {
+    color: var(--space-border-strong);
+    font-size: var(--font-size-3);
+    font-weight: 800;
+  }
+  .about-grid h2 {
+    margin: var(--space-4) 0 0;
+    font-size: var(--font-size-2);
+  }
+  .about-grid h2 small {
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--space-primary);
+    font-size: 0.55em;
+  }
+  .about-grid p,
+  .about-system p {
+    color: var(--space-ink-muted);
+  }
+  .about-system {
+    display: grid;
+    grid-template-columns: minmax(12rem, 0.7fr) minmax(0, 1.3fr);
+    gap: var(--space-7);
+    padding: clamp(1.75rem, 5vw, 3.5rem) var(--page-gutter);
+    background: linear-gradient(
+      135deg,
+      var(--space-surface-blue),
+      var(--space-surface-yellow)
+    );
+  }
+  .about-system h2 {
+    margin: 0;
+    font-size: var(--font-size-3);
+  }
+  .about-system p:first-child {
+    margin-top: 0;
+  }
+  @media (max-width: 47.99rem) {
+    .about-grid,
+    .about-system {
+      grid-template-columns: 1fr;
+    }
+    .about-grid article + article {
+      border-top: 1px solid var(--space-border);
+      border-left: 0;
+    }
+    .about-system {
+      gap: var(--space-3);
+    }
+  }
+</style>

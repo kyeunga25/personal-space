@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "personal-space",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-07-23",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "d1_databases": [
@@ -23,6 +23,9 @@
       "custom_domain": true,
     },
   ],
+  "triggers": {
+    "crons": ["15 0,12 * * *", "0 14 * * *"],
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist",

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import type { EditionRecord } from "../src/server/editions/domain";
+import { renderEditionRss } from "../src/server/feeds/edition-rss";
 import { renderRssFeed } from "../src/server/feeds/rss";
 import { renderSitemap } from "../src/server/feeds/sitemap";
 import type { PostRecord } from "../src/server/publishing/domain";
@@ -23,6 +25,18 @@ const publicPost: PostRecord = {
   title: "Hello & 世界",
   updatedAt: "2026-07-25T02:00:00.000Z",
   visibility: "public",
+};
+
+const publicEdition: EditionRecord = {
+  createdAt: "2026-07-25T00:00:00.000Z",
+  date: "2026-07-25",
+  entries: [],
+  id: "edition-2026-07-25",
+  introMd: "已審閱的 **公開** 來源整理。",
+  publishedAt: "2026-07-25T03:00:00.000Z",
+  status: "published",
+  title: "2026-07-25 每日整理 Daily Edition",
+  updatedAt: "2026-07-25T04:00:00.000Z",
 };
 
 describe("public XML feeds", () => {
@@ -57,6 +71,12 @@ describe("public XML feeds", () => {
 
   it("renders public sitemap locations and last-modified dates", () => {
     const xml = renderSitemap({
+      entries: [
+        {
+          path: "/editions/2026-07-25",
+          updatedAt: "2026-07-25T04:00:00.000Z",
+        },
+      ],
       paths: ["/", "/search"],
       posts: [publicPost],
       site: new URL("https://example.com"),
@@ -67,5 +87,25 @@ describe("public XML feeds", () => {
       "<loc>https://example.com/articles/hello-world</loc>",
     );
     expect(xml).toContain("<lastmod>2026-07-25T02:00:00.000Z</lastmod>");
+    expect(xml).toContain("<loc>https://example.com/editions/2026-07-25</loc>");
+  });
+
+  it("renders only published Editions in their dedicated RSS feed", () => {
+    const xml = renderEditionRss({
+      description: "Reviewed editions",
+      editions: [
+        publicEdition,
+        { ...publicEdition, id: "draft-edition", status: "draft" },
+      ],
+      generatedAt: "2026-07-25T05:00:00.000Z",
+      selfPath: "/feeds/editions.xml",
+      site: new URL("https://example.com"),
+      title: "Editions & updates",
+    });
+
+    expect(xml).toContain("<title>Editions &amp; updates</title>");
+    expect(xml).toContain("已審閱的 公開 來源整理。");
+    expect(xml).toContain("https://example.com/editions/2026-07-25");
+    expect(xml).not.toContain("draft-edition");
   });
 });

@@ -1,0 +1,319 @@
+---
+import StudioLayout from "../../../layouts/StudioLayout.astro";
+import { formatHongKongDate } from "../../../lib/dates";
+import { D1EditionRepository } from "../../../server/editions/repository";
+import { getBindings } from "../../../server/platform/bindings";
+
+const sources = await new D1EditionRepository(getBindings().DB).listSources();
+---
+
+<StudioLayout title="來源管理">
+  <div class="source-workspace">
+    <header class="source-header">
+      <div>
+        <p class="eyebrow">私人工作區 · Owner only</p>
+        <h1>來源 <small lang="en">Sources</small></h1>
+        <p>加入公開 HTTPS RSS／Atom feed；系統每日同步兩次。</p>
+      </div>
+      <button class="button button--primary" type="button" data-ingest-now>
+        立即同步 <span lang="en">Sync now</span>
+      </button>
+    </header>
+
+    <p class="source-status" aria-live="polite" data-source-status></p>
+
+    <section class="source-panel" aria-labelledby="new-source-heading">
+      <h2 id="new-source-heading">新增來源 <small>Add source</small></h2>
+      <form
+        class="source-form"
+        method="post"
+        action="/api/studio/sources"
+        data-source-form
+      >
+        <label
+          >名稱 <small>Name</small><input
+            name="name"
+            maxlength="120"
+            required
+          /></label
+        >
+        <label
+          >Feed URL <input
+            name="feedUrl"
+            type="url"
+            inputmode="url"
+            placeholder="https://example.com/feed.xml"
+            required
+          /></label
+        >
+        <label
+          >網站 URL <small>Site URL</small><input
+            name="siteUrl"
+            type="url"
+            inputmode="url"
+            placeholder="https://example.com/"
+          /></label
+        >
+        <label
+          >狀態 <small>Status</small><select name="status"
+            ><option value="enabled">啟用 Enabled</option><option value="paused"
+              >暫停 Paused</option
+            ></select
+          ></label
+        >
+        <button class="button button--primary" type="submit"
+          >加入來源 Add source</button
+        >
+      </form>
+    </section>
+
+    <section class="source-list" aria-labelledby="source-list-heading">
+      <header>
+        <h2 id="source-list-heading">
+          已加入來源 <small>Saved sources</small>
+        </h2><span>{sources.length}</span>
+      </header>
+      {
+        sources.length === 0 ? (
+          <p class="source-empty">尚未加入來源。 Add a public feed to begin.</p>
+        ) : (
+          <div class="source-grid">
+            {sources.map((source) => (
+              <form
+                class="source-card"
+                method="post"
+                action={`/api/studio/sources/${encodeURIComponent(source.id)}`}
+                data-source-form
+                data-source-id={source.id}
+              >
+                <div class="source-card__meta">
+                  <strong>
+                    {source.status === "enabled"
+                      ? "啟用 Enabled"
+                      : "暫停 Paused"}
+                  </strong>
+                  <span>
+                    最近同步 {formatHongKongDate(source.lastFetchedAt)}
+                  </span>
+                  {source.lastErrorCode && (
+                    <span class="source-card__error">
+                      狀態：{source.lastErrorCode}
+                    </span>
+                  )}
+                </div>
+                <label>
+                  名稱{" "}
+                  <input
+                    name="name"
+                    maxlength="120"
+                    value={source.name}
+                    required
+                  />
+                </label>
+                <label>
+                  Feed URL{" "}
+                  <input
+                    name="feedUrl"
+                    type="url"
+                    value={source.feedUrl}
+                    required
+                  />
+                </label>
+                <label>
+                  網站 URL{" "}
+                  <input
+                    name="siteUrl"
+                    type="url"
+                    value={source.siteUrl ?? ""}
+                  />
+                </label>
+                <label>
+                  狀態{" "}
+                  <select name="status">
+                    <option
+                      value="enabled"
+                      selected={source.status === "enabled"}
+                    >
+                      啟用 Enabled
+                    </option>
+                    <option
+                      value="paused"
+                      selected={source.status === "paused"}
+                    >
+                      暫停 Paused
+                    </option>
+                  </select>
+                </label>
+                <button class="button" type="submit">
+                  儲存 Save
+                </button>
+              </form>
+            ))}
+          </div>
+        )
+      }
+    </section>
+  </div>
+</StudioLayout>
+
+<script>
+  import "../../../scripts/studio-sources";
+</script>
+
+<style>
+  .source-workspace {
+    width: min(100%, 76rem);
+    margin-inline: auto;
+    padding: clamp(1.5rem, 5vw, 4rem);
+  }
+  .source-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-5);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--space-border-strong);
+  }
+  .eyebrow {
+    margin: 0 0 var(--space-2);
+    color: var(--space-primary-strong);
+    font-size: var(--font-size--1);
+    font-weight: 720;
+  }
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-4);
+    letter-spacing: -0.05em;
+  }
+  h1 small,
+  h2 small {
+    color: var(--space-primary);
+    font-size: 0.55em;
+  }
+  .source-header p:not(.eyebrow) {
+    margin: var(--space-3) 0 0;
+    color: var(--space-ink-muted);
+  }
+  .source-status {
+    min-height: 1.5rem;
+    margin: var(--space-4) 0;
+    color: var(--space-teal-strong);
+    font-weight: 650;
+  }
+  .source-status[data-state="error"],
+  .source-card__error {
+    color: #a23b3b;
+  }
+  .source-panel,
+  .source-list {
+    overflow: hidden;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.7);
+  }
+  .source-panel {
+    padding: var(--space-5);
+  }
+  h2 {
+    margin: 0;
+    font-size: var(--font-size-2);
+  }
+  .source-form {
+    display: grid;
+    grid-template-columns: 1fr 2fr 2fr 1fr auto;
+    gap: var(--space-3);
+    align-items: end;
+    margin-top: var(--space-4);
+  }
+  label {
+    display: grid;
+    gap: var(--space-2);
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    font-weight: 680;
+  }
+  label small {
+    color: var(--space-ink-faint);
+  }
+  input,
+  select {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--space-ink);
+  }
+  .source-list {
+    margin-top: var(--space-6);
+  }
+  .source-list > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--space-border);
+    background: var(--space-surface-blue);
+  }
+  .source-list > header span {
+    color: var(--space-primary-strong);
+    font-weight: 750;
+  }
+  .source-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--space-border);
+  }
+  .source-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    background: rgba(255, 255, 255, 0.92);
+  }
+  .source-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+  .source-card__meta strong {
+    color: var(--space-teal-strong);
+  }
+  .source-card .button {
+    justify-self: start;
+  }
+  .source-empty {
+    margin: 0;
+    padding: var(--space-7);
+    color: var(--space-ink-muted);
+    text-align: center;
+  }
+  @media (max-width: 64rem) {
+    .source-form {
+      grid-template-columns: 1fr 1fr;
+    }
+    .source-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .source-workspace {
+      padding: var(--space-5) var(--space-4) 7rem;
+    }
+    .source-header {
+      display: block;
+    }
+    .source-header .button {
+      margin-top: var(--space-4);
+    }
+    h1 {
+      font-size: var(--font-size-3);
+    }
+    .source-form {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

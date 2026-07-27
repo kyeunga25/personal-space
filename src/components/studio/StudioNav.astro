@@ -23,6 +23,18 @@ const items = [
     label: "文章",
     labelEn: "Articles",
   },
+  {
+    href: "/studio/sources",
+    icon: "source",
+    label: "來源",
+    labelEn: "Sources",
+  },
+  {
+    href: "/studio/editions",
+    icon: "edition",
+    label: "Editions",
+    labelEn: "Daily editions",
+  },
   { href: "/studio#media", icon: "media", label: "媒體", labelEn: "Media" },
 ] as const;
 ---
@@ -37,10 +49,19 @@ const items = [
       {
         items.map((item) => {
           const active =
-            item.href === "/studio/articles/new"
-              ? pathname.includes("/studio/articles") ||
-                pathname.includes("/studio/posts")
-              : isActivePath(pathname, item.href.split("#")[0] ?? item.href);
+            item.href === "/studio"
+              ? pathname === "/studio" || pathname === "/studio/"
+              : item.href === "/studio#media"
+                ? false
+                : item.href === "/studio/articles/new"
+                  ? pathname.includes("/studio/articles") ||
+                    pathname.includes("/studio/posts")
+                  : item.href === "/studio/editions"
+                    ? pathname.includes("/studio/editions")
+                    : isActivePath(
+                        pathname,
+                        item.href.split("#")[0] ?? item.href,
+                      );
           return (
             <li>
               <a
