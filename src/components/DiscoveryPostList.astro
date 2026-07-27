@@ -1,0 +1,210 @@
+---
+import { formatHongKongDate } from "../lib/dates";
+import type { PostRecord } from "../server/publishing/domain";
+
+interface Props {
+  emptyDescription?: string;
+  emptyTitle?: string;
+  nextHref?: string | null;
+  posts: PostRecord[];
+}
+
+const {
+  emptyDescription = "目前沒有符合條件的公開內容。",
+  emptyTitle = "找不到內容",
+  nextHref = null,
+  posts,
+} = Astro.props;
+---
+
+<section class="discovery-results" aria-live="polite">
+  {
+    posts.length === 0 ? (
+      <div class="discovery-results__empty">
+        <h2>
+          {emptyTitle} <small lang="en">No matching entries</small>
+        </h2>
+        <p>{emptyDescription}</p>
+      </div>
+    ) : (
+      <ol>
+        {posts.map((post) => {
+          const href = `/${post.kind === "note" ? "notes" : "articles"}/${encodeURIComponent(post.slug ?? "")}`;
+          return (
+            <li>
+              <article
+                class:list={["discovery-row", `discovery-row--${post.kind}`]}
+              >
+                <a class="discovery-row__main" href={href}>
+                  <span class="discovery-row__meta">
+                    <span>
+                      {post.kind === "note" ? "筆記 Note" : "文章 Article"}
+                    </span>
+                    <time
+                      datetime={
+                        post.publishedAt ?? post.scheduledAt ?? undefined
+                      }
+                    >
+                      {formatHongKongDate(post.publishedAt ?? post.scheduledAt)}
+                    </time>
+                  </span>
+                  <strong>{post.title ?? post.excerpt ?? "無標題筆記"}</strong>
+                  {post.title && post.excerpt && (
+                    <span class="discovery-row__excerpt">{post.excerpt}</span>
+                  )}
+                </a>
+                {(post.category || post.tags.length > 0) && (
+                  <ul class="discovery-row__taxonomy" aria-label="分類與標籤">
+                    {post.category && (
+                      <li>
+                        <a
+                          href={`/categories/${encodeURIComponent(post.category.slug)}`}
+                        >
+                          {post.category.name}
+                        </a>
+                      </li>
+                    )}
+                    {post.tags.map((tag) => (
+                      <li>
+                        <a href={`/tags/${encodeURIComponent(tag.slug)}`}>
+                          #{tag.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            </li>
+          );
+        })}
+      </ol>
+    )
+  }
+  {
+    nextHref && (
+      <div class="discovery-results__more">
+        <a class="button" href={nextHref}>
+          載入較早內容 <span lang="en">Load older</span>
+        </a>
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .discovery-results ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .discovery-results li {
+    border-bottom: 1px solid var(--space-border);
+  }
+
+  .discovery-row {
+    padding: clamp(1.35rem, 4vw, 2.15rem);
+    transition:
+      background-color var(--motion-fast) ease,
+      box-shadow var(--motion-fast) ease;
+  }
+
+  .discovery-row:hover {
+    background: var(--space-surface-hover);
+    box-shadow: inset 3px 0 var(--space-primary);
+  }
+
+  .discovery-row--article:hover {
+    box-shadow: inset 3px 0 var(--space-blue);
+  }
+
+  .discovery-row__main {
+    display: block;
+    color: var(--space-ink);
+    text-decoration: none;
+  }
+
+  .discovery-row__meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+
+  .discovery-row__meta > span {
+    color: var(--space-primary-strong);
+    font-weight: 720;
+  }
+
+  .discovery-row--article .discovery-row__meta > span {
+    color: var(--space-blue-strong);
+  }
+
+  .discovery-row strong,
+  .discovery-row__excerpt {
+    display: block;
+  }
+
+  .discovery-row strong {
+    margin-top: var(--space-3);
+    font-size: var(--font-size-2);
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+
+  .discovery-row__excerpt {
+    display: -webkit-box;
+    max-width: 40rem;
+    margin-top: var(--space-3);
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    color: var(--space-ink-muted);
+    -webkit-line-clamp: 3;
+  }
+
+  .discovery-row__taxonomy {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    font-size: var(--font-size--1);
+    list-style: none;
+  }
+
+  .discovery-row__taxonomy a {
+    color: var(--space-teal-strong);
+    font-weight: 650;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  .discovery-results__empty,
+  .discovery-results__more {
+    padding: clamp(1.5rem, 4vw, 2.25rem);
+  }
+
+  .discovery-results__empty h2 {
+    margin: 0;
+    font-size: var(--font-size-2);
+  }
+
+  .discovery-results__empty p {
+    margin: var(--space-3) 0 0;
+    color: var(--space-ink-muted);
+  }
+
+  .discovery-results__more {
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid var(--space-border);
+  }
+
+  @media (max-width: 47.99rem) {
+    .discovery-row strong {
+      font-size: var(--font-size-1);
+    }
+  }
+</style>

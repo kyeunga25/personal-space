@@ -2,23 +2,27 @@
 
 公開網站 / Public site: [space.k-y.cc](https://space.k-y.cc)
 
-目前程式版本 / Current code version: **v0.4.0**
+目前程式版本 / Current code version: **v0.5.0**
 
-截至 2026-07-26，正式網站仍運行已驗證的 v0.3.0。v0.4.0 的發佈功能
-會在私人 Cloudflare bindings、Access 設定及正式資料庫 migration
-完成後才啟用；公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
+截至 2026-07-26，正式網站仍運行已驗證的 v0.3.0。遠端資料庫 migrations
+已套用至 v0.5.0；v0.4.0 及 v0.5.0 仍會等候私人 Cloudflare Access 設定及
+正式提升完成後才啟用。公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
 
 ## 中文
 
-Personal Space 是一個簡潔的個人內容展示介面，使用三個清晰分類：
+Personal Space 是一個簡潔、由自己管理的個人發佈空間，公開內容分為：
 
-- **短內容 / Shorts** — Story、Comment、Note。
-- **長內容 / Longform** — Post、Article、Review。
-- **新聞整理 / Briefings** — 經整理並附有來源的新聞摘要。
+- **筆記 / Notes** — 短小、即時的內容。
+- **文章 / Articles** — 有完整結構的長篇內容。
+- **動態、搜尋與封存 / Stream, Search, Archive** — 以時間、關鍵字、分類及標籤尋回公開內容。
 
 v0.4.0 加入只供站主使用的 Studio 發佈流程，以及公開的 Note 與 Article
 列表／詳情頁。內容及修訂記錄存放於 Cloudflare D1，圖片存放於 R2；私人內容、
 未發佈草稿及 Studio API 不會成為 repository 內容。
+
+v0.5.0 加入 D1 FTS5 公開搜尋、時間動態、香港時間月份封存、分類／標籤頁、
+RSS feeds 及 sitemap。首頁只會讀取真實公開內容；私人、未列出、草稿及未到期
+排程內容不會出現在搜尋、封存、feeds 或 sitemap。
 
 目前介面採用原創 **Clear Sky Feed** 視覺系統，以淡天藍、晴空青、
 薄荷青與少量日光黃構成清新、青春而俐落的信息流。所有圖標、SVG
@@ -32,6 +36,8 @@ v0.4.0 加入只供站主使用的 Studio 發佈流程，以及公開的 Note �
 - Cloudflare D1 內容資料庫與 R2 圖片儲存；
 - Cloudflare Access 驗證及應用程式層站主核對；
 - Note／Article 草稿、預覽、發佈、排程、封存及修訂還原；
+- 公開全文搜尋、分類／標籤篩選、香港時間封存及時間動態；
+- RSS、獨立 Note／Article feeds 及公開 sitemap；
 - 響應式桌面／手機導覽；
 - ESLint、Prettier、Vitest、Astro typecheck；
 - GitHub Actions 與 Cloudflare Workers Builds。
@@ -66,13 +72,14 @@ npm run preview
 
 ## English
 
-Personal Space is a focused personal publishing interface organized into
-Shorts, Longform, and source-backed Briefings.
+Personal Space is a focused, self-managed publishing space for Notes and
+Articles, with chronological, searchable, and archived public discovery.
 
-The current code version is **v0.4.0**. As verified on 2026-07-26, production
-continues to serve the stable v0.3.0 release. The publishing update will remain
-undeployed until its private Cloudflare bindings, Access settings, and remote
-migration are ready.
+The current code version is **v0.5.0**. As verified on 2026-07-26, production
+continues to serve the stable v0.3.0 release and remote database migrations are
+applied through v0.5.0. The v0.4.0 publishing and v0.5.0 discovery updates will
+remain inactive until private Cloudflare Access configuration and final
+promotion are complete.
 
 The current interface uses the original **Clear Sky Feed** visual system: a
 fresh, crisp information feed built from pale sky blue, cyan, teal, and
@@ -83,6 +90,8 @@ The application uses Astro, strict TypeScript, Cloudflare Workers with Static
 Assets, D1 content storage, R2 image storage, responsive navigation, GitHub
 Actions, and Cloudflare Workers Builds. v0.4.0 adds an owner-only Studio with
 draft, preview, publish, scheduling, archive, and revision restore workflows.
+v0.5.0 adds public full-text search, taxonomy filters, a chronological stream,
+Hong Kong month archives, RSS feeds, and a public-only sitemap.
 
 For local Studio testing, copy `.dev.vars.example` to the ignored `.dev.vars`
 file and apply the local D1 migration first. Production requires

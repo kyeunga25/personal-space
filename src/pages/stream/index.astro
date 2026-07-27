@@ -1,6 +1,44 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import DiscoveryFilters from "../../components/DiscoveryFilters.astro";
+import DiscoveryPostList from "../../components/DiscoveryPostList.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  parseDiscoveryFilters,
+  withCursor,
+} from "../../server/discovery/filters";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const filters = parseDiscoveryFilters(Astro.url.searchParams);
+const repository = new D1PublishingRepository(getBindings().DB);
+const now = new Date().toISOString();
+const [result, taxonomy] = await Promise.all([
+  repository.listPublicDiscovery(
+    { ...filters, query: "", sort: "newest" },
+    now,
+  ),
+  repository.listPublicTaxonomy(now),
+]);
+const nextHref = result.nextCursor
+  ? withCursor(Astro.url.searchParams, result.nextCursor)
+  : null;
 ---
 
-<RoutePlaceholder {...placeholderRoutes.stream} />
+<BaseLayout
+  title="動態"
+  titleEn="Stream"
+  description="按時間閱讀公開筆記與文章，不使用演算法排序。"
+  descriptionEn="Read public Notes and Articles chronologically without algorithmic ranking."
+>
+  <div class="page-stack">
+    <header class="route-header">
+      <h1>動態 <small lang="en">Stream</small></h1>
+      <p>按發布時間排列的公開內容，不設互動數字或演算法排序。</p>
+      <p class="en-subline" lang="en">
+        A chronological public stream without engagement counters.
+      </p>
+    </header>
+    <DiscoveryFilters action="/stream" {filters} showQuery={false} {taxonomy} />
+    <DiscoveryPostList posts={result.posts} {nextHref} />
+  </div>
+</BaseLayout>

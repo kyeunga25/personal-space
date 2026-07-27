@@ -1,0 +1,191 @@
+---
+import type {
+  DiscoveryFilters,
+  PublicTaxonomy,
+} from "../server/discovery/types";
+
+interface Props {
+  action: string;
+  filters: DiscoveryFilters;
+  showQuery?: boolean;
+  taxonomy: PublicTaxonomy;
+}
+
+const { action, filters, showQuery = true, taxonomy } = Astro.props;
+---
+
+<form class="discovery-filters" method="get" action={action}>
+  {
+    showQuery && (
+      <label class="discovery-filters__query">
+        <span>
+          關鍵字 <small lang="en">Keywords</small>
+        </span>
+        <input
+          type="search"
+          name="q"
+          value={filters.query}
+          maxlength="120"
+          placeholder="搜尋標題、摘要或內容…"
+          autocomplete="off"
+        />
+      </label>
+    )
+  }
+
+  <div class="discovery-filters__grid">
+    <label>
+      <span>內容類型 <small lang="en">Type</small></span>
+      <select name="kind">
+        <option value="all" selected={filters.kind === "all"}>全部 All</option>
+        <option value="note" selected={filters.kind === "note"}
+          >筆記 Notes</option
+        >
+        <option value="article" selected={filters.kind === "article"}
+          >文章 Articles</option
+        >
+      </select>
+    </label>
+
+    <label>
+      <span>分類 <small lang="en">Category</small></span>
+      <select name="category">
+        <option value="">全部分類 All</option>
+        {
+          taxonomy.categories.map((category) => (
+            <option
+              value={category.slug}
+              selected={filters.category === category.slug}
+            >
+              {category.name} ({category.count})
+            </option>
+          ))
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>標籤 <small lang="en">Tag</small></span>
+      <select name="tag">
+        <option value="">全部標籤 All</option>
+        {
+          taxonomy.tags.map((tag) => (
+            <option value={tag.slug} selected={filters.tag === tag.slug}>
+              {tag.name} ({tag.count})
+            </option>
+          ))
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>開始日期 <small lang="en">From</small></span>
+      <input type="date" name="from" value={filters.from ?? ""} />
+    </label>
+
+    <label>
+      <span>結束日期 <small lang="en">To</small></span>
+      <input type="date" name="to" value={filters.to ?? ""} />
+    </label>
+
+    {
+      showQuery && (
+        <label>
+          <span>
+            排序 <small lang="en">Sort</small>
+          </span>
+          <select name="sort">
+            <option value="newest" selected={filters.sort === "newest"}>
+              最新 Newest
+            </option>
+            <option
+              value="relevance"
+              selected={filters.sort === "relevance"}
+              disabled={!filters.query}
+            >
+              相關程度 Relevance
+            </option>
+          </select>
+        </label>
+      )
+    }
+  </div>
+
+  <div class="discovery-filters__actions">
+    <button class="button button--primary" type="submit">
+      套用 <span lang="en">Apply</span>
+    </button>
+    <a class="button" href={action}>清除 <span lang="en">Clear</span></a>
+  </div>
+</form>
+
+<style>
+  .discovery-filters {
+    padding: clamp(1.25rem, 4vw, 2rem);
+    border-bottom: 1px solid var(--space-border-strong);
+    background: rgba(247, 252, 255, 0.72);
+  }
+
+  label,
+  label > span {
+    display: block;
+  }
+
+  label > span {
+    margin-bottom: var(--space-2);
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    font-weight: 720;
+  }
+
+  label small {
+    margin-left: 0.25em;
+    color: var(--space-ink-faint);
+    font-size: 0.86em;
+    font-weight: 560;
+  }
+
+  input,
+  select {
+    width: 100%;
+    min-height: 2.8rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--space-ink);
+    font-size: var(--font-size-0);
+  }
+
+  .discovery-filters__query input {
+    min-height: 3.35rem;
+    padding-inline: 1rem;
+    font-size: var(--font-size-1);
+  }
+
+  .discovery-filters__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+  }
+
+  .discovery-filters__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+  }
+
+  @media (max-width: 47.99rem) {
+    .discovery-filters__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 31rem) {
+    .discovery-filters__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,51 @@
+---
+import DiscoveryPostList from "../../components/DiscoveryPostList.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { parseDiscoveryFilters } from "../../server/discovery/filters";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const slug = Astro.params.slug ?? "";
+const repository = new D1PublishingRepository(getBindings().DB);
+const now = new Date().toISOString();
+const taxonomy = await repository.listPublicTaxonomy(now);
+const category = taxonomy.categories.find((item) => item.slug === slug);
+if (!category) {
+  Astro.response.status = 404;
+}
+const filters = parseDiscoveryFilters(
+  new URLSearchParams({ category: slug }),
+  50,
+);
+const result = category
+  ? await repository.listPublicDiscovery(filters, now)
+  : { nextCursor: null, posts: [] };
+---
+
+<BaseLayout
+  title={category?.name ?? "找不到分類"}
+  titleEn="Category"
+  description={category
+    ? `${category.name} 分類的公開內容。`
+    : "找不到這個分類。"}
+  descriptionEn="Public writing grouped by category."
+  noIndex={!category}
+>
+  <div class="page-stack">
+    <header class="route-header">
+      <h1>
+        {category?.name ?? "找不到分類"}
+        <small lang="en">Category</small>
+      </h1>
+      <p>
+        {
+          category
+            ? `${category.count} 項公開內容。`
+            : "這個分類不存在或沒有公開內容。"
+        }
+      </p>
+      <p class="en-subline" lang="en">Public writing grouped by category.</p>
+    </header>
+    <DiscoveryPostList posts={result.posts} />
+  </div>
+</BaseLayout>

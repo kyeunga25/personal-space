@@ -1,48 +1,26 @@
 ---
-import FeedItem from "../components/FeedItem.astro";
+import DiscoveryPostList from "../components/DiscoveryPostList.astro";
 import ProfileHeader from "../components/ProfileHeader.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { parseDiscoveryFilters } from "../server/discovery/filters";
+import { getBindings } from "../server/platform/bindings";
+import { D1PublishingRepository } from "../server/publishing/repository";
+
+const repository = new D1PublishingRepository(getBindings().DB);
+const result = await repository.listPublicDiscovery(
+  parseDiscoveryFilters(new URLSearchParams(), 20),
+  new Date().toISOString(),
+);
 ---
 
 <BaseLayout section="首頁" sectionEn="Home">
   <ProfileHeader />
   <section class="home-feed" aria-labelledby="highlights-heading">
-    <h2 id="highlights-heading" class="visually-hidden">精選內容 Highlights</h2>
-    <FeedItem
-      kind="short"
-      label="短內容 · Story"
-      labelEn="Short"
-      date="2026-07-25"
-      dateTime="2026-07-25"
-      title="今天的一個小想法。"
-      titleEn="A small thought from today."
-      excerpt="把當下值得記住的片刻收進這裡。"
-      excerptEn="A place for moments worth keeping."
-      href="/shorts"
-    />
-    <FeedItem
-      kind="longform"
-      label="長內容 · Review"
-      labelEn="Longform"
-      date="2026-07-25"
-      dateTime="2026-07-25"
-      title="把喜歡的作品慢慢寫下來。"
-      titleEn="Write slowly about the things I enjoy."
-      excerpt="Post、Article 與 Review 保留完整的閱讀節奏。"
-      excerptEn="Posts, articles, and reviews keep their full reading rhythm."
-      href="/longform"
-    />
-    <FeedItem
-      kind="briefing"
-      label="AI 新聞 · Daily Briefing"
-      labelEn="AI Briefing"
-      date="2026-07-25"
-      dateTime="2026-07-25"
-      title="今日整理：值得留意的主題更新。"
-      titleEn="Today's topics worth keeping in view."
-      excerpt="每日或定時收集指定類型新聞，整理後再閱讀。"
-      excerptEn="Selected news collected daily or on schedule, then organized for reading."
-      href="/briefings"
+    <h2 id="highlights-heading" class="visually-hidden">最新內容 Latest</h2>
+    <DiscoveryPostList
+      posts={result.posts}
+      emptyTitle="這裡準備好了"
+      emptyDescription="公開筆記或文章發佈後，會按時間顯示在這裡。"
     />
   </section>
 </BaseLayout>

@@ -1,0 +1,42 @@
+---
+import DiscoveryPostList from "../../components/DiscoveryPostList.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { parseDiscoveryFilters } from "../../server/discovery/filters";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const slug = Astro.params.slug ?? "";
+const repository = new D1PublishingRepository(getBindings().DB);
+const now = new Date().toISOString();
+const taxonomy = await repository.listPublicTaxonomy(now);
+const tag = taxonomy.tags.find((item) => item.slug === slug);
+if (!tag) {
+  Astro.response.status = 404;
+}
+const filters = parseDiscoveryFilters(new URLSearchParams({ tag: slug }), 50);
+const result = tag
+  ? await repository.listPublicDiscovery(filters, now)
+  : { nextCursor: null, posts: [] };
+---
+
+<BaseLayout
+  title={tag ? `#${tag.name}` : "找不到標籤"}
+  titleEn="Tag"
+  description={tag ? `以 #${tag.name} 標記的公開內容。` : "找不到這個標籤。"}
+  descriptionEn="Public writing grouped by tag."
+  noIndex={!tag}
+>
+  <div class="page-stack">
+    <header class="route-header">
+      <h1>
+        {tag ? `#${tag.name}` : "找不到標籤"}
+        <small lang="en">Tag</small>
+      </h1>
+      <p>
+        {tag ? `${tag.count} 項公開內容。` : "這個標籤不存在或沒有公開內容。"}
+      </p>
+      <p class="en-subline" lang="en">Public writing grouped by tag.</p>
+    </header>
+    <DiscoveryPostList posts={result.posts} />
+  </div>
+</BaseLayout>
