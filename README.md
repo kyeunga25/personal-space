@@ -4,9 +4,8 @@
 
 目前程式版本 / Current code version: **v0.6.0**
 
-截至 2026-07-26，正式網站仍運行已驗證的 v0.3.0。遠端資料庫 migrations
-已套用至 v0.6.0；v0.4.0 至 v0.6.0 仍會等候私人 Cloudflare Access 設定及
-正式提升完成後才啟用。v0.6.0 release candidate 已上傳但沒有接收正式流量。
+截至 2026-07-28，正式網站已運行經驗證的 v0.6.0。遠端資料庫 migrations
+已套用至 v0.6.0，私人 Studio 與寫入 API 亦已由 Cloudflare Access 保護。
 公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
 
 ## 中文
@@ -83,12 +82,10 @@ npm run preview
 Personal Space is a focused, self-managed publishing space for Notes and
 Articles, with chronological, searchable, and archived public discovery.
 
-The current code version is **v0.6.0**. As verified on 2026-07-26, production
-continues to serve the stable v0.3.0 release and remote database migrations are
-applied through v0.6.0. The v0.4.0 through v0.6.0 updates will remain inactive
-until private Cloudflare Access configuration and final promotion are complete.
-A v0.6.0 release candidate has been uploaded without receiving production
-traffic.
+The current code version is **v0.6.0**. As verified on 2026-07-28, production
+serves the validated v0.6.0 release, remote database migrations are applied
+through v0.6.0, and Cloudflare Access protects the private Studio and write
+APIs.
 
 The current interface uses the original **Clear Sky Feed** visual system: a
 fresh, crisp information feed built from pale sky blue, cyan, teal, and
