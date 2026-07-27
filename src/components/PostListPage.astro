@@ -1,0 +1,162 @@
+---
+import { formatHongKongDate } from "../lib/dates";
+import type { PostKind, PostRecord } from "../server/publishing/domain";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+interface Props {
+  description: string;
+  descriptionEn: string;
+  kind: PostKind;
+  posts: PostRecord[];
+  title: string;
+  titleEn: string;
+}
+
+const { description, descriptionEn, kind, posts, title, titleEn } = Astro.props;
+const routeBase = kind === "note" ? "/notes" : "/articles";
+---
+
+<BaseLayout
+  title={title}
+  titleEn={titleEn}
+  description={description}
+  descriptionEn={descriptionEn}
+>
+  <div class="page-stack">
+    <header class="route-header">
+      <h1>{title} <small lang="en">{titleEn}</small></h1>
+      <p>{description}</p>
+      <p class="en-subline" lang="en">{descriptionEn}</p>
+    </header>
+
+    <section class="post-list" aria-label={`${title} ${titleEn}`}>
+      {
+        posts.length === 0 ? (
+          <div class="post-list__empty">
+            <h2>
+              暫未有公開內容 <small lang="en">No public entries yet</small>
+            </h2>
+            <p>這裡會保留經過選擇、適合公開閱讀的內容。</p>
+            <p class="en-subline" lang="en">
+              Selected public entries will appear here.
+            </p>
+          </div>
+        ) : (
+          posts.map((post) => (
+            <article class:list={["post-row", `post-row--${kind}`]}>
+              <a href={`${routeBase}/${encodeURIComponent(post.slug ?? "")}`}>
+                <div class="post-row__meta">
+                  <span>{kind === "note" ? "筆記 Note" : "文章 Article"}</span>
+                  <time
+                    datetime={post.publishedAt ?? post.scheduledAt ?? undefined}
+                  >
+                    {formatHongKongDate(post.publishedAt ?? post.scheduledAt)}
+                  </time>
+                </div>
+                <h2>{post.title ?? post.excerpt ?? "無標題筆記"}</h2>
+                {post.title && post.excerpt && <p>{post.excerpt}</p>}
+                {(post.category || post.tags.length > 0) && (
+                  <ul class="taxonomy-list" aria-label="分類與標籤">
+                    {post.category && <li>{post.category.name}</li>}
+                    {post.tags.map((tag) => (
+                      <li>#{tag.name}</li>
+                    ))}
+                  </ul>
+                )}
+              </a>
+            </article>
+          ))
+        )
+      }
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .post-list {
+    min-height: 24rem;
+  }
+
+  .post-list__empty {
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .post-list__empty h2 {
+    margin: 0;
+    font-size: var(--font-size-2);
+  }
+
+  .post-list__empty p {
+    margin: var(--space-3) 0 0;
+    color: var(--space-ink-muted);
+  }
+
+  .post-row {
+    border-bottom: 1px solid var(--space-border);
+  }
+
+  .post-row a {
+    display: block;
+    padding: clamp(1.5rem, 4vw, 2.25rem);
+    color: var(--space-ink);
+    text-decoration: none;
+    transition:
+      background-color var(--motion-fast) ease,
+      box-shadow var(--motion-fast) ease;
+  }
+
+  .post-row a:hover {
+    background: var(--space-surface-hover);
+    box-shadow: inset 3px 0 var(--space-primary);
+  }
+
+  .post-row--article a:hover {
+    box-shadow: inset 3px 0 var(--space-blue);
+  }
+
+  .post-row__meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+
+  .post-row__meta span {
+    color: var(--space-primary-strong);
+    font-weight: 720;
+  }
+
+  .post-row--article .post-row__meta span {
+    color: var(--space-blue-strong);
+  }
+
+  h2 {
+    margin: var(--space-3) 0 0;
+    font-size: var(--font-size-2);
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+
+  .post-row p {
+    display: -webkit-box;
+    max-width: 39rem;
+    margin: var(--space-3) 0 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    color: var(--space-ink-muted);
+    -webkit-line-clamp: 3;
+  }
+
+  .taxonomy-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    color: var(--space-blue-strong);
+    font-size: var(--font-size--1);
+    list-style: none;
+  }
+</style>

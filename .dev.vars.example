@@ -1,0 +1,9 @@
+# Local Studio only. Copy to .dev.vars for local testing.
+APP_ENV=development
+LOCAL_STUDIO_BYPASS=true
+LOCAL_OWNER_EMAIL=owner@local.invalid
+
+# Production uses Cloudflare secrets instead. Never commit real values.
+# ACCESS_TEAM_DOMAIN=https://your-team.cloudflareaccess.com
+# ACCESS_AUD=your-access-application-audience
+# OWNER_EMAIL=owner@example.invalid

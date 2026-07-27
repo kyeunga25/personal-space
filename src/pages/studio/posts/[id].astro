@@ -1,0 +1,19 @@
+---
+import EditorForm from "../../../components/studio/EditorForm.astro";
+import StudioLayout from "../../../layouts/StudioLayout.astro";
+import { getBindings } from "../../../server/platform/bindings";
+import { D1PublishingRepository } from "../../../server/publishing/repository";
+
+const id = Astro.params.id;
+if (!id) return new Response("Not found", { status: 404 });
+const repository = new D1PublishingRepository(getBindings().DB);
+const post = await repository.findOwnerPost(id);
+if (!post) return new Response("Not found", { status: 404 });
+const revisions = await repository.listRevisions(post.id);
+---
+
+<StudioLayout
+  title={post.title ?? (post.kind === "article" ? "未命名文章" : "快速筆記")}
+>
+  <EditorForm kind={post.kind} post={post} revisions={revisions} />
+</StudioLayout>

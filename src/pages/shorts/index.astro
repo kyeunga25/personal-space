@@ -1,6 +1,18 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import PostListPage from "../../components/PostListPage.astro";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const posts = await new D1PublishingRepository(
+  getBindings().DB,
+).listPublicPosts("note", new Date().toISOString());
 ---
 
-<RoutePlaceholder {...placeholderRoutes.shorts} />
+<PostListPage
+  title="短內容"
+  titleEn="Shorts"
+  description="Story、Comment 與 Note，都以安靜的時間順序留下。"
+  descriptionEn="Stories, comments, and notes in a calm chronological flow."
+  kind="note"
+  posts={posts}
+/>

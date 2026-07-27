@@ -1,6 +1,18 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import PostListPage from "../../components/PostListPage.astro";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const posts = await new D1PublishingRepository(
+  getBindings().DB,
+).listPublicPosts("article", new Date().toISOString());
 ---
 
-<RoutePlaceholder {...placeholderRoutes.articles} />
+<PostListPage
+  title="文章"
+  titleEn="Articles"
+  description="以完整結構整理想法、故事與作品。"
+  descriptionEn="Long-form writing for ideas, stories, and considered work."
+  kind="article"
+  posts={posts}
+/>

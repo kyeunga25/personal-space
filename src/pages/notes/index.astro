@@ -1,6 +1,18 @@
 ---
-import RoutePlaceholder from "../../components/RoutePlaceholder.astro";
-import { placeholderRoutes } from "../../config/route-content";
+import PostListPage from "../../components/PostListPage.astro";
+import { getBindings } from "../../server/platform/bindings";
+import { D1PublishingRepository } from "../../server/publishing/repository";
+
+const posts = await new D1PublishingRepository(
+  getBindings().DB,
+).listPublicPosts("note", new Date().toISOString());
 ---
 
-<RoutePlaceholder {...placeholderRoutes.notes} />
+<PostListPage
+  title="筆記"
+  titleEn="Notes"
+  description="短小、即時，保存值得留下來的片刻。"
+  descriptionEn="Short, immediate notes for moments worth keeping."
+  kind="note"
+  posts={posts}
+/>

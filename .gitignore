@@ -8,6 +8,7 @@ coverage/
 # Local configuration and secrets
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 .env
 .env.*
 !.env.example

@@ -1,0 +1,958 @@
+---
+import { renderMarkdown } from "../../server/content/markdown";
+import type {
+  PostKind,
+  PostRecord,
+  PostRevision,
+} from "../../server/publishing/domain";
+import StudioIcon from "./StudioIcon.astro";
+
+interface Props {
+  kind: PostKind;
+  post?: PostRecord | null;
+  revisions?: PostRevision[];
+}
+
+const { kind, post = null, revisions = [] } = Astro.props;
+const isArticle = kind === "article";
+const title = post?.title ?? "";
+const bodyMd = post?.bodyMd ?? "";
+const previewHtml = bodyMd
+  ? renderMarkdown(bodyMd)
+  : "<p>預覽會在這裡出現。</p>";
+const tags = post?.tags.map((tag) => tag.name).join(", ") ?? "";
+const endpoint = post ? `/api/studio/posts/${post.id}` : "/api/studio/posts";
+const method = post ? "PUT" : "POST";
+const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
+---
+
+<form
+  class="editor"
+  data-editor-form
+  data-endpoint={endpoint}
+  data-method={method}
+  data-kind={kind}
+  data-post-id={post?.id ?? ""}
+>
+  <header class="editor-header">
+    <a href="/studio" class="editor-header__back" aria-label="返回 Studio">←</a>
+    <div class="editor-header__title">
+      <h1>{title || (isArticle ? "未命名文章" : "快速筆記")}</h1>
+      <span
+        >{
+          post?.status === "published"
+            ? "已發佈 Published"
+            : post?.status === "scheduled"
+              ? "已排程 Scheduled"
+              : "草稿 Draft"
+        }</span
+      >
+    </div>
+    <p class="save-state" data-save-state aria-live="polite">
+      已儲存 <span lang="en">Saved</span>
+    </p>
+    <div class="editor-header__actions">
+      <button
+        class="studio-button studio-button--quiet"
+        type="button"
+        data-preview-button
+      >
+        <StudioIcon name="preview" />預覽 <span lang="en">Preview</span>
+      </button>
+      <button
+        class="studio-button studio-button--primary"
+        type="button"
+        data-open-publish
+      >
+        <StudioIcon name="send" />發佈 <span lang="en">Publish</span>
+      </button>
+    </div>
+  </header>
+
+  <div
+    class="mobile-editor-tabs"
+    role="tablist"
+    aria-label="編輯模式 Editor mode"
+  >
+    <button
+      class="is-active"
+      type="button"
+      role="tab"
+      aria-selected="true"
+      data-editor-tab="write">撰寫 <span>Write</span></button
+    >
+    <button
+      type="button"
+      role="tab"
+      aria-selected="false"
+      data-editor-tab="preview">預覽 <span>Preview</span></button
+    >
+  </div>
+
+  <div class="editor-grid">
+    <section class="write-pane" data-write-pane aria-label="撰寫 Write">
+      <div
+        class="markdown-toolbar"
+        aria-label="Markdown 工具列 Markdown toolbar"
+      >
+        <button type="button" data-md-prefix="## " aria-label="標題 Heading"
+          >H</button
+        >
+        <button
+          type="button"
+          data-md-prefix="**"
+          data-md-suffix="**"
+          aria-label="粗體 Bold"><strong>B</strong></button
+        >
+        <button
+          type="button"
+          data-md-prefix="*"
+          data-md-suffix="*"
+          aria-label="斜體 Italic"><em>I</em></button
+        >
+        <button
+          type="button"
+          data-md-prefix="["
+          data-md-suffix="](https://)"
+          aria-label="連結 Link"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path
+              d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1"
+            ></path></svg
+          >
+        </button>
+        <button type="button" data-md-prefix="> " aria-label="引用 Quote">
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path d="M7 17h4V9H5v5h2v3ZM16 17h4V9h-6v5h2v3Z"></path></svg
+          >
+        </button>
+        <button
+          type="button"
+          data-md-prefix="- "
+          aria-label="項目清單 Bulleted list"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"
+            ></path></svg
+          >
+        </button>
+        <button
+          type="button"
+          data-md-prefix="1. "
+          aria-label="編號清單 Numbered list"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path d="M10 6h10M10 12h10M10 18h10M4 4v4M3 4h2M3 13h3l-3 4h3"
+            ></path></svg
+          >
+        </button>
+        <button
+          type="button"
+          data-md-prefix="```\n"
+          data-md-suffix="\n```"
+          aria-label="程式碼 Code block">&lt;/&gt;</button
+        >
+        <button
+          type="button"
+          data-md-prefix="![替代文字]("
+          data-md-suffix=")"
+          aria-label="圖片 Image"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle
+              cx="9"
+              cy="9"
+              r="1.5"></circle><path d="m5.5 18 4.8-5 3.2 3 2.3-2.3 2.7 4.3"
+            ></path></svg
+          >
+        </button>
+        <button
+          type="button"
+          data-md-prefix="\n---\n"
+          aria-label="分隔線 Separator">—</button
+        >
+      </div>
+
+      <div class="write-fields">
+        <label>
+          <span>標題 {isArticle ? "Title" : "（選填） Optional title"}</span>
+          <input
+            name="title"
+            value={title}
+            required={isArticle && post?.status !== "draft"}
+            placeholder={isArticle
+              ? "為文章寫一個清晰標題…"
+              : "為筆記加上標題…"}
+          />
+        </label>
+        {
+          isArticle && (
+            <label>
+              <span>
+                摘要 <small lang="en">Excerpt</small>
+              </span>
+              <textarea
+                name="excerpt"
+                rows="2"
+                placeholder="簡短摘要會出現在文章列表。"
+              >
+                {post?.excerpt ?? ""}
+              </textarea>
+            </label>
+          )
+        }
+        <label class="body-field">
+          <span>內容 <small lang="en">Content (Markdown)</small></span>
+          <textarea
+            name="bodyMd"
+            rows="24"
+            placeholder="記下一個值得保留的片刻。"
+            autofocus={!post}>{bodyMd}</textarea
+          >
+        </label>
+        <div class="write-footer">
+          <a
+            href="https://www.markdownguide.org/basic-syntax/"
+            rel="noopener noreferrer"
+            target="_blank">Markdown 語法</a
+          ><span data-word-count>字數：{bodyMd.length}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="preview-pane" data-preview-pane aria-label="預覽 Preview">
+      <p class="pane-label">預覽 <span lang="en">Preview</span></p>
+      <article
+        class="markdown-preview"
+        data-preview-output
+        set:html={previewHtml}
+      />
+    </section>
+
+    <aside class="settings-pane" aria-label="發佈設定 Publish settings">
+      <header>
+        <h2>發佈設定 <small lang="en">Publish settings</small></h2><span
+          aria-hidden="true">✦</span
+        >
+      </header>
+      <div class="settings-fields">
+        <label
+          ><span>可見性 <small>Visibility</small></span>
+          <select name="visibility">
+            <option
+              value="private"
+              selected={post?.visibility !== "public" &&
+                post?.visibility !== "unlisted"}>私人 Private</option
+            >
+            <option value="unlisted" selected={post?.visibility === "unlisted"}
+              >不公開列出 Unlisted</option
+            >
+            <option value="public" selected={post?.visibility === "public"}
+              >公開 Public</option
+            >
+          </select>
+          <small>公開內容會出現在列表；私人內容只限 Studio。</small>
+        </label>
+        <label
+          ><span>分類 <small>Category</small></span><input
+            name="category"
+            value={post?.category?.name ?? ""}
+            placeholder="未分類"
+          /></label
+        >
+        <label
+          ><span>標籤 <small>Tags</small></span><input
+            name="tags"
+            value={tags}
+            placeholder="以逗號分隔"
+          /></label
+        >
+        {
+          isArticle && (
+            <label>
+              <>
+                <span>
+                  網址代稱 <small>Slug</small>
+                </span>
+                <input
+                  name="slug"
+                  value={post?.slug ?? ""}
+                  placeholder="由標題自動產生"
+                />
+              </>
+            </label>
+          )
+        }
+        <label
+          ><span>排程 <small>Schedule</small></span><input
+            name="scheduledAt"
+            type="datetime-local"
+            value={scheduledValue}
+          /></label
+        >
+
+        <fieldset id="media" class="media-upload">
+          <legend>封面媒體 <small>Cover</small></legend>
+          <input
+            name="heroMediaId"
+            type="hidden"
+            value={post?.heroMediaId ?? ""}
+          />
+          <label
+            ><span>圖片 <small>PNG / JPEG, max 5 MB</small></span><input
+              data-media-file
+              type="file"
+              accept="image/png,image/jpeg"
+            /></label
+          >
+          <label
+            ><span>替代文字 <small>Alt text</small></span><input
+              data-media-alt
+              maxlength="240"
+              placeholder="描述圖片內容"
+            /></label
+          >
+          <button
+            class="studio-button studio-button--quiet"
+            type="button"
+            data-upload-media>上傳圖片 Upload</button
+          >
+          <p data-media-state aria-live="polite">
+            {post?.heroMediaId ? "已連結封面圖片。" : "尚未選擇圖片。"}
+          </p>
+        </fieldset>
+
+        <div class="settings-actions">
+          <button
+            class="studio-button studio-button--quiet"
+            type="button"
+            data-save-action="save"
+            ><StudioIcon name="save" />儲存草稿 Save</button
+          >
+          <button
+            class="studio-button studio-button--quiet"
+            type="button"
+            data-save-action="schedule">排程 Schedule</button
+          >
+          {
+            post && (
+              <button
+                class="studio-button studio-button--danger"
+                type="button"
+                data-save-action="archive"
+              >
+                封存 Archive
+              </button>
+            )
+          }
+        </div>
+      </div>
+
+      {
+        post && revisions.length > 0 && (
+          <section class="revision-list">
+            <h2>
+              修訂版本 <small>Revisions</small>
+            </h2>
+            <ul>
+              {revisions.map((revision, index) => (
+                <li>
+                  <span>
+                    <strong>修訂 {revisions.length - index}</strong>
+                    <small>
+                      {new Date(revision.createdAt).toLocaleString(
+                        "zh-Hant-HK",
+                        { timeZone: "Asia/Hong_Kong" },
+                      )}
+                    </small>
+                  </span>
+                  <button type="button" data-revision-id={revision.id}>
+                    還原為草稿 Restore
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </aside>
+  </div>
+
+  <div class="mobile-action-bar">
+    <button
+      class="studio-button studio-button--quiet"
+      type="button"
+      data-save-action="save"
+      ><StudioIcon name="save" />儲存草稿 <span>Save draft</span></button
+    >
+    <button
+      class="studio-button studio-button--primary"
+      type="button"
+      data-open-publish
+      ><StudioIcon name="send" />發佈 <span>Publish</span></button
+    >
+  </div>
+</form>
+
+<dialog class="publish-dialog" data-publish-dialog>
+  <form method="dialog">
+    <h2>確認發佈 <small lang="en">Confirm publish</small></h2>
+    <p>發佈後會立即按照目前的可見性設定生效。</p>
+    <div>
+      <button class="studio-button studio-button--quiet" value="cancel"
+        >取消 Cancel</button
+      ><button
+        class="studio-button studio-button--primary"
+        value="confirm"
+        data-confirm-publish>確認發佈 Publish</button
+      >
+    </div>
+  </form>
+</dialog>
+<p class="editor-toast" data-editor-toast aria-live="polite"></p>
+
+<script>
+  import "../../scripts/studio-editor";
+</script>
+
+<style>
+  .editor {
+    min-height: 100svh;
+  }
+  .editor-header {
+    position: sticky;
+    z-index: 8;
+    top: 0;
+    display: flex;
+    min-height: 6.35rem;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--space-border-strong);
+    background: rgba(252, 254, 255, 0.94);
+    backdrop-filter: blur(18px);
+  }
+  .editor-header__back {
+    color: var(--space-ink);
+    font-size: 1.6rem;
+    text-decoration: none;
+  }
+  .editor-header__title {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+  .editor-header h1 {
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--font-size-2);
+    letter-spacing: -0.03em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .editor-header__title > span {
+    color: var(--space-primary-strong);
+    font-size: var(--font-size--1);
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  .save-state {
+    margin: 0;
+    color: var(--space-teal-strong);
+    font-size: var(--font-size--1);
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  .save-state span {
+    margin-left: 0.25em;
+    color: var(--space-ink-faint);
+    font-weight: 520;
+  }
+  .editor-header__actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-left: auto;
+  }
+  .studio-button {
+    display: inline-flex;
+    min-height: 2.85rem;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--space-ink);
+    font-size: 0.85rem;
+    font-weight: 720;
+    cursor: pointer;
+  }
+  .studio-button--primary {
+    border-color: var(--space-primary);
+    background: linear-gradient(
+      135deg,
+      var(--space-primary),
+      var(--space-blue)
+    );
+    color: white;
+  }
+  .studio-button--danger {
+    border-color: rgba(181, 65, 65, 0.35);
+    color: #9a3030;
+  }
+  .studio-button:hover {
+    background-color: var(--space-surface-hover);
+  }
+  .studio-button--primary:hover {
+    background: linear-gradient(
+      135deg,
+      var(--space-primary-strong),
+      var(--space-blue-strong)
+    );
+  }
+  .mobile-editor-tabs {
+    display: none;
+  }
+  .editor-grid {
+    display: grid;
+    min-height: calc(100svh - 6.35rem);
+    grid-template-columns: minmax(28rem, 1fr) minmax(24rem, 1fr) minmax(
+        18rem,
+        21rem
+      );
+  }
+  .write-pane,
+  .preview-pane {
+    min-width: 0;
+    border-right: 1px solid var(--space-border-strong);
+    background: rgba(255, 255, 255, 0.72);
+  }
+  .markdown-toolbar {
+    display: flex;
+    min-height: 3.35rem;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-4);
+    overflow-x: auto;
+    border-bottom: 1px solid var(--space-border-strong);
+  }
+  .markdown-toolbar button {
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 0;
+    border-right: 1px solid var(--space-border);
+    background: transparent;
+    color: var(--space-ink);
+    cursor: pointer;
+  }
+  .markdown-toolbar button:hover {
+    color: var(--space-primary);
+    background: var(--space-surface-hover);
+  }
+  .markdown-toolbar svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+  .write-fields {
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5);
+  }
+  label > span,
+  .media-upload legend {
+    display: block;
+    margin-bottom: var(--space-2);
+    color: var(--space-ink);
+    font-size: 0.78rem;
+    font-weight: 720;
+  }
+  label > span small,
+  .media-upload legend small {
+    margin-left: 0.3em;
+    color: var(--space-ink-faint);
+    font-weight: 540;
+  }
+  input,
+  textarea,
+  select {
+    width: 100%;
+    border: 1px solid var(--space-primary-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(252, 254, 255, 0.9);
+    color: var(--space-ink);
+    font-size: 0.9rem;
+  }
+  input,
+  select {
+    min-height: 3rem;
+    padding: 0.7rem 0.85rem;
+  }
+  textarea {
+    padding: 0.85rem;
+    line-height: 1.65;
+    resize: vertical;
+  }
+  .body-field textarea {
+    min-height: 34rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92rem;
+    line-height: 1.75;
+  }
+  .write-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--space-border);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+  .write-footer a {
+    color: var(--space-primary-strong);
+  }
+  .preview-pane {
+    padding: var(--space-5) clamp(1.5rem, 3vw, 2.75rem);
+  }
+  .pane-label {
+    margin: 0;
+    color: var(--space-ink-muted);
+    font-size: 0.78rem;
+    font-weight: 720;
+  }
+  .pane-label span {
+    margin-left: 0.25em;
+    color: var(--space-ink-faint);
+  }
+  .markdown-preview {
+    max-width: 38rem;
+    margin: var(--space-6) auto;
+    font-family: var(--font-reading);
+    font-size: var(--font-size-0);
+    line-height: 1.85;
+  }
+  .markdown-preview :global(h1),
+  .markdown-preview :global(h2),
+  .markdown-preview :global(h3) {
+    margin: 1.8em 0 0.65em;
+    letter-spacing: -0.03em;
+    line-height: 1.3;
+  }
+  .markdown-preview :global(h1:first-child),
+  .markdown-preview :global(h2:first-child) {
+    margin-top: 0;
+    font-size: var(--font-size-3);
+  }
+  .markdown-preview :global(blockquote) {
+    margin-inline: 0;
+    padding-left: var(--space-4);
+    border-left: 3px solid var(--space-primary);
+    color: var(--space-ink-muted);
+  }
+  .markdown-preview :global(pre) {
+    padding: var(--space-4);
+    overflow-x: auto;
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-sm);
+    background: var(--space-canvas-blue);
+    font-family: ui-monospace, monospace;
+  }
+  .settings-pane {
+    min-width: 0;
+    background: rgba(240, 249, 255, 0.66);
+  }
+  .settings-pane > header {
+    display: flex;
+    min-height: 3.35rem;
+    align-items: center;
+    padding: 0 var(--space-4);
+    border-bottom: 1px solid var(--space-border-strong);
+    background: rgba(255, 255, 255, 0.72);
+  }
+  .settings-pane h2 {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+  .settings-pane h2 small {
+    display: inline;
+    margin-left: 0.3em;
+    color: var(--space-primary);
+    font-size: 0.75rem;
+    font-weight: 560;
+  }
+  .settings-pane > header > span {
+    margin-left: auto;
+    color: var(--space-yellow);
+  }
+  .settings-fields {
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-4);
+  }
+  .settings-fields label > small {
+    display: block;
+    margin-top: var(--space-2);
+    color: var(--space-ink-faint);
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
+  .media-upload {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px dashed var(--space-primary-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.6);
+  }
+  .media-upload p {
+    margin: 0;
+    color: var(--space-ink-faint);
+    font-size: 0.72rem;
+  }
+  .settings-actions {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .revision-list {
+    border-top: 1px solid var(--space-border-strong);
+    padding: var(--space-5) var(--space-4);
+  }
+  .revision-list ul {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .revision-list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.64);
+  }
+  .revision-list li span,
+  .revision-list li strong,
+  .revision-list li small {
+    display: block;
+  }
+  .revision-list li span {
+    min-width: 0;
+  }
+  .revision-list li small {
+    color: var(--space-ink-faint);
+    font-size: 0.65rem;
+  }
+  .revision-list li button {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: var(--space-primary-strong);
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .mobile-action-bar {
+    display: none;
+  }
+  .publish-dialog {
+    width: min(28rem, calc(100% - 2rem));
+    padding: 0;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--space-canvas);
+    color: var(--space-ink);
+    box-shadow: var(--space-shadow-soft);
+  }
+  .publish-dialog::backdrop {
+    background: rgba(11, 25, 72, 0.35);
+    backdrop-filter: blur(4px);
+  }
+  .publish-dialog form {
+    padding: var(--space-6);
+  }
+  .publish-dialog h2 {
+    margin: 0;
+    font-size: var(--font-size-2);
+  }
+  .publish-dialog h2 small {
+    margin-left: 0.3em;
+    color: var(--space-ink-faint);
+    font-size: 0.55em;
+  }
+  .publish-dialog p {
+    color: var(--space-ink-muted);
+  }
+  .publish-dialog form > div {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+  }
+  .editor-toast {
+    position: fixed;
+    z-index: 30;
+    right: var(--space-5);
+    bottom: var(--space-5);
+    max-width: 24rem;
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--space-surface-strong);
+    color: var(--space-ink);
+    box-shadow: var(--space-shadow-soft);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-fast);
+  }
+  .editor-toast.is-visible {
+    opacity: 1;
+  }
+
+  @media (max-width: 79.99rem) {
+    .editor-grid {
+      grid-template-columns: minmax(25rem, 1fr) minmax(22rem, 1fr);
+    }
+    .settings-pane {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--space-border-strong);
+    }
+    .settings-fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .settings-actions,
+    .media-upload {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 47.99rem) {
+    .editor-header {
+      position: static;
+      min-height: 6rem;
+      padding: var(--space-3) var(--space-4);
+    }
+    .editor-header__title {
+      display: block;
+    }
+    .editor-header h1 {
+      font-size: var(--font-size-2);
+    }
+    .editor-header__title > span {
+      display: block;
+      margin-top: 0.1rem;
+    }
+    .save-state {
+      margin-left: auto;
+    }
+    .editor-header__actions {
+      display: none;
+    }
+    .mobile-editor-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--space-border-strong);
+      background: white;
+    }
+    .mobile-editor-tabs button {
+      min-height: 4rem;
+      border: 0;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      color: var(--space-ink);
+      font-weight: 720;
+    }
+    .mobile-editor-tabs button span {
+      margin-left: 0.3em;
+      color: var(--space-ink-faint);
+      font-size: 0.8em;
+    }
+    .mobile-editor-tabs button.is-active {
+      border-bottom-color: var(--space-primary);
+      color: var(--space-primary-strong);
+    }
+    .editor-grid {
+      display: block;
+      min-height: auto;
+    }
+    .write-pane,
+    .preview-pane {
+      border-right: 0;
+    }
+    .markdown-toolbar {
+      position: sticky;
+      z-index: 4;
+      bottom: 11rem;
+      order: 2;
+      border-top: 1px solid var(--space-border-strong);
+      background: rgba(255, 255, 255, 0.96);
+    }
+    .write-pane {
+      display: flex;
+      flex-direction: column;
+    }
+    .write-fields {
+      order: 1;
+      padding: var(--space-5) var(--space-4);
+    }
+    .body-field textarea {
+      min-height: 29rem;
+      font-family: var(--font-ui);
+      font-size: 1rem;
+    }
+    .preview-pane {
+      display: none;
+      min-height: 36rem;
+      padding: var(--space-5) var(--space-4);
+    }
+    .editor[data-mobile-mode="preview"] .write-pane {
+      display: none;
+    }
+    .editor[data-mobile-mode="preview"] .preview-pane {
+      display: block;
+    }
+    .settings-pane {
+      border-top: 1px solid var(--space-border-strong);
+    }
+    .settings-fields {
+      display: grid;
+      grid-template-columns: 1fr;
+      padding: var(--space-5) var(--space-4) 8rem;
+    }
+    .settings-actions {
+      display: none;
+    }
+    .mobile-action-bar {
+      position: fixed;
+      z-index: 12;
+      right: 0;
+      bottom: 4.8rem;
+      left: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-top: 1px solid var(--space-border);
+      background: rgba(252, 254, 255, 0.96);
+      backdrop-filter: blur(16px);
+    }
+    .editor-toast {
+      right: var(--space-4);
+      bottom: 10rem;
+      left: var(--space-4);
+    }
+  }
+</style>

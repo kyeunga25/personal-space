@@ -1,0 +1,251 @@
+---
+import { formatHongKongDate } from "../lib/dates";
+import type { MediaRecord, PostRecord } from "../server/publishing/domain";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+interface Props {
+  media?: MediaRecord | null;
+  post: PostRecord;
+}
+
+const { media = null, post } = Astro.props;
+const isArticle = post.kind === "article";
+const backHref = isArticle ? "/articles" : "/notes";
+const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
+---
+
+<BaseLayout
+  title={post.title ?? "筆記"}
+  titleEn={isArticle ? "Article" : "Note"}
+  description={post.excerpt ?? "Personal Space 公開內容"}
+  descriptionEn="Published in Personal Space"
+  noIndex={post.visibility === "unlisted"}
+>
+  <article
+    class:list={["reading-page", { "reading-page--article": isArticle }]}
+  >
+    <header class="reading-header">
+      <a class="reading-header__back" href={backHref}
+        >← 返回{isArticle ? "文章" : "筆記"}
+        <span lang="en">Back to {isArticle ? "Articles" : "Notes"}</span></a
+      >
+      <p class="reading-header__kind">
+        {isArticle ? "文章" : "筆記"}
+        <span lang="en">{isArticle ? "Article" : "Note"}</span>
+      </p>
+      <h1>{post.title ?? post.excerpt ?? "無標題筆記"}</h1>
+      {
+        post.title && post.excerpt && (
+          <p class="reading-header__excerpt">{post.excerpt}</p>
+        )
+      }
+      <div class="reading-header__meta">
+        <time datetime={post.publishedAt ?? post.scheduledAt ?? undefined}>
+          {formatHongKongDate(post.publishedAt ?? post.scheduledAt)}
+        </time>
+        {
+          isArticle && (
+            <span>
+              {readingMinutes} 分鐘閱讀 · {readingMinutes} min read
+            </span>
+          )
+        }
+        {post.visibility === "unlisted" && <span>不公開列出 · Unlisted</span>}
+      </div>
+    </header>
+
+    {
+      media && (
+        <figure class="reading-cover">
+          <img
+            src={`/media/${media.id}`}
+            alt={media.altText}
+            width={media.width}
+            height={media.height}
+          />
+        </figure>
+      )
+    }
+
+    <div class="reading-body" set:html={post.bodyHtml} />
+
+    {
+      (post.category || post.tags.length > 0) && (
+        <footer class="reading-taxonomy">
+          <h2>
+            整理 <small lang="en">Filed under</small>
+          </h2>
+          <ul>
+            {post.category && <li>{post.category.name}</li>}
+            {post.tags.map((tag) => (
+              <li>#{tag.name}</li>
+            ))}
+          </ul>
+        </footer>
+      )
+    }
+  </article>
+</BaseLayout>
+
+<style>
+  .reading-page {
+    min-height: 100svh;
+  }
+
+  .reading-header {
+    padding: clamp(1.75rem, 6vw, 4rem) clamp(1.25rem, 6vw, 4.5rem);
+    border-bottom: 1px solid var(--space-border);
+    background: linear-gradient(
+      145deg,
+      rgba(226, 245, 255, 0.78),
+      rgba(255, 251, 232, 0.58)
+    );
+  }
+
+  .reading-header__back {
+    color: var(--space-primary-strong);
+    font-size: var(--font-size--1);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .reading-header__back span,
+  .reading-header__kind span {
+    margin-left: 0.35em;
+    color: var(--space-ink-faint);
+    font-size: 0.86em;
+  }
+
+  .reading-header__kind {
+    margin: var(--space-7) 0 0;
+    color: var(--space-blue-strong);
+    font-size: var(--font-size--1);
+    font-weight: 720;
+  }
+
+  h1 {
+    max-width: 16ch;
+    margin: var(--space-3) 0 0;
+    font-family: var(--font-reading);
+    font-size: var(--font-size-4);
+    letter-spacing: -0.04em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .reading-header__excerpt {
+    max-width: 38rem;
+    margin: var(--space-4) 0 0;
+    color: var(--space-ink-muted);
+    font-size: var(--font-size-1);
+    line-height: 1.7;
+  }
+
+  .reading-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-5);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+
+  .reading-cover {
+    margin: 0;
+    border-bottom: 1px solid var(--space-border);
+  }
+
+  .reading-cover img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 28rem;
+    object-fit: cover;
+  }
+
+  .reading-body {
+    max-width: 40rem;
+    margin-inline: auto;
+    padding: clamp(2rem, 6vw, 4.5rem) var(--page-gutter);
+    color: var(--space-ink);
+    font-family: var(--font-reading);
+    font-size: var(--font-size-1);
+    line-height: 1.9;
+  }
+
+  .reading-body :global(h1),
+  .reading-body :global(h2),
+  .reading-body :global(h3) {
+    margin: 2.3em 0 0.75em;
+    font-family: var(--font-reading);
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+
+  .reading-body :global(p),
+  .reading-body :global(ul),
+  .reading-body :global(ol),
+  .reading-body :global(blockquote),
+  .reading-body :global(pre) {
+    margin-block: 1.2em;
+  }
+
+  .reading-body :global(a) {
+    color: var(--space-primary-strong);
+    text-underline-offset: 0.2em;
+  }
+
+  .reading-body :global(blockquote) {
+    margin-inline: 0;
+    padding-left: var(--space-5);
+    border-left: 3px solid var(--space-primary);
+    color: var(--space-ink-muted);
+  }
+
+  .reading-body :global(pre) {
+    padding: var(--space-5);
+    overflow-x: auto;
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-md);
+    background: rgba(230, 244, 255, 0.72);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.86em;
+    line-height: 1.65;
+  }
+
+  .reading-taxonomy {
+    padding: var(--space-6) clamp(1.25rem, 6vw, 4.5rem) var(--space-8);
+    border-top: 1px solid var(--space-border);
+  }
+
+  .reading-taxonomy h2 {
+    margin: 0;
+    font-size: var(--font-size-1);
+  }
+
+  .reading-taxonomy h2 small {
+    display: inline;
+    margin-left: 0.35em;
+  }
+
+  .reading-taxonomy ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    color: var(--space-blue-strong);
+    font-size: var(--font-size--1);
+    list-style: none;
+  }
+
+  @media (max-width: 47.99rem) {
+    h1 {
+      font-size: var(--font-size-3);
+    }
+
+    .reading-header__kind {
+      margin-top: var(--space-6);
+    }
+  }
+</style>

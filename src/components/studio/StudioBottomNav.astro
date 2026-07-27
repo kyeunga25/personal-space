@@ -1,0 +1,71 @@
+---
+import NavIcon from "../NavIcon.astro";
+import StudioIcon from "./StudioIcon.astro";
+---
+
+<nav
+  class="studio-bottom"
+  aria-label="Studio 流動版導覽 Studio mobile navigation"
+>
+  <a href="/"><NavIcon name="home" /><span>首頁</span><small>Home</small></a>
+  <a href="/shorts"
+    ><NavIcon name="short" /><span>短內容</span><small>Shorts</small></a
+  >
+  <a href="/articles"
+    ><NavIcon name="article" /><span>文章</span><small>Articles</small></a
+  >
+  <a href="/search"
+    ><NavIcon name="search" /><span>搜尋</span><small>Search</small></a
+  >
+  <a class="is-active" href="/studio" aria-current="page"
+    ><StudioIcon name="dashboard" /><span>Studio</span><small>Owner</small></a
+  >
+</nav>
+
+<style>
+  .studio-bottom {
+    display: none;
+  }
+  @media (max-width: 47.99rem) {
+    .studio-bottom {
+      position: fixed;
+      z-index: var(--z-navigation);
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      padding: var(--space-2) var(--space-2)
+        max(var(--space-2), env(safe-area-inset-bottom));
+      border-top: 1px solid var(--space-border);
+      background: rgba(248, 252, 255, 0.95);
+      backdrop-filter: blur(16px);
+    }
+    a {
+      display: flex;
+      min-height: 3.5rem;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.08rem;
+      border-radius: var(--radius-md);
+      color: var(--space-ink-muted);
+      font-size: 0.68rem;
+      font-weight: 650;
+      text-decoration: none;
+    }
+    a.is-active {
+      color: var(--space-primary);
+    }
+    a :global(.nav-icon),
+    a :global(.studio-icon) {
+      width: 1.4rem;
+      height: 1.4rem;
+      margin-bottom: 0.15rem;
+    }
+    small {
+      font-size: 0.58rem;
+      font-weight: 520;
+    }
+  }
+</style>
