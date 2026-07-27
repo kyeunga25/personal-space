@@ -5,7 +5,7 @@
 This file records publicly verifiable product versions. Versions that are not
 yet deployed are marked explicitly.
 
-## [0.6.0] - 未部署 / Unreleased
+## [0.6.0] - 2026-07-28
 
 - 加入站主專用的公開 RSS／Atom 來源管理、手動同步及安全狀態顯示。
 - 加入 HTTPS-only feed 擷取、條件請求、大小／逾時／重新導向限制及公開網絡檢查。
@@ -40,7 +40,7 @@ yet deployed are marked explicitly.
   type toolchain while retaining TypeScript 6.0.3, the newest release supported
   by the current Astro checker.
 
-## [0.5.0] - 未部署 / Unreleased
+## [0.5.0] - 2026-07-28
 
 - 加入公開搜尋、時間動態、香港時間月份封存、分類及標籤頁。
 - 使用 D1 FTS5 搜尋三個字或以上的內容，較短查詢使用安全轉義的相符搜尋。
@@ -62,7 +62,7 @@ yet deployed are marked explicitly.
 - Updated ESLint to 10.8.0 while retaining TypeScript 6.0.3, the newest version
   supported by the current lint toolchain.
 
-## [0.4.0] - 未部署 / Unreleased
+## [0.4.0] - 2026-07-28
 
 - 加入站主專用 Studio、Cloudflare Access 雙重身分核對及同源寫入保護。
 - 加入 Note／Article 草稿、自動儲存、預覽、發佈、排程、封存與修訂還原。
