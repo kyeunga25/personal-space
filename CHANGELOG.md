@@ -16,6 +16,8 @@ yet deployed are marked explicitly.
 - Studio scripts 維持同源外部檔案，保留不容許 inline script 的嚴格 CSP。
 - 完成公開 About 頁，並將舊 Channels placeholder 永久轉向目前的搜尋與主題篩選。
 - 將示例內容改成中性、可公開審閱的測試文字，不帶個人興趣或自動生成聲稱。
+- 更新 Astro、Cloudflare adapter、Astro 檢查工具及 Node.js 型別等相容工具鏈；
+  TypeScript 維持目前 Astro 檢查工具可支援的 6.0.3。
 
 - Added owner-only management and manual synchronization for public RSS/Atom
   sources.
@@ -34,6 +36,9 @@ yet deployed are marked explicitly.
   Channels placeholder to the current search and topic filters.
 - Replaced stale examples with neutral, reviewable test content without
   personal-interest or automated-authorship claims.
+- Updated the compatible Astro, Cloudflare adapter, Astro checking, and Node.js
+  type toolchain while retaining TypeScript 6.0.3, the newest release supported
+  by the current Astro checker.
 
 ## [0.5.0] - 未部署 / Unreleased
 
