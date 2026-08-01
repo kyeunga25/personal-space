@@ -2,11 +2,10 @@
 
 公開網站 / Public site: [space.k-y.cc](https://space.k-y.cc)
 
-目前程式候選版本 / Current code candidate: **v0.7.0**
+目前正式版本 / Current production release: **v0.7.0**
 
-截至 2026-08-02 的發佈前驗證，正式網站仍運行經驗證的 v0.6.0；v0.7.0
-必須先套用 `0004` 至 `0006` 的遠端 D1 migrations、通過固定 commit 的 GitHub
-檢查並完成正式站驗證，才視為已發佈。私人 Studio 與寫入 API 由 Cloudflare
+v0.7.0 已於 2026-08-02 完成遠端 D1 migrations、固定 commit 的 GitHub CI、
+Cloudflare Workers Build 及正式站驗證。私人 Studio 與寫入 API 仍由 Cloudflare
 Access 保護；公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
 
 ## 中文
@@ -101,11 +100,10 @@ localhost upstream 啟動 built Worker，方便用中性測試身分驗證 D1／
 Personal Space is a focused, self-managed publishing space for Notes and
 Articles, with chronological, searchable, and archived public discovery.
 
-The current code candidate is **v0.7.0**. At the 2026-08-02 pre-release gate,
-production still serves the validated v0.6.0 release. v0.7.0 is not considered
-released until remote D1 migrations `0004` through `0006`, fixed-commit GitHub
-checks, and production verification all pass. Cloudflare Access protects the
-private Studio and write APIs.
+The current production release is **v0.7.0**. On 2026-08-02 it completed the
+remote D1 migrations, fixed-commit GitHub CI, Cloudflare Workers Build, and live
+production verification. Cloudflare Access continues to protect the private
+Studio and write APIs.
 
 The current interface uses the original **Clear Sky Feed** visual system: a
 fresh, crisp information feed built from pale sky blue, cyan, teal, and
