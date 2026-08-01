@@ -172,6 +172,7 @@ describe("publishing workflow", () => {
     expect(workingCopy).toMatchObject({
       bodyMd: "第二版",
       hasWorkingCopy: true,
+      slug: published.slug,
       status: "published",
     });
     expect(repository.posts.get(published.id)?.bodyMd).toBe("第一版");
@@ -193,6 +194,7 @@ describe("publishing workflow", () => {
     expect(promoted).toMatchObject({
       bodyMd: "第二版",
       hasWorkingCopy: false,
+      slug: published.slug,
       status: "published",
     });
     expect(repository.lastSave).toMatchObject({

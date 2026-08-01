@@ -24,6 +24,8 @@ const tags = post?.tags.map((tag) => tag.name).join(", ") ?? "";
 const endpoint = post ? `/api/studio/posts/${post.id}` : "/api/studio/posts";
 const method = post ? "PUT" : "POST";
 const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
+const usesWorkingCopy =
+  post?.status === "published" || post?.status === "scheduled";
 ---
 
 <form
@@ -33,6 +35,7 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
   data-method={method}
   data-kind={kind}
   data-post-id={post?.id ?? ""}
+  data-restore-target={usesWorkingCopy ? "working-copy" : "draft"}
 >
   <header class="editor-header">
     <a href="/studio" class="editor-header__back" aria-label="返回 Studio">←</a>
@@ -348,7 +351,11 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
             class="studio-button studio-button--quiet"
             type="button"
             data-save-action="save"
-            ><StudioIcon name="save" />儲存草稿 Save</button
+            ><StudioIcon name="save" />{
+              usesWorkingCopy
+                ? "儲存工作副本 Save working copy"
+                : "儲存草稿 Save"
+            }</button
           >
           <button
             class="studio-button studio-button--quiet"
@@ -388,7 +395,9 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
                     </small>
                   </span>
                   <button type="button" data-revision-id={revision.id}>
-                    還原為草稿 Restore
+                    {usesWorkingCopy
+                      ? "還原為工作副本 Restore to working copy"
+                      : "還原為草稿 Restore"}
                   </button>
                 </li>
               ))}
@@ -404,7 +413,9 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
       class="studio-button studio-button--quiet"
       type="button"
       data-save-action="save"
-      ><StudioIcon name="save" />儲存草稿 <span>Save draft</span></button
+      ><StudioIcon name="save" />{usesWorkingCopy ? "儲存工作副本" : "儲存草稿"}
+      <span>{usesWorkingCopy ? "Save working copy" : "Save draft"}</span
+      ></button
     >
     <button
       class="studio-button studio-button--primary"
@@ -851,9 +862,9 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
     opacity: 1;
   }
 
-  @media (max-width: 79.99rem) {
+  @media (max-width: 87.99rem) {
     .editor-grid {
-      grid-template-columns: minmax(25rem, 1fr) minmax(22rem, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .settings-pane {
       grid-column: 1 / -1;

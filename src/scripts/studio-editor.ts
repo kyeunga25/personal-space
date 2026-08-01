@@ -69,7 +69,7 @@ if (form) {
       id: form.dataset.postId || undefined,
       kind: form.dataset.kind,
       scheduledAt: scheduledRaw ? new Date(scheduledRaw).toISOString() : null,
-      slug: formString(data, "slug") || null,
+      slug: data.has("slug") ? formString(data, "slug") || null : undefined,
       tags: formString(data, "tags")
         .split(",")
         .map((tag) => tag.trim())
@@ -301,7 +301,11 @@ if (form) {
         if (
           !postId ||
           !revisionId ||
-          !window.confirm("要把這個修訂版本還原為草稿嗎？")
+          !window.confirm(
+            form.dataset.restoreTarget === "working-copy"
+              ? "要把這個修訂版本還原為工作副本嗎？公開內容會維持不變。"
+              : "要把這個修訂版本還原為草稿嗎？",
+          )
         )
           return;
         try {

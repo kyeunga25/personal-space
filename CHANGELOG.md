@@ -26,6 +26,12 @@ yet deployed are marked explicitly.
 - 在無快取的公開 health response 加入 release version，方便部署後核對 exact build。
 - 在 build 後將 server modules 的本機 project path 改為中性 workspace path，避免
   Astro manifest 或 component metadata 將開發機路徑帶入 Worker artifact。
+- 已發佈或已排程 Post 的儲存及修訂還原按鈕明確標示 working copy，避免把
+  owner-only 修改誤稱為 canonical 草稿。
+- Note 編輯器未提供 slug 欄位時明確傳送「未提供」而不是 `null`，服務層會保留
+  既有 slug，避免 working-copy autosave 或提升時意外改變公開 URL。
+- Studio 編輯器會按包含側欄的完整可用寬度切換雙欄版面，避免 1280px 桌面視窗
+  出現橫向捲動。
 
 - Added an explicit Studio and D1 source-rights gate. A source needs a terms
   URL, rights basis, review time, and approved status before it can be enabled;
@@ -50,6 +56,12 @@ yet deployed are marked explicitly.
 - Replaced the local project path in built server modules with a neutral
   workspace path, preventing Astro manifest or component metadata from carrying
   a developer-machine path into the Worker artifact.
+- Labeled save and revision-restore actions on published or scheduled Posts as
+  working-copy operations instead of canonical drafts.
+- Preserved an existing Note slug when its editor omits the slug field, avoiding
+  accidental public-URL changes during working-copy autosave or promotion.
+- Switched the Studio editor to two columns based on the full shell width,
+  removing horizontal overflow at a 1280px desktop viewport.
 
 ## [0.6.0] - 2026-07-28
 
