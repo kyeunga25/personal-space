@@ -25,8 +25,13 @@ function sourceData(form: HTMLFormElement) {
   return {
     feedUrl: formString("feedUrl"),
     name: formString("name"),
+    reviewNotes: formString("reviewNotes"),
+    reviewStatus: formString("reviewStatus", "pending"),
+    rightsBasis: formString("rightsBasis"),
+    rightsConfirmed: data.get("rightsConfirmed") === "on",
     siteUrl: formString("siteUrl"),
-    status: formString("status", "enabled"),
+    status: formString("status", "paused"),
+    termsUrl: formString("termsUrl"),
   };
 }
 

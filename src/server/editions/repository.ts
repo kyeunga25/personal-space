@@ -1,5 +1,10 @@
 import { UserFacingError } from "../errors";
 import type {
+  AutomationJob,
+  AutomationRunClaim,
+  AutomationRunRecord,
+  AutomationRunStatus,
+  AutomationTrigger,
   EditionEntry,
   EditionRecord,
   EditionSaveInput,
@@ -21,9 +26,28 @@ interface SourceRow {
   last_modified: string | null;
   last_success_at: string | null;
   name: string;
+  review_notes: string | null;
+  review_status: SourceRecord["reviewStatus"];
+  reviewed_at: string | null;
+  rights_basis: string | null;
   site_url: string | null;
   status: SourceRecord["status"];
+  terms_url: string | null;
   updated_at: string;
+}
+
+interface AutomationRunRow {
+  attempt_count: number;
+  claim_token: string | null;
+  completed_at: string | null;
+  error_code: string | null;
+  id: string;
+  job: AutomationJob;
+  scheduled_at: string;
+  started_at: string;
+  status: AutomationRunStatus;
+  summary_json: string;
+  trigger_kind: AutomationTrigger;
 }
 
 interface ClusterRow {
@@ -77,9 +101,43 @@ function mapSource(row: SourceRow): SourceRecord {
     lastModified: row.last_modified,
     lastSuccessAt: row.last_success_at,
     name: row.name,
+    reviewNotes: row.review_notes,
+    reviewedAt: row.reviewed_at,
+    reviewStatus: row.review_status,
+    rightsBasis: row.rights_basis,
     siteUrl: row.site_url,
     status: row.status,
+    termsUrl: row.terms_url,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapAutomationRun(row: AutomationRunRow): AutomationRunRecord {
+  let summary: Record<string, number> = {};
+  try {
+    const parsed: unknown = JSON.parse(row.summary_json);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      summary = Object.fromEntries(
+        Object.entries(parsed).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[1] === "number" && Number.isFinite(entry[1]),
+        ),
+      );
+    }
+  } catch {
+    summary = {};
+  }
+  return {
+    attemptCount: row.attempt_count,
+    completedAt: row.completed_at,
+    errorCode: row.error_code,
+    id: row.id,
+    job: row.job,
+    scheduledAt: row.scheduled_at,
+    startedAt: row.started_at,
+    status: row.status,
+    summary,
+    trigger: row.trigger_kind,
   };
 }
 
@@ -112,7 +170,7 @@ export class D1EditionRepository {
     const result = await this.database
       .prepare(
         `SELECT * FROM sources
-         WHERE status = 'enabled'
+         WHERE status = 'enabled' AND review_status = 'approved'
          ORDER BY COALESCE(last_fetched_at, created_at), id
          LIMIT ?`,
       )
@@ -145,8 +203,9 @@ export class D1EditionRepository {
     await this.database
       .prepare(
         `INSERT INTO sources (
-           id, name, feed_url, site_url, status, created_at, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+           id, name, feed_url, site_url, status, review_status, terms_url,
+           rights_basis, review_notes, reviewed_at, created_at, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         id,
@@ -154,6 +213,11 @@ export class D1EditionRepository {
         input.feedUrl,
         input.siteUrl,
         input.status,
+        input.reviewStatus,
+        input.termsUrl,
+        input.rightsBasis,
+        input.reviewNotes,
+        input.reviewStatus === "approved" ? now : null,
         now,
         now,
       )
@@ -177,14 +241,136 @@ export class D1EditionRepository {
     await this.database
       .prepare(
         `UPDATE sources
-         SET name = ?, feed_url = ?, site_url = ?, status = ?, updated_at = ?
+         SET name = ?, feed_url = ?, site_url = ?, status = ?,
+             review_status = ?, terms_url = ?, rights_basis = ?,
+             review_notes = ?, reviewed_at = ?, etag = NULL,
+             last_modified = NULL, updated_at = ?
          WHERE id = ?`,
       )
-      .bind(input.name, input.feedUrl, input.siteUrl, input.status, now, id)
+      .bind(
+        input.name,
+        input.feedUrl,
+        input.siteUrl,
+        input.status,
+        input.reviewStatus,
+        input.termsUrl,
+        input.rightsBasis,
+        input.reviewNotes,
+        input.reviewStatus === "approved" ? now : null,
+        now,
+        id,
+      )
       .run();
     const source = await this.findSource(id);
     if (!source) throw new Error("Source update could not be read back");
     return source;
+  }
+
+  async claimAutomationRun(
+    job: AutomationJob,
+    trigger: AutomationTrigger,
+    scheduledAt: string,
+    now: string,
+    leaseExpiresAt: string,
+  ): Promise<AutomationRunClaim> {
+    const id = crypto.randomUUID();
+    const claimToken = crypto.randomUUID();
+    const runKey =
+      trigger === "cron"
+        ? `${job}:${scheduledAt}`
+        : `${job}:manual:${crypto.randomUUID()}`;
+    await this.database
+      .prepare(
+        `INSERT OR IGNORE INTO automation_runs (
+           id, run_key, job, trigger_kind, scheduled_at, status,
+           attempt_count, claim_token, lease_expires_at, started_at,
+           created_at, updated_at
+         ) VALUES (?, ?, ?, ?, ?, 'running', 1, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        id,
+        runKey,
+        job,
+        trigger,
+        scheduledAt,
+        claimToken,
+        leaseExpiresAt,
+        now,
+        now,
+        now,
+      )
+      .run();
+    await this.database
+      .prepare(
+        `UPDATE automation_runs
+         SET status = 'running', attempt_count = attempt_count + 1,
+             claim_token = ?, lease_expires_at = ?, started_at = ?,
+             completed_at = NULL, error_code = NULL, updated_at = ?
+         WHERE run_key = ? AND claim_token != ?
+           AND (status = 'failed' OR (
+             status = 'running' AND lease_expires_at < ?
+           ))`,
+      )
+      .bind(claimToken, leaseExpiresAt, now, now, runKey, claimToken, now)
+      .run();
+    const row = await this.database
+      .prepare(
+        `SELECT id, attempt_count, claim_token, completed_at, error_code,
+                job, scheduled_at, started_at, status, summary_json,
+                trigger_kind
+         FROM automation_runs WHERE run_key = ? LIMIT 1`,
+      )
+      .bind(runKey)
+      .first<AutomationRunRow>();
+    if (!row) throw new Error("Automation run claim could not be read back");
+    return {
+      attemptCount: row.attempt_count,
+      claimed: row.claim_token === claimToken && row.status === "running",
+      claimToken,
+      id: row.id,
+      status: row.status,
+    };
+  }
+
+  async completeAutomationRun(
+    claim: AutomationRunClaim,
+    status: Exclude<AutomationRunStatus, "running">,
+    summary: Record<string, number>,
+    now: string,
+    errorCode: string | null = null,
+  ): Promise<void> {
+    await this.database
+      .prepare(
+        `UPDATE automation_runs
+         SET status = ?, completed_at = ?, summary_json = ?, error_code = ?,
+             lease_expires_at = NULL, updated_at = ?
+         WHERE id = ? AND claim_token = ? AND status = 'running'`,
+      )
+      .bind(
+        status,
+        now,
+        JSON.stringify(summary),
+        errorCode?.slice(0, 80) ?? null,
+        now,
+        claim.id,
+        claim.claimToken,
+      )
+      .run();
+  }
+
+  async listAutomationRuns(limit = 20): Promise<AutomationRunRecord[]> {
+    const result = await this.database
+      .prepare(
+        `SELECT id, attempt_count, claim_token, completed_at, error_code,
+                job, scheduled_at, started_at, status, summary_json,
+                trigger_kind
+         FROM automation_runs
+         ORDER BY scheduled_at DESC, created_at DESC
+         LIMIT ?`,
+      )
+      .bind(Math.min(Math.max(Math.trunc(limit), 1), 50))
+      .all<AutomationRunRow>();
+    return result.results.map(mapAutomationRun);
   }
 
   async listRecentClusters(

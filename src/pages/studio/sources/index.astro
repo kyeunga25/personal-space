@@ -4,7 +4,15 @@ import { formatHongKongDate } from "../../../lib/dates";
 import { D1EditionRepository } from "../../../server/editions/repository";
 import { getBindings } from "../../../server/platform/bindings";
 
-const sources = await new D1EditionRepository(getBindings().DB).listSources();
+const repository = new D1EditionRepository(getBindings().DB);
+const [sources, automationRuns] = await Promise.all([
+  repository.listSources(),
+  repository.listAutomationRuns(12),
+]);
+const summarizeRun = (summary: Record<string, number>) =>
+  Object.entries(summary)
+    .map(([key, value]) => key + ": " + String(value))
+    .join(" · ");
 ---
 
 <StudioLayout title="來源管理">
@@ -13,7 +21,7 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
       <div>
         <p class="eyebrow">私人工作區 · Owner only</p>
         <h1>來源 <small lang="en">Sources</small></h1>
-        <p>加入公開 HTTPS RSS／Atom feed；系統每日同步兩次。</p>
+        <p>加入已核對使用條款的 HTTPS RSS／Atom feed；系統每日同步兩次。</p>
       </div>
       <button class="button button--primary" type="button" data-ingest-now>
         立即同步 <span lang="en">Sync now</span>
@@ -21,6 +29,13 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
     </header>
 
     <p class="source-status" aria-live="polite" data-source-status></p>
+
+    <aside class="rights-notice">
+      <strong>權利審核 · Rights review</strong>
+      <p>
+        僅在已核對來源條款、引用方式及署名要求後標記為已核准。系統只保存必要的標題、短摘要與原文連結，不應重新發佈第三方全文。
+      </p>
+    </aside>
 
     <section class="source-panel" aria-labelledby="new-source-heading">
       <h2 id="new-source-heading">新增來源 <small>Add source</small></h2>
@@ -55,12 +70,45 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
           /></label
         >
         <label
+          >條款 URL <small>Terms URL</small><input
+            name="termsUrl"
+            type="url"
+            inputmode="url"
+            placeholder="https://example.com/terms"
+          /></label
+        >
+        <label class="field--wide"
+          >權利依據 <small>Rights basis</small><textarea
+            name="rightsBasis"
+            rows="3"
+            maxlength="600"
+            placeholder="記錄可使用 RSS 標題、摘要與連結的依據，以及署名或非商業限制。"
+          ></textarea></label
+        >
+        <label class="field--wide"
+          >審核備註 <small>Review notes</small><textarea
+            name="reviewNotes"
+            rows="2"
+            maxlength="1000"></textarea></label
+        >
+        <label
+          >審核 <small>Review</small><select name="reviewStatus"
+            ><option value="pending">待審核 Pending</option><option
+              value="approved">已核准 Approved</option
+            ><option value="rejected">不採用 Rejected</option></select
+          ></label
+        >
+        <label
           >狀態 <small>Status</small><select name="status"
-            ><option value="enabled">啟用 Enabled</option><option value="paused"
-              >暫停 Paused</option
+            ><option value="paused">暫停 Paused</option><option value="enabled"
+              >啟用 Enabled</option
             ></select
           ></label
         >
+        <label class="confirmation field--wide">
+          <input name="rightsConfirmed" type="checkbox" />
+          <span>我已核對條款及使用權利 · Rights confirmed</span>
+        </label>
         <button class="button button--primary" type="submit"
           >加入來源 Add source</button
         >
@@ -92,6 +140,7 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
                       ? "啟用 Enabled"
                       : "暫停 Paused"}
                   </strong>
+                  <span>審核：{source.reviewStatus}</span>
                   <span>
                     最近同步 {formatHongKongDate(source.lastFetchedAt)}
                   </span>
@@ -128,6 +177,49 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
                   />
                 </label>
                 <label>
+                  條款 URL <small>Terms URL</small>
+                  <input
+                    name="termsUrl"
+                    type="url"
+                    value={source.termsUrl ?? ""}
+                  />
+                </label>
+                <label>
+                  權利依據 <small>Rights basis</small>
+                  <textarea name="rightsBasis" rows="3" maxlength="600">
+                    {source.rightsBasis ?? ""}
+                  </textarea>
+                </label>
+                <label>
+                  審核備註 <small>Review notes</small>
+                  <textarea name="reviewNotes" rows="2" maxlength="1000">
+                    {source.reviewNotes ?? ""}
+                  </textarea>
+                </label>
+                <label>
+                  審核 <small>Review</small>
+                  <select name="reviewStatus">
+                    <option
+                      value="pending"
+                      selected={source.reviewStatus === "pending"}
+                    >
+                      待審核 Pending
+                    </option>
+                    <option
+                      value="approved"
+                      selected={source.reviewStatus === "approved"}
+                    >
+                      已核准 Approved
+                    </option>
+                    <option
+                      value="rejected"
+                      selected={source.reviewStatus === "rejected"}
+                    >
+                      不採用 Rejected
+                    </option>
+                  </select>
+                </label>
+                <label>
                   狀態{" "}
                   <select name="status">
                     <option
@@ -144,12 +236,57 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
                     </option>
                   </select>
                 </label>
+                <label class="confirmation">
+                  <input
+                    name="rightsConfirmed"
+                    type="checkbox"
+                    checked={source.reviewStatus === "approved"}
+                  />
+                  <span>我已核對條款及使用權利 · Rights confirmed</span>
+                </label>
                 <button class="button" type="submit">
                   儲存 Save
                 </button>
               </form>
             ))}
           </div>
+        )
+      }
+    </section>
+
+    <section class="run-list" aria-labelledby="run-list-heading">
+      <header>
+        <h2 id="run-list-heading">執行紀錄 <small>Automation runs</small></h2>
+        <span>{automationRuns.length}</span>
+      </header>
+      {
+        automationRuns.length === 0 ? (
+          <p class="source-empty">尚未有自動化執行紀錄。</p>
+        ) : (
+          <ol>
+            {automationRuns.map((run) => (
+              <li>
+                <div>
+                  <strong>
+                    {run.job === "source_ingestion"
+                      ? "來源同步 Source ingestion"
+                      : "Edition 產生 Edition generation"}
+                  </strong>
+                  <span data-run-status={run.status}>{run.status}</span>
+                </div>
+                <small>
+                  {formatHongKongDate(run.scheduledAt)} · {run.trigger} · 嘗試{" "}
+                  {run.attemptCount}
+                </small>
+                {Object.keys(run.summary).length > 0 && (
+                  <p>{summarizeRun(run.summary)}</p>
+                )}
+                {run.errorCode && (
+                  <p class="source-card__error">{run.errorCode}</p>
+                )}
+              </li>
+            ))}
+          </ol>
         )
       }
     </section>
@@ -205,11 +342,26 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
     color: #a23b3b;
   }
   .source-panel,
-  .source-list {
+  .source-list,
+  .run-list {
     overflow: hidden;
     border: 1px solid var(--space-border-strong);
     border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.7);
+  }
+  .rights-notice {
+    margin-bottom: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--space-surface-blue);
+    color: var(--space-ink-muted);
+  }
+  .rights-notice strong {
+    color: var(--space-primary-strong);
+  }
+  .rights-notice p {
+    margin: var(--space-2) 0 0;
   }
   .source-panel {
     padding: var(--space-5);
@@ -220,10 +372,13 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
   }
   .source-form {
     display: grid;
-    grid-template-columns: 1fr 2fr 2fr 1fr auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
     align-items: end;
     margin-top: var(--space-4);
+  }
+  .source-form .field--wide {
+    grid-column: 1 / -1;
   }
   label {
     display: grid;
@@ -236,7 +391,8 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
     color: var(--space-ink-faint);
   }
   input,
-  select {
+  select,
+  textarea {
     width: 100%;
     min-height: 2.75rem;
     padding: 0.6rem 0.7rem;
@@ -245,7 +401,24 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
     background: white;
     color: var(--space-ink);
   }
+  textarea {
+    resize: vertical;
+  }
+  .confirmation {
+    display: flex;
+    grid-template-columns: none;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .confirmation input {
+    width: 1.15rem;
+    min-height: 1.15rem;
+  }
   .source-list {
+    margin-top: var(--space-6);
+  }
+  .run-list {
     margin-top: var(--space-6);
   }
   .source-list > header {
@@ -259,6 +432,43 @@ const sources = await new D1EditionRepository(getBindings().DB).listSources();
   .source-list > header span {
     color: var(--space-primary-strong);
     font-weight: 750;
+  }
+  .run-list > header {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--space-border);
+    background: var(--space-surface-blue);
+  }
+  .run-list ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .run-list li {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--space-border);
+  }
+  .run-list li:last-child {
+    border-bottom: 0;
+  }
+  .run-list li > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .run-list p {
+    margin: 0;
+    color: var(--space-ink-muted);
+  }
+  [data-run-status="succeeded"] {
+    color: var(--space-teal-strong);
+  }
+  [data-run-status="failed"],
+  [data-run-status="partial"] {
+    color: #a23b3b;
   }
   .source-grid {
     display: grid;
