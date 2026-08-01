@@ -24,6 +24,10 @@ ledger 只記錄狀態、錯誤碼及數量，不保存來源文章內容或私�
 tables。Post 與封面媒體可見性由服務驗證及 D1 triggers 雙重約束。R2 bucket 不應
 直接公開，公開媒體只經過會再次核對資料庫可見性的 Worker route 提供。
 
+Production build 完成後會清理 Astro server modules 內的本機 project path，避免
+開發機目錄經 manifest 或 component metadata 進入 Worker artifact。Wrangler 的
+本機 redirect config 不屬於上傳 module，仍保留實際路徑供 CLI 解析。
+
 ## English
 
 If you discover a potential security issue, use GitHub **Private vulnerability reporting** or open a private security advisory. Do not disclose vulnerabilities, credentials, personal data, or reproducible attack details through public channels.
@@ -54,3 +58,8 @@ public queries read canonical tables only. Post and cover-media visibility is
 enforced by both service validation and D1 triggers. The R2 bucket should not be
 made directly public; public media is served through the Worker route, which
 checks database visibility again.
+
+After a production build, local project paths are removed from Astro server
+modules so manifest and component metadata cannot carry a developer-machine
+directory into the Worker artifact. Wrangler's local redirect config is not an
+uploaded module and retains its real path for CLI resolution.

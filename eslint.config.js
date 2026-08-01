@@ -22,6 +22,12 @@ export default tseslint.config(
   })),
   ...astro.configs["flat/recommended"],
   {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     files: typedFiles,
     languageOptions: {
       globals: {

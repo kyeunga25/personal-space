@@ -24,6 +24,8 @@ yet deployed are marked explicitly.
 - 限制本機 Studio bypass 只接受 loopback URL，並在 RSS／sitemap renderer
   再次排除未到期排程內容。
 - 在無快取的公開 health response 加入 release version，方便部署後核對 exact build。
+- 在 build 後將 server modules 的本機 project path 改為中性 workspace path，避免
+  Astro manifest 或 component metadata 將開發機路徑帶入 Worker artifact。
 
 - Added an explicit Studio and D1 source-rights gate. A source needs a terms
   URL, rights basis, review time, and approved status before it can be enabled;
@@ -45,6 +47,9 @@ yet deployed are marked explicitly.
   not-yet-due scheduled-content guard inside RSS and sitemap renderers.
 - Added the release version to the uncached public health response for exact
   post-deployment build verification.
+- Replaced the local project path in built server modules with a neutral
+  workspace path, preventing Astro manifest or component metadata from carrying
+  a developer-machine path into the Worker artifact.
 
 ## [0.6.0] - 2026-07-28
 

@@ -12,6 +12,7 @@ production validation, and final release record pending.
 - Service and D1 media-visibility invariants.
 - Loopback-only local Studio bypass.
 - Defence-in-depth future-schedule filtering in RSS and sitemap output.
+- Post-build removal of local project paths from uploaded server modules.
 
 The architecture contract is documented in
 [`EDITORIAL_AUTOMATION_V0.7.0.md`](../03-architecture/EDITORIAL_AUTOMATION_V0.7.0.md).
@@ -74,6 +75,9 @@ Completed on 2026-08-02 against synthetic local D1 records:
 - Tests cover source approval, chunked oversize responses, unsafe article URLs,
   automation duplicate claims, leases, partial/all-source failure, workload
   limits, media mismatch, revision promotion, and future scheduled feed output.
+- The post-build sanitizer removes the local project root from uploaded JS/MJS
+  modules while leaving Wrangler's non-uploaded redirect config usable; the
+  sanitized build passes Wrangler dry-run and built-Worker runtime checks.
 
 ## Production acceptance gates
 
