@@ -89,9 +89,11 @@ export class PublishingService {
 
     const requestedSlug = normalizeOptional(input.slug);
     const slug =
-      status === "draft" && !requestedSlug && !previous?.slug
-        ? null
-        : createPostSlug(requestedSlug ?? title, now, id);
+      input.slug === undefined && previous?.slug
+        ? previous.slug
+        : status === "draft" && !requestedSlug && !previous?.slug
+          ? null
+          : createPostSlug(requestedSlug ?? title, now, id);
     const excerpt =
       normalizeOptional(input.excerpt) ??
       (bodyMd ? createExcerpt(bodyMd) : null);
