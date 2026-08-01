@@ -5,7 +5,7 @@
 This file records publicly verifiable product versions. Versions that are not
 yet deployed are marked explicitly.
 
-## [0.7.0] - Unreleased
+## [0.7.0] - 2026-08-02
 
 - 將來源權利審核加入 Studio 及 D1 不變量：來源需有條款網址、權利依據、審核
   時間及 `approved` 狀態才可啟用；既有來源在 migration 後先暫停並重新審核。

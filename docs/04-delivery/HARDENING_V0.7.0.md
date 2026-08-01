@@ -1,7 +1,7 @@
 # Personal Space Hardening v0.7.0
 
-Status: release candidate complete locally; remote migrations, fixed-SHA merge,
-production validation, and final release record pending.
+Status: production verified on 2026-08-02. The final release commit containing
+this record is the source of the annotated `v0.7.0` tag and GitHub Release.
 
 ## Scope
 
@@ -61,7 +61,7 @@ place.
 
 Completed on 2026-08-02 against synthetic local D1 records:
 
-- Prettier, ESLint, Astro typecheck, 16 Vitest files with 68 tests, production
+- Prettier, ESLint, Astro typecheck, 17 Vitest files with 69 tests, production
   build, generated Worker types, and Wrangler dry-run pass.
 - Local migrations through `0006_content_invariants.sql` apply successfully and
   no local migration remains pending.
@@ -78,26 +78,36 @@ Completed on 2026-08-02 against synthetic local D1 records:
 - The post-build sanitizer removes the local project root from uploaded JS/MJS
   modules while leaving Wrangler's non-uploaded redirect config usable; the
   sanitized build passes Wrangler dry-run and built-Worker runtime checks.
+- Browser acceptance confirms owner working-copy edits remain separate from the
+  public canonical Post, the working-copy actions use accurate labels, and the
+  Studio editor has no horizontal overflow at 1280px. Source-rights controls
+  also pass at 390px without console errors or horizontal overflow.
 
-## Production acceptance gates
+## Production acceptance evidence
 
-Production is complete only when all of the following are true:
+Completed on 2026-08-02:
 
-- GitHub checks pass for the fixed reviewed SHA and the merge contains that SHA.
-- Remote D1 reports migrations through `0006` with none pending.
-- The active Cloudflare deployment corresponds to the merged v0.7 code.
+- Feature PR #11 passed GitHub CI at reviewed head
+  `172fe0aec489a0cef23d1b6732f25997426f65b3`; QA follow-up PR #13 passed at
+  `e7881ff9c4944c682fe67c4c6d8d569eaf6e1ecc`. Both fixed heads were preserved
+  in their merge commits.
+- GitHub CI and Cloudflare Workers Build succeeded for both merges. The latest
+  active deployment uses one version at 100% traffic.
+- Remote D1 migrations `0004` through `0006` are applied with none pending. A
+  recoverable pre-migration Time Travel point was confirmed before the change.
+- Count-only D1 checks report zero sources, zero approved or enabled sources,
+  zero working copies, zero automation runs, and all seven source/media
+  invariant triggers. No source was implicitly trusted during migration.
 - `/`, `/notes`, `/articles`, `/editions`, `/rss.xml`, Edition RSS,
-  `/sitemap.xml`, and `/api/health` return expected public responses.
-- Unauthenticated `/studio` and `/api/studio/*` requests are intercepted by
-  Access; protected responses remain private and non-indexable.
-- Public responses retain CSP, HSTS, referrer, permissions, frame, MIME, and
-  robots protections.
-- The live version reports `0.7.0`, and at least one hashed CSS/JS asset matches
-  the locally built bytes after cache-busting.
-- Count-only database checks show no source was implicitly approved or enabled,
-  and automation-run records contain no content fields.
-- Local branch, `origin/main`, GitHub merge commit, production deployment, tag,
-  and GitHub Release agree on the final verified state.
+  `/sitemap.xml`, and `/api/health` return `200`. All Note, Article, Edition,
+  and sitemap XML responses parse successfully.
+- Unauthenticated `/studio` and `/api/studio/*` requests return `302` into
+  Cloudflare Access. Public responses retain CSP, HSTS, referrer, permissions,
+  frame-ancestor, and MIME protections.
+- The uncached health response reports `v0.7.0`. A cache-busted hashed public
+  CSS asset is byte-identical to the locally built artifact.
+- After this record merges, local `main`, `origin/main`, and GitHub are checked
+  against the same final commit before that commit is tagged and released.
 
 ## Rollback
 
