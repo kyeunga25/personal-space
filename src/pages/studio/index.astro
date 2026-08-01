@@ -92,6 +92,7 @@ const publishedCount = posts.filter(
                     <small>
                       {post.kind === "note" ? "筆記 Note" : "文章 Article"} ·{" "}
                       {post.status}
+                      {post.hasWorkingCopy ? " · 未發佈修改" : ""}
                     </small>
                   </span>
                   <time datetime={post.updatedAt}>

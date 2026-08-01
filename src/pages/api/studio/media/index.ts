@@ -60,7 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
       httpMetadata: {
         cacheControl:
           visibility === "public"
-            ? "public, max-age=31536000, immutable"
+            ? "public, max-age=300, stale-while-revalidate=60"
             : "private, no-store",
         contentType: validated.mimeType,
       },

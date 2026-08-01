@@ -86,6 +86,7 @@ export interface EditionRecord {
   createdAt: string;
   date: string;
   entries: EditionEntry[];
+  hasWorkingCopy: boolean;
   id: string;
   introMd: string;
   publishedAt: string | null;

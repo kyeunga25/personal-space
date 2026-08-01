@@ -61,6 +61,12 @@ export class PublishingService {
     const title = normalizeOptional(input.title);
     const bodyMd = input.bodyMd.trim();
     const status = resolveStatus(input, previous);
+    const persistence: SavePostData["persistence"] =
+      input.action === "save" &&
+      previous !== null &&
+      (previous.status === "published" || previous.status === "scheduled")
+        ? "working-copy"
+        : "canonical";
     const scheduledAt =
       status === "scheduled" ? normalizeOptional(input.scheduledAt) : null;
 
@@ -70,9 +76,14 @@ export class PublishingService {
     if (input.kind === "article" && status !== "draft" && !title) {
       throw new UserFacingError("文章在發佈或排程前必須有標題。");
     }
-    if (status === "scheduled") {
+    if (input.action === "schedule") {
       if (!scheduledAt || new Date(scheduledAt).getTime() <= now.getTime()) {
         throw new UserFacingError("排程時間必須晚於現在。");
+      }
+      if (previous?.status === "published") {
+        throw new UserFacingError(
+          "已發佈內容不可直接排程更新；請立即發佈，或建立另一篇內容。",
+        );
       }
     }
 
@@ -87,13 +98,28 @@ export class PublishingService {
     const nowIso = now.toISOString();
     const category = input.category ? createTerm(input.category) : null;
     const tags = createTerms(input.tags);
+    const heroMediaId =
+      input.heroMediaId === undefined
+        ? (previous?.heroMediaId ?? null)
+        : normalizeOptional(input.heroMediaId);
+    if (heroMediaId) {
+      const media = await this.repository.findMedia(heroMediaId, true);
+      if (!media) {
+        throw new UserFacingError("找不到所選封面媒體。", 404);
+      }
+      const expectedVisibility =
+        input.visibility === "private" ? "private" : "public";
+      if (media.visibility !== expectedVisibility) {
+        throw new UserFacingError(
+          "封面媒體的可見性與內容不一致，請重新上傳或清除封面。",
+        );
+      }
+    }
     const snapshotPrevious =
+      persistence === "canonical" &&
       previous !== null &&
       (previous.status === "published" || previous.status === "scheduled") &&
-      (previous.bodyMd !== bodyMd ||
-        previous.title !== title ||
-        previous.excerpt !== excerpt ||
-        previous.visibility !== input.visibility);
+      input.action !== "save";
 
     const post: SavePostData["post"] = {
       authorId: "owner",
@@ -101,7 +127,7 @@ export class PublishingService {
       bodyMd,
       createdAt: previous?.createdAt ?? nowIso,
       excerpt,
-      heroMediaId: input.heroMediaId ?? previous?.heroMediaId ?? null,
+      heroMediaId,
       id,
       kind: input.kind,
       pinned: previous?.pinned ?? false,
@@ -121,6 +147,7 @@ export class PublishingService {
 
     return this.repository.savePost({
       category,
+      persistence,
       post,
       snapshotPrevious,
       tags,
@@ -144,6 +171,7 @@ export class PublishingService {
       revision,
       renderMarkdown(revision.bodyMd),
       now.toISOString(),
+      post.status === "published" || post.status === "scheduled",
     );
   }
 }

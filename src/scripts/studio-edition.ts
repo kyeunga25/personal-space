@@ -1,6 +1,7 @@
 export {};
 
 interface EditionApiError {
+  edition?: { hasWorkingCopy?: boolean };
   error?: string;
 }
 
@@ -87,7 +88,11 @@ async function saveEdition(
     );
     const result = await response.json<EditionApiError>();
     if (!response.ok) throw new Error(result.error ?? "儲存失敗。");
-    showEditionStatus("Edition 已儲存。 Saved.");
+    showEditionStatus(
+      result.edition?.hasWorkingCopy
+        ? "Edition 工作副本已儲存。 Working copy saved."
+        : "Edition 已儲存。 Saved.",
+    );
     window.location.reload();
   } catch (error) {
     showEditionStatus(

@@ -9,11 +9,15 @@ export function escapeXml(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
-export function publicPostPath(post: PostRecord): string | null {
+export function publicPostPath(post: PostRecord, now: Date): string | null {
+  const scheduledIsDue =
+    post.status === "scheduled" &&
+    post.scheduledAt !== null &&
+    new Date(post.scheduledAt).getTime() <= now.getTime();
   if (
     !post.slug ||
     post.visibility !== "public" ||
-    (post.status !== "published" && post.status !== "scheduled")
+    (post.status !== "published" && !scheduledIsDue)
   ) {
     return null;
   }

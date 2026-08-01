@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ params }) => {
   if (!object) return new Response("Not found", { status: 404 });
 
   const headers = new Headers({
-    "Cache-Control": "public, max-age=31536000, immutable",
+    "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
     "Content-Type": media.mimeType,
     ETag: object.httpEtag,
   });

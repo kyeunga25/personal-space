@@ -1,4 +1,5 @@
 interface SavedPost {
+  hasWorkingCopy: boolean;
   id: string;
   slug: string | null;
   status: string;
@@ -101,7 +102,9 @@ if (form) {
       form.dataset.postId = result.post.id;
       form.dataset.endpoint = `/api/studio/posts/${result.post.id}`;
       form.dataset.method = "PUT";
-      saveState.innerHTML = '已儲存 <span lang="en">Saved</span>';
+      saveState.innerHTML = result.post.hasWorkingCopy
+        ? '工作副本已儲存 <span lang="en">Working copy saved</span>'
+        : '已儲存 <span lang="en">Saved</span>';
       if (!location.pathname.includes(`/studio/posts/${result.post.id}`)) {
         history.replaceState(null, "", `/studio/posts/${result.post.id}`);
       }
@@ -113,7 +116,9 @@ if (form) {
               ? "內容已排程。"
               : action === "archive"
                 ? "內容已封存。"
-                : "草稿已儲存。",
+                : result.post.hasWorkingCopy
+                  ? "未發佈修改已儲存為工作副本。"
+                  : "草稿已儲存。",
         );
     } catch (error) {
       saveState.innerHTML = '未儲存 <span lang="en">Not saved</span>';
@@ -242,9 +247,14 @@ if (form) {
     const payload = new FormData();
     payload.set("file", file);
     payload.set("altText", altInput.value.trim());
+    const postVisibility = formString(
+      new FormData(form),
+      "visibility",
+      "private",
+    );
     payload.set(
       "visibility",
-      formString(new FormData(form), "visibility", "private"),
+      postVisibility === "private" ? "private" : "public",
     );
     state.textContent = "上傳中…";
     try {
@@ -269,6 +279,17 @@ if (form) {
   };
   uploadButton.addEventListener("click", () => {
     void uploadMedia();
+  });
+  const clearMediaButton = getElement(
+    form,
+    "[data-clear-media]",
+  ) as HTMLButtonElement;
+  clearMediaButton.addEventListener("click", () => {
+    (getElement(form, '[name="heroMediaId"]') as HTMLInputElement).value = "";
+    (getElement(form, "[data-media-state]") as HTMLElement).textContent =
+      "封面連結已清除；儲存後生效。";
+    clearMediaButton.disabled = true;
+    saveState.innerHTML = '未儲存 <span lang="en">Unsaved</span>';
   });
 
   form

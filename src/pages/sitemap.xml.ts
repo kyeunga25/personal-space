@@ -31,6 +31,7 @@ export const GET: APIRoute = async ({ site }) => {
         path: `/editions/${edition.date}`,
         updatedAt: edition.updatedAt,
       })),
+      generatedAt: now,
       paths: [...PUBLIC_PATHS],
       posts,
       site: site ?? new URL(`https://${SITE.domain}`),
