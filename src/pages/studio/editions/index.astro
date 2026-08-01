@@ -38,6 +38,7 @@ const editions = await new D1EditionRepository(
                     <strong>{edition.title}</strong>
                     <small>
                       {edition.status} · {edition.entries.length} items
+                      {edition.hasWorkingCopy ? " · 未發佈修改" : ""}
                     </small>
                   </span>
                   <time datetime={edition.updatedAt}>

@@ -7,10 +7,13 @@ import { getBindings } from "../../../../server/platform/bindings";
 
 export const POST: APIRoute = async () => {
   try {
-    const edition = await new EditionAutomationService(
+    const result = await new EditionAutomationService(
       new D1EditionRepository(getBindings().DB),
-    ).generateDailyEdition();
-    return jsonResponse({ edition }, { status: 201 });
+    ).runEditionGeneration();
+    return jsonResponse(
+      { edition: result.report, run: result },
+      { status: 201 },
+    );
   } catch (error) {
     return errorResponse(error);
   }

@@ -1,12 +1,20 @@
 import { UserFacingError } from "../errors";
-import type { EditionSaveInput, SourceStatus } from "./domain";
+import type {
+  EditionSaveInput,
+  SourceReviewStatus,
+  SourceStatus,
+} from "./domain";
 import { validateFeedUrl } from "./feed-fetcher";
 
 export interface SourceInput {
   feedUrl: string;
   name: string;
+  reviewNotes: string | null;
+  reviewStatus: SourceReviewStatus;
+  rightsBasis: string | null;
   siteUrl: string | null;
   status: SourceStatus;
+  termsUrl: string | null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -27,19 +35,49 @@ function optionalSiteUrl(value: unknown): string | null {
   return url.toString();
 }
 
+function optionalText(value: unknown, limit: number): string | null {
+  return text(value, limit) || null;
+}
+
 export function parseSourceInput(value: unknown): SourceInput | null {
   const record = asRecord(value);
   if (!record) return null;
   const name = text(record.name, 120);
   const feedUrl = text(record.feedUrl, 2048);
-  const status = record.status === "paused" ? "paused" : "enabled";
+  const status: SourceStatus =
+    record.status === "enabled" ? "enabled" : "paused";
+  const reviewStatus: SourceReviewStatus =
+    record.reviewStatus === "approved"
+      ? "approved"
+      : record.reviewStatus === "rejected"
+        ? "rejected"
+        : "pending";
   if (!name || !feedUrl) return null;
+
+  const termsUrl = optionalSiteUrl(record.termsUrl);
+  const rightsBasis = optionalText(record.rightsBasis, 600);
+  const reviewNotes = optionalText(record.reviewNotes, 1000);
+  if (reviewStatus === "approved") {
+    if (record.rightsConfirmed !== true) {
+      throw new UserFacingError("請明確確認已核對來源條款及使用權利。", 400);
+    }
+    if (!termsUrl || !rightsBasis) {
+      throw new UserFacingError("核准來源需要條款網址及權利依據。", 400);
+    }
+  }
+  if (status === "enabled" && reviewStatus !== "approved") {
+    throw new UserFacingError("來源完成權利審核後才可啟用。", 400);
+  }
 
   return {
     feedUrl: validateFeedUrl(feedUrl).toString(),
     name,
+    reviewNotes,
+    reviewStatus,
+    rightsBasis,
     siteUrl: optionalSiteUrl(record.siteUrl),
     status,
+    termsUrl,
   };
 }
 

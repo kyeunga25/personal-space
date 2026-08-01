@@ -1,5 +1,10 @@
 export type SourceStatus = "enabled" | "paused";
+export type SourceReviewStatus = "approved" | "pending" | "rejected";
 export type EditionStatus = "archived" | "draft" | "published";
+export type AutomationJob = "edition_generation" | "source_ingestion";
+export type AutomationRunStatus =
+  "failed" | "partial" | "running" | "skipped" | "succeeded";
+export type AutomationTrigger = "cron" | "manual";
 
 export interface SourceRecord {
   createdAt: string;
@@ -12,9 +17,35 @@ export interface SourceRecord {
   lastModified: string | null;
   lastSuccessAt: string | null;
   name: string;
+  reviewNotes: string | null;
+  reviewedAt: string | null;
+  reviewStatus: SourceReviewStatus;
+  rightsBasis: string | null;
   siteUrl: string | null;
   status: SourceStatus;
+  termsUrl: string | null;
   updatedAt: string;
+}
+
+export interface AutomationRunRecord {
+  attemptCount: number;
+  completedAt: string | null;
+  errorCode: string | null;
+  id: string;
+  job: AutomationJob;
+  scheduledAt: string;
+  startedAt: string;
+  status: AutomationRunStatus;
+  summary: Record<string, number>;
+  trigger: AutomationTrigger;
+}
+
+export interface AutomationRunClaim {
+  attemptCount: number;
+  claimToken: string;
+  claimed: boolean;
+  id: string;
+  status: AutomationRunStatus;
 }
 
 export interface FeedEntry {
@@ -55,6 +86,7 @@ export interface EditionRecord {
   createdAt: string;
   date: string;
   entries: EditionEntry[];
+  hasWorkingCopy: boolean;
   id: string;
   introMd: string;
   publishedAt: string | null;
@@ -72,6 +104,7 @@ export interface EditionSaveInput {
 }
 
 export interface IngestionReport {
+  attemptedSources: number;
   failedSources: number;
   fetchedSources: number;
   newItems: number;

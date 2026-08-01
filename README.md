@@ -2,11 +2,12 @@
 
 公開網站 / Public site: [space.k-y.cc](https://space.k-y.cc)
 
-目前程式版本 / Current code version: **v0.6.0**
+目前程式候選版本 / Current code candidate: **v0.7.0**
 
-截至 2026-07-28，正式網站已運行經驗證的 v0.6.0。遠端資料庫 migrations
-已套用至 v0.6.0，私人 Studio 與寫入 API 亦已由 Cloudflare Access 保護。
-公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
+截至 2026-08-02 的發佈前驗證，正式網站仍運行經驗證的 v0.6.0；v0.7.0
+必須先套用 `0004` 至 `0006` 的遠端 D1 migrations、通過固定 commit 的 GitHub
+檢查並完成正式站驗證，才視為已發佈。私人 Studio 與寫入 API 由 Cloudflare
+Access 保護；公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
 
 ## 中文
 
@@ -30,6 +31,16 @@ v0.6.0 加入私人來源管理、RSS／Atom 安全擷取、相近標題去重�
 建立草稿；只有站主明確發佈的 Edition 才會出現在公開頁、獨立 RSS 及 sitemap。
 repository 不預設加入第三方來源，來源條款及使用權需由站主在加入前確認。
 
+v0.7.0 將來源條款核對變成資料庫及 Studio 的明確權利閘門；既有來源會先暫停，
+只有記錄條款網址、使用依據及審核時間後才可重新啟用。每次同步最多處理兩個
+來源、每個來源五項內容，回應內容以串流方式限制為 2 MiB。Cron 與手動工作均
+寫入可重入 run ledger，只保存狀態與數量摘要，不在 logs 保存文章或來源內容。
+
+已發佈的 Note、Article 與 Edition 現在使用只限 Studio 的工作副本；自動儲存
+不再直接改動公開 canonical 記錄，只有明確發佈才會提升工作副本。封面媒體的
+私人／公開可見性由服務層和 D1 triggers 同時約束，公開媒體亦不再使用永久
+immutable cache，降低變更可見性時的殘留風險。
+
 目前介面採用原創 **Clear Sky Feed** 視覺系統，以淡天藍、晴空青、
 薄荷青與少量日光黃構成清新、青春而俐落的信息流。所有圖標、SVG
 與 CSS 裝飾均為原創抽象圖形，不使用第三方角色或受版權保護資產。
@@ -42,8 +53,10 @@ repository 不預設加入第三方來源，來源條款及使用權需由站主
 - Cloudflare D1 內容資料庫與 R2 圖片儲存；
 - Cloudflare Access 驗證及應用程式層站主核對；
 - Note／Article 草稿、預覽、發佈、排程、封存及修訂還原；
+- 已發佈 Post／Edition 的 Studio 工作副本與明確提升流程；
 - 公開全文搜尋、分類／標籤篩選、香港時間封存及時間動態；
-- 來源同步、相近標題去重、Edition 草稿／審閱／發佈及 Cron automation；
+- 來源權利審核、bounded 同步、相近標題去重及 Edition 審閱／發佈；
+- 可重入 Cron automation、租約回收、數量式狀態記錄及失敗可觀察性；
 - RSS、獨立 Note／Article／Edition feeds 及公開 sitemap；
 - 響應式桌面／手機導覽；
 - ESLint、Prettier、Vitest、Astro typecheck；
@@ -61,9 +74,15 @@ npm run check
 npm run preview
 ```
 
-本機 Studio 測試可由 `.dev.vars.example` 複製出未追蹤的 `.dev.vars`。正式環境
-需要以 secret 提供 `ACCESS_TEAM_DOMAIN`、`ACCESS_AUD` 及 `OWNER_EMAIL`，並先
-套用 D1 migration。不要把實際電郵、Access audience 或任何憑證提交到 Git。
+本機 Studio 測試可由 `.dev.vars.example` 複製出未追蹤的 `.dev.vars`。本機
+bypass 同時要求 development 設定和 loopback URL；正式主機即使誤設本機變數
+仍會 fail closed。正式環境需要以 secret 提供 `ACCESS_TEAM_DOMAIN`、
+`ACCESS_AUD` 及 `OWNER_EMAIL`，並先套用 D1 migration。不要把實際電郵、
+Access audience 或任何憑證提交到 Git。
+
+`npm run preview` 會以 production build、`.dev.vars.example`、local bindings 及
+localhost upstream 啟動 built Worker，方便用中性測試身分驗證 D1／R2／Studio
+整合；runtime 不會部署或連接遠端資源。
 
 公開 Wrangler 設定只宣告程式使用的 binding。最新版 Wrangler 可在部署時自動
 配置所需資源；實際名稱及 identifiers 應只保留在 Cloudflare 的私人環境，不應
@@ -82,10 +101,11 @@ npm run preview
 Personal Space is a focused, self-managed publishing space for Notes and
 Articles, with chronological, searchable, and archived public discovery.
 
-The current code version is **v0.6.0**. As verified on 2026-07-28, production
-serves the validated v0.6.0 release, remote database migrations are applied
-through v0.6.0, and Cloudflare Access protects the private Studio and write
-APIs.
+The current code candidate is **v0.7.0**. At the 2026-08-02 pre-release gate,
+production still serves the validated v0.6.0 release. v0.7.0 is not considered
+released until remote D1 migrations `0004` through `0006`, fixed-commit GitHub
+checks, and production verification all pass. Cloudflare Access protects the
+private Studio and write APIs.
 
 The current interface uses the original **Clear Sky Feed** visual system: a
 fresh, crisp information feed built from pale sky blue, cyan, teal, and
@@ -103,10 +123,25 @@ deduplication, reviewed daily Editions, scheduled draft generation, an Edition
 feed, and Edition sitemap entries. No third-party source is seeded by the
 repository; the owner must review source terms before adding a feed.
 
+v0.7.0 makes source-rights review an explicit Studio and database gate, pauses
+existing sources for re-review, bounds each ingestion run to two sources and
+five items per source, and enforces a streaming 2 MiB response limit. Cron and
+manual jobs use an idempotent run ledger with leases, count-only summaries, and
+visible failure states. Published Posts and Editions now autosave to owner-only
+working copies; public canonical records change only on explicit publish.
+Service validation and D1 triggers also keep cover-media visibility aligned
+with its Post.
+
 For local Studio testing, copy `.dev.vars.example` to the ignored `.dev.vars`
-file and apply the local D1 migration first. Production requires
-`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, and `OWNER_EMAIL` as secrets, plus the remote
-D1 migration. Never commit real account identifiers or credentials.
+file and apply the local D1 migrations first. The development bypass also
+requires a loopback URL, so the same variables fail closed on a public host.
+Production requires `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, and `OWNER_EMAIL` as
+secrets, plus the remote D1 migrations. Never commit real account identifiers
+or credentials.
+
+`npm run preview` starts the production build with `.dev.vars.example`, local
+bindings, and a localhost upstream for built-Worker D1/R2/Studio testing. It
+does not deploy or connect its runtime to remote resources.
 
 The public Wrangler configuration declares binding names only. Current Wrangler
 can provision the backing resources during deployment, while their real names

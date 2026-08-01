@@ -29,6 +29,7 @@ export interface PostRecord {
   createdAt: string;
   excerpt: string | null;
   heroMediaId: string | null;
+  hasWorkingCopy: boolean;
   id: string;
   kind: PostKind;
   pinned: boolean;
@@ -47,6 +48,7 @@ export interface PostRevision {
   categoryId: string | null;
   createdAt: string;
   excerpt: string | null;
+  heroMediaId: string | null;
   id: string;
   postId: string;
   slug: string | null;
@@ -72,7 +74,8 @@ export interface SavePostInput {
 
 export interface SavePostData {
   category: TaxonomyTerm | null;
-  post: Omit<PostRecord, "category" | "tags">;
+  persistence: "canonical" | "working-copy";
+  post: Omit<PostRecord, "category" | "hasWorkingCopy" | "tags">;
   snapshotPrevious: boolean;
   tags: TaxonomyTerm[];
 }

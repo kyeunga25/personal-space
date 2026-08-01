@@ -6,6 +6,42 @@ import { EditionAutomationService } from "./server/editions/service";
 const INGEST_CRON = "15 0,12 * * *";
 const EDITION_CRON = "0 14 * * *";
 
+function logAutomation(
+  job: "edition_generation" | "source_ingestion",
+  result: {
+    attemptCount: number;
+    duplicate: boolean;
+    report: unknown;
+    runId: string;
+    status: string;
+  },
+): void {
+  let counts: Record<string, number> = {};
+  if (result.report && typeof result.report === "object") {
+    if ("entries" in result.report && Array.isArray(result.report.entries)) {
+      counts = { editionItems: result.report.entries.length };
+    } else {
+      counts = Object.fromEntries(
+        Object.entries(result.report).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[1] === "number" && Number.isFinite(entry[1]),
+        ),
+      );
+    }
+  }
+  console.log(
+    JSON.stringify({
+      attemptCount: result.attemptCount,
+      counts,
+      duplicate: result.duplicate,
+      event: "automation_run",
+      job,
+      runId: result.runId,
+      status: result.status,
+    }),
+  );
+}
+
 export default {
   fetch(request, environment, context) {
     return handle(request, environment, context);
@@ -14,12 +50,45 @@ export default {
     const service = new EditionAutomationService(
       new D1EditionRepository(environment.DB),
     );
-    if (controller.cron === INGEST_CRON) {
-      await service.ingest(new Date(controller.scheduledTime));
-      return;
-    }
-    if (controller.cron === EDITION_CRON) {
-      await service.generateDailyEdition(new Date(controller.scheduledTime));
+    try {
+      const scheduledAt = new Date(controller.scheduledTime);
+      if (controller.cron === INGEST_CRON) {
+        const result = await service.runIngestion({
+          scheduledAt,
+          trigger: "cron",
+        });
+        logAutomation("source_ingestion", result);
+        if (result.status === "failed") {
+          throw new Error("source_ingestion_failed");
+        }
+        return;
+      }
+      if (controller.cron === EDITION_CRON) {
+        const result = await service.runEditionGeneration({
+          scheduledAt,
+          trigger: "cron",
+        });
+        logAutomation("edition_generation", result);
+        if (result.status === "failed") {
+          throw new Error("edition_generation_failed");
+        }
+        return;
+      }
+      console.warn(
+        JSON.stringify({
+          event: "automation_run",
+          job: "unknown",
+          status: "ignored",
+        }),
+      );
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          code: "automation_handler_error",
+          event: "automation_error",
+        }),
+      );
+      throw error;
     }
   },
 } satisfies ExportedHandler<Cloudflare.Env>;

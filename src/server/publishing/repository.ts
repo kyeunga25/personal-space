@@ -43,6 +43,21 @@ interface PostRow {
   visibility: PostRecord["visibility"];
 }
 
+interface PostWorkingCopyRow {
+  body_html: string;
+  body_md: string;
+  category_json: string | null;
+  excerpt: string | null;
+  hero_media_id: string | null;
+  post_id: string;
+  scheduled_at: string | null;
+  slug: string | null;
+  tags_json: string;
+  title: string | null;
+  updated_at: string;
+  visibility: PostRecord["visibility"];
+}
+
 interface MediaRow {
   alt_text: string;
   byte_size: number;
@@ -61,6 +76,7 @@ interface RevisionRow {
   category_id: string | null;
   created_at: string;
   excerpt: string | null;
+  hero_media_id: string | null;
   id: string;
   post_id: string;
   slug: string | null;
@@ -155,6 +171,25 @@ function parseTags(value: string): TaxonomyTerm[] {
   );
 }
 
+function parseTerm(value: string | null): TaxonomyTerm | null {
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return typeof parsed === "object" &&
+      parsed !== null &&
+      "id" in parsed &&
+      typeof parsed.id === "string" &&
+      "name" in parsed &&
+      typeof parsed.name === "string" &&
+      "slug" in parsed &&
+      typeof parsed.slug === "string"
+      ? { id: parsed.id, name: parsed.name, slug: parsed.slug }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function mapPost(row: PostRow): PostRecord {
   const category =
     row.category_id && row.category_name && row.category_slug
@@ -172,6 +207,7 @@ function mapPost(row: PostRow): PostRecord {
     category,
     createdAt: row.created_at,
     excerpt: row.excerpt,
+    hasWorkingCopy: false,
     heroMediaId: row.hero_media_id,
     id: row.id,
     kind: row.kind,
@@ -184,6 +220,27 @@ function mapPost(row: PostRow): PostRecord {
     title: row.title,
     updatedAt: row.updated_at,
     visibility: row.visibility,
+  };
+}
+
+function mergeWorkingCopy(
+  post: PostRecord,
+  working: PostWorkingCopyRow,
+): PostRecord {
+  return {
+    ...post,
+    bodyHtml: working.body_html,
+    bodyMd: working.body_md,
+    category: parseTerm(working.category_json),
+    excerpt: working.excerpt,
+    hasWorkingCopy: true,
+    heroMediaId: working.hero_media_id,
+    scheduledAt: working.scheduled_at,
+    slug: working.slug,
+    tags: parseTags(working.tags_json),
+    title: working.title,
+    updatedAt: working.updated_at,
+    visibility: working.visibility,
   };
 }
 
@@ -203,6 +260,7 @@ function mapMedia(row: MediaRow): MediaRecord {
 }
 
 export interface PublishingRepository {
+  findMedia(id: string, owner?: boolean): Promise<MediaRecord | null>;
   findOwnerPost(id: string): Promise<PostRecord | null>;
   findRevision(id: string): Promise<PostRevision | null>;
   restoreRevision(
@@ -210,6 +268,7 @@ export interface PublishingRepository {
     revision: PostRevision,
     bodyHtml: string,
     now: string,
+    asWorkingCopy: boolean,
   ): Promise<PostRecord>;
   savePost(data: SavePostData): Promise<PostRecord>;
 }
@@ -275,7 +334,21 @@ export class D1PublishingRepository implements PublishingRepository {
       )
       .bind(limit)
       .all<PostRow>();
-    return result.results.map(mapPost);
+    const posts = result.results.map(mapPost);
+    if (posts.length === 0) return posts;
+    const placeholders = posts.map(() => "?").join(", ");
+    const working = await this.database
+      .prepare(
+        `SELECT post_id FROM post_working_copies
+         WHERE post_id IN (${placeholders})`,
+      )
+      .bind(...posts.map((post) => post.id))
+      .all<{ post_id: string }>();
+    const workingIds = new Set(working.results.map((row) => row.post_id));
+    return posts.map((post) => ({
+      ...post,
+      hasWorkingCopy: workingIds.has(post.id),
+    }));
   }
 
   async listPublicDiscovery(
@@ -477,6 +550,16 @@ export class D1PublishingRepository implements PublishingRepository {
   }
 
   async findOwnerPost(id: string): Promise<PostRecord | null> {
+    const post = await this.findCanonicalPost(id);
+    if (!post) return null;
+    const working = await this.database
+      .prepare("SELECT * FROM post_working_copies WHERE post_id = ? LIMIT 1")
+      .bind(id)
+      .first<PostWorkingCopyRow>();
+    return working ? mergeWorkingCopy(post, working) : post;
+  }
+
+  private async findCanonicalPost(id: string): Promise<PostRecord | null> {
     const row = await this.database
       .prepare(
         `${POST_SELECT}
@@ -490,7 +573,49 @@ export class D1PublishingRepository implements PublishingRepository {
   }
 
   async savePost(data: SavePostData): Promise<PostRecord> {
-    const { category, post, snapshotPrevious, tags } = data;
+    const { category, persistence, post, snapshotPrevious, tags } = data;
+    if (persistence === "working-copy") {
+      await this.database
+        .prepare(
+          `INSERT INTO post_working_copies (
+             post_id, title, slug, excerpt, body_md, body_html, visibility,
+             category_json, hero_media_id, tags_json, scheduled_at, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(post_id) DO UPDATE SET
+             title = excluded.title,
+             slug = excluded.slug,
+             excerpt = excluded.excerpt,
+             body_md = excluded.body_md,
+             body_html = excluded.body_html,
+             visibility = excluded.visibility,
+             category_json = excluded.category_json,
+             hero_media_id = excluded.hero_media_id,
+             tags_json = excluded.tags_json,
+             scheduled_at = excluded.scheduled_at,
+             updated_at = excluded.updated_at`,
+        )
+        .bind(
+          post.id,
+          post.title,
+          post.slug,
+          post.excerpt,
+          post.bodyMd,
+          post.bodyHtml,
+          post.visibility,
+          category ? JSON.stringify(category) : null,
+          post.heroMediaId,
+          JSON.stringify(tags),
+          post.scheduledAt,
+          post.updatedAt,
+        )
+        .run();
+      const savedWorkingCopy = await this.findOwnerPost(post.id);
+      if (!savedWorkingCopy) {
+        throw new Error("儲存後無法重新讀取工作副本。");
+      }
+      return savedWorkingCopy;
+    }
+
     const resolvedCategory = category
       ? await this.resolveTerm("categories", category)
       : null;
@@ -498,7 +623,7 @@ export class D1PublishingRepository implements PublishingRepository {
       tags.map((tag) => this.resolveTerm("tags", tag)),
     );
     const previous = snapshotPrevious
-      ? await this.findOwnerPost(post.id)
+      ? await this.findCanonicalPost(post.id)
       : null;
     const statements: D1PreparedStatement[] = [
       this.database
@@ -517,8 +642,8 @@ export class D1PublishingRepository implements PublishingRepository {
           .prepare(
             `INSERT INTO post_revisions (
                id, post_id, title, slug, excerpt, body_md, visibility,
-               category_id, tags_json, created_at
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+               category_id, hero_media_id, tags_json, created_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .bind(
             crypto.randomUUID(),
@@ -529,6 +654,7 @@ export class D1PublishingRepository implements PublishingRepository {
             previous.bodyMd,
             previous.visibility,
             previous.category?.id ?? null,
+            previous.heroMediaId,
             JSON.stringify(previous.tags),
             post.updatedAt,
           ),
@@ -614,6 +740,9 @@ export class D1PublishingRepository implements PublishingRepository {
       this.database
         .prepare("DELETE FROM post_tags WHERE post_id = ?")
         .bind(post.id),
+      this.database
+        .prepare("DELETE FROM post_working_copies WHERE post_id = ?")
+        .bind(post.id),
     );
 
     for (const tag of resolvedTags) {
@@ -658,6 +787,7 @@ export class D1PublishingRepository implements PublishingRepository {
       categoryId: row.category_id,
       createdAt: row.created_at,
       excerpt: row.excerpt,
+      heroMediaId: row.hero_media_id,
       id: row.id,
       postId: row.post_id,
       slug: row.slug,
@@ -678,6 +808,7 @@ export class D1PublishingRepository implements PublishingRepository {
           categoryId: row.category_id,
           createdAt: row.created_at,
           excerpt: row.excerpt,
+          heroMediaId: row.hero_media_id,
           id: row.id,
           postId: row.post_id,
           slug: row.slug,
@@ -693,14 +824,65 @@ export class D1PublishingRepository implements PublishingRepository {
     revision: PostRevision,
     bodyHtml: string,
     now: string,
+    asWorkingCopy: boolean,
   ): Promise<PostRecord> {
+    if (asWorkingCopy) {
+      const category = revision.categoryId
+        ? await this.database
+            .prepare(
+              "SELECT id, name, slug FROM categories WHERE id = ? LIMIT 1",
+            )
+            .bind(revision.categoryId)
+            .first<TaxonomyTerm>()
+        : null;
+      await this.database
+        .prepare(
+          `INSERT INTO post_working_copies (
+             post_id, title, slug, excerpt, body_md, body_html, visibility,
+             category_json, hero_media_id, tags_json, scheduled_at, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(post_id) DO UPDATE SET
+             title = excluded.title,
+             slug = excluded.slug,
+             excerpt = excluded.excerpt,
+             body_md = excluded.body_md,
+             body_html = excluded.body_html,
+             visibility = excluded.visibility,
+             category_json = excluded.category_json,
+             hero_media_id = excluded.hero_media_id,
+             tags_json = excluded.tags_json,
+             scheduled_at = excluded.scheduled_at,
+             updated_at = excluded.updated_at`,
+        )
+        .bind(
+          post.id,
+          revision.title,
+          revision.slug,
+          revision.excerpt,
+          revision.bodyMd,
+          bodyHtml,
+          revision.visibility,
+          category ? JSON.stringify(category) : null,
+          revision.heroMediaId,
+          JSON.stringify(revision.tags),
+          post.scheduledAt,
+          now,
+        )
+        .run();
+      const restoredWorkingCopy = await this.findOwnerPost(post.id);
+      if (!restoredWorkingCopy) {
+        throw new Error("還原後無法重新讀取工作副本。");
+      }
+      return restoredWorkingCopy;
+    }
+
     await this.database.batch([
       this.database
         .prepare(
           `INSERT INTO post_revisions (
              id, post_id, title, slug, excerpt, body_md, visibility,
-             category_id, tags_json, created_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             category_id, hero_media_id, tags_json, created_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
           crypto.randomUUID(),
@@ -711,6 +893,7 @@ export class D1PublishingRepository implements PublishingRepository {
           post.bodyMd,
           post.visibility,
           post.category?.id ?? null,
+          post.heroMediaId,
           JSON.stringify(post.tags),
           now,
         ),
@@ -718,7 +901,7 @@ export class D1PublishingRepository implements PublishingRepository {
         .prepare(
           `UPDATE posts SET
              title = ?, slug = ?, excerpt = ?, body_md = ?, body_html = ?,
-             visibility = ?, category_id = ?, status = 'draft',
+             visibility = ?, category_id = ?, hero_media_id = ?, status = 'draft',
              scheduled_at = NULL, updated_at = ?
            WHERE id = ?`,
         )
@@ -730,11 +913,15 @@ export class D1PublishingRepository implements PublishingRepository {
           bodyHtml,
           revision.visibility,
           revision.categoryId,
+          revision.heroMediaId,
           now,
           post.id,
         ),
       this.database
         .prepare("DELETE FROM post_tags WHERE post_id = ?")
+        .bind(post.id),
+      this.database
+        .prepare("DELETE FROM post_working_copies WHERE post_id = ?")
         .bind(post.id),
       ...revision.tags.map((tag) =>
         this.database

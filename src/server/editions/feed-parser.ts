@@ -68,13 +68,11 @@ function cleanText(value: string, limit: number): string {
     .slice(0, limit);
 }
 
-function resolvedHttpUrl(value: string, baseUrl: URL): string | null {
+function resolvedHttpsUrl(value: string, baseUrl: URL): string | null {
   if (!value) return null;
   try {
     const url = new URL(value, baseUrl);
-    return url.protocol === "https:" || url.protocol === "http:"
-      ? url.toString()
-      : null;
+    return url.protocol === "https:" ? url.toString() : null;
   } catch {
     return null;
   }
@@ -84,7 +82,7 @@ function atomLink(entry: Record<string, unknown>, baseUrl: URL): string | null {
   const links = asArray(entry.link);
   for (const link of links) {
     if (typeof link === "string") {
-      const resolved = resolvedHttpUrl(link, baseUrl);
+      const resolved = resolvedHttpsUrl(link, baseUrl);
       if (resolved) return resolved;
       continue;
     }
@@ -92,7 +90,7 @@ function atomLink(entry: Record<string, unknown>, baseUrl: URL): string | null {
     const record = link as Record<string, unknown>;
     const relation = textValue(record["@_rel"] as XmlValue) || "alternate";
     if (relation !== "alternate") continue;
-    const resolved = resolvedHttpUrl(
+    const resolved = resolvedHttpsUrl(
       textValue(record["@_href"] as XmlValue),
       baseUrl,
     );
@@ -111,7 +109,7 @@ function parseRssItem(value: unknown, baseUrl: URL): FeedEntry | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;
   const title = cleanText(textValue(item.title as XmlValue), 300);
-  const url = resolvedHttpUrl(textValue(item.link as XmlValue), baseUrl);
+  const url = resolvedHttpsUrl(textValue(item.link as XmlValue), baseUrl);
   if (!title || !url) return null;
   const externalId = cleanText(textValue(item.guid as XmlValue), 500) || url;
   const summary = cleanText(

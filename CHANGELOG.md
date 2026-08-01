@@ -5,6 +5,52 @@
 This file records publicly verifiable product versions. Versions that are not
 yet deployed are marked explicitly.
 
+## [0.7.0] - Unreleased
+
+- 將來源權利審核加入 Studio 及 D1 不變量：來源需有條款網址、權利依據、審核
+  時間及 `approved` 狀態才可啟用；既有來源在 migration 後先暫停並重新審核。
+- 將每次同步限制為最多兩個來源、每個來源五項內容；feed body 使用串流 2 MiB
+  硬上限，並在超限或重新導向時主動取消回應。
+- 加入 Cron／手動工作 run ledger、唯一 run key、十四分鐘租約、過期重試、
+  `succeeded`／`partial`／`failed`／`skipped` 狀態及只含數量的結構化 logs。
+- 為已發佈或已排程的 Note／Article 加入只限 Studio 的工作副本；自動儲存不會
+  改動公開 canonical 內容，明確發佈時才建立修訂並提升新版本。
+- 為已發佈 Edition 加入同樣的工作副本與明確提升流程，避免編輯中的標題、
+  引言、項目及註解提前進入公開頁、RSS 或 sitemap。
+- 在服務層及 D1 triggers 同時約束 Post 與封面媒體的可見性；公開及 unlisted
+  內容只可連結公開媒體，私人內容只可連結私人媒體。
+- 將公開媒體 cache 改為五分鐘並容許短暫 stale-while-revalidate，不再對可變
+  媒體使用一年 immutable cache。
+- 限制本機 Studio bypass 只接受 loopback URL，並在 RSS／sitemap renderer
+  再次排除未到期排程內容。
+- 在無快取的公開 health response 加入 release version，方便部署後核對 exact build。
+- 在 build 後將 server modules 的本機 project path 改為中性 workspace path，避免
+  Astro manifest 或 component metadata 將開發機路徑帶入 Worker artifact。
+
+- Added an explicit Studio and D1 source-rights gate. A source needs a terms
+  URL, rights basis, review time, and approved status before it can be enabled;
+  existing sources are paused for re-review by the migration.
+- Bounded each ingestion run to two sources and five items per source, with a
+  streaming 2 MiB feed-body hard limit and response cancellation on oversize
+  bodies or redirects.
+- Added an idempotent Cron/manual run ledger with unique run keys, 14-minute
+  leases, stale-run recovery, explicit terminal states, and count-only logs.
+- Added owner-only working copies for published or scheduled Notes and
+  Articles, so autosave cannot mutate public canonical content before an
+  explicit publish action.
+- Added the same working-copy promotion boundary for published Editions,
+  including their titles, introductions, selected items, and annotations.
+- Enforced Post/cover-media visibility alignment in both the service and D1
+  triggers, and replaced one-year immutable caching for mutable public media
+  with a five-minute cache policy.
+- Restricted the local Studio bypass to loopback URLs and repeated the
+  not-yet-due scheduled-content guard inside RSS and sitemap renderers.
+- Added the release version to the uncached public health response for exact
+  post-deployment build verification.
+- Replaced the local project path in built server modules with a neutral
+  workspace path, preventing Astro manifest or component metadata from carrying
+  a developer-machine path into the Worker artifact.
+
 ## [0.6.0] - 2026-07-28
 
 - 加入站主專用的公開 RSS／Atom 來源管理、手動同步及安全狀態顯示。
@@ -15,7 +61,7 @@ yet deployed are marked explicitly.
 - 加入 Edition RSS、sitemap 條目、短摘錄、原文連結及來源版權提示。
 - Studio scripts 維持同源外部檔案，保留不容許 inline script 的嚴格 CSP。
 - 完成公開 About 頁，並將舊 Channels placeholder 永久轉向目前的搜尋與主題篩選。
-- 將示例內容改成中性、可公開審閱的測試文字，不帶個人興趣或自動生成聲稱。
+- 將示例內容改成中性、可公開審閱的測試文字，不加入非必要的個人化或自動生成聲稱。
 - 更新 Astro、Cloudflare adapter、Astro 檢查工具及 Node.js 型別等相容工具鏈；
   TypeScript 維持目前 Astro 檢查工具可支援的 6.0.3。
 
@@ -35,7 +81,7 @@ yet deployed are marked explicitly.
 - Completed the public About page and permanently redirected the legacy
   Channels placeholder to the current search and topic filters.
 - Replaced stale examples with neutral, reviewable test content without
-  personal-interest or automated-authorship claims.
+  unnecessary personalization or automated-authorship claims.
 - Updated the compatible Astro, Cloudflare adapter, Astro checking, and Node.js
   type toolchain while retaining TypeScript 6.0.3, the newest release supported
   by the current Astro checker.

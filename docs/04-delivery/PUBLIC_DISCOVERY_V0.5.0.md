@@ -1,7 +1,8 @@
 # Public Discovery v0.5.0
 
-Status: local acceptance and remote migration passed; production promotion
-pending.
+Status: historical v0.5.0 delivery record. These capabilities are included in
+later verified production releases; candidate-time evidence and gates are kept
+below for audit context.
 
 ## Included
 
@@ -52,7 +53,7 @@ indexes without storing deployment or account identifiers in source control.
 - WebKit checks passed at 1440px and 390px with no console errors or horizontal
   overflow.
 
-## Production gates
+## Historical production gates
 
 1. Complete the owner-only Cloudflare Access configuration required by v0.4.0.
 2. Confirm private Worker secrets and bindings without writing their values to
@@ -64,4 +65,5 @@ indexes without storing deployment or account identifiers in source control.
 
 Remote D1 migrations through `0002_public_discovery.sql` were applied and
 verified on 2026-07-26. The v0.5.0 release candidate was uploaded without
-receiving production traffic.
+receiving production traffic at the time this candidate record was written.
+Later release records supersede the pending state in this file.

@@ -1,7 +1,8 @@
 # Source Editions v0.6.0
 
-Status: local acceptance, remote migration, GitHub checks, and non-active
-release candidate passed; production promotion pending.
+Status: historical production release. v0.6.0 was merged through release PR #9,
+tagged, and verified in production on 2026-07-28. Candidate-time evidence is
+retained below where useful.
 
 ## Included
 
@@ -15,8 +16,8 @@ release candidate passed; production promotion pending.
 - Owner item selection, annotations, publishing, and archiving.
 - Public Edition index, detail pages, RSS feed, and sitemap entries.
 - Completed public About page and permanent redirects for legacy content names.
-- Neutral test examples that do not imply personal interests or automated
-  authorship.
+- Neutral, publicly reviewable test examples without automated-authorship
+  claims.
 
 ## Routes
 
@@ -85,9 +86,10 @@ therefore remain an owner review decision rather than a repository default.
 - Remote migration `0003_sources_editions.sql` was applied and verified on
   2026-07-26. All five expected tables exist, no migration remains pending, and
   no source, source item, or Edition row was seeded.
-- GitHub `verify` passed for draft PR #8, which remains mergeable and stacked on
-  the v0.5.0 discovery branch.
-- Worker candidate `v0.6.0-rc.2` was uploaded from the verified application code
-  without creating a deployment. The candidate has preview support, is not in
-  the active deployment, and production remains on one version at 100% traffic.
-- Access configuration and production promotion remain separate release gates.
+- GitHub `verify` passed for the reviewed feature changes in PR #8; the final
+  release alignment was merged through PR #9.
+- Tag `v0.6.0` points to merge commit `95237fe`, which contains the reviewed
+  source and Edition implementation plus the final release-state corrections.
+- Production route, feed, sitemap, Access-boundary, security-header, Worker
+  deployment, and hashed-asset checks passed before the v0.6.0 release was
+  closed.

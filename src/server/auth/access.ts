@@ -37,11 +37,18 @@ export function isOwnerEmail(candidate: unknown, ownerEmail: string): boolean {
   );
 }
 
+export function isLoopbackRequest(request: Request): boolean {
+  const hostname = new URL(request.url).hostname.toLowerCase();
+  return (
+    hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]"
+  );
+}
+
 export async function verifyOwnerRequest(
   request: Request,
   environment: AccessEnvironment,
 ): Promise<OwnerIdentity | null> {
-  if (isLocalStudioBypassAllowed(environment)) {
+  if (isLocalStudioBypassAllowed(environment) && isLoopbackRequest(request)) {
     return {
       email: environment.LOCAL_OWNER_EMAIL ?? "owner@local.invalid",
       subject: "local-owner",

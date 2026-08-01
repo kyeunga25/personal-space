@@ -18,8 +18,9 @@ export function renderRssFeed(options: RssFeedOptions): string {
   const { description, generatedAt, posts, selfPath, site, title } = options;
   const siteUrl = new URL("/", site).toString();
   const selfUrl = new URL(selfPath, site).toString();
+  const now = new Date(generatedAt);
   const items = posts.flatMap((post) => {
-    const path = publicPostPath(post);
+    const path = publicPostPath(post, now);
     if (!path) return [];
     const link = new URL(path, site).toString();
     const publishedAt = post.publishedAt ?? post.scheduledAt ?? post.createdAt;

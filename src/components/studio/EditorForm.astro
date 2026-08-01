@@ -40,11 +40,13 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
       <h1>{title || (isArticle ? "未命名文章" : "快速筆記")}</h1>
       <span
         >{
-          post?.status === "published"
-            ? "已發佈 Published"
-            : post?.status === "scheduled"
-              ? "已排程 Scheduled"
-              : "草稿 Draft"
+          post?.hasWorkingCopy
+            ? "未發佈修改 Working copy"
+            : post?.status === "published"
+              ? "已發佈 Published"
+              : post?.status === "scheduled"
+                ? "已排程 Scheduled"
+                : "草稿 Draft"
         }</span
       >
     </div>
@@ -68,6 +70,15 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
       </button>
     </div>
   </header>
+
+  {
+    post?.hasWorkingCopy && (
+      <p class="working-copy-notice">
+        目前顯示的是只限 Studio
+        的工作副本；公開頁面仍使用上一個已發佈版本。按下「發佈」才會更新公開內容。
+      </p>
+    )
+  }
 
   <div
     class="mobile-editor-tabs"
@@ -318,9 +329,18 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
             type="button"
             data-upload-media>上傳圖片 Upload</button
           >
+          <button
+            class="studio-button studio-button--quiet"
+            type="button"
+            data-clear-media
+            disabled={!post?.heroMediaId}>清除封面 Clear cover</button
+          >
           <p data-media-state aria-live="polite">
             {post?.heroMediaId ? "已連結封面圖片。" : "尚未選擇圖片。"}
           </p>
+          <small>
+            私人內容使用私人媒體；公開及不公開列出內容使用公開媒體。
+          </small>
         </fieldset>
 
         <div class="settings-actions">
@@ -515,6 +535,15 @@ const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
   }
   .mobile-editor-tabs {
     display: none;
+  }
+  .working-copy-notice {
+    margin: 0;
+    padding: var(--space-3) var(--space-6);
+    border-bottom: 1px solid var(--space-border-strong);
+    background: var(--space-surface-blue);
+    color: var(--space-primary-strong);
+    font-size: var(--font-size--1);
+    font-weight: 650;
   }
   .editor-grid {
     display: grid;

@@ -13,6 +13,7 @@ const publicPost: PostRecord = {
   category: null,
   createdAt: "2026-07-25T00:00:00.000Z",
   excerpt: "A <safe> summary & update",
+  hasWorkingCopy: false,
   heroMediaId: null,
   id: "post-1",
   kind: "article",
@@ -31,6 +32,7 @@ const publicEdition: EditionRecord = {
   createdAt: "2026-07-25T00:00:00.000Z",
   date: "2026-07-25",
   entries: [],
+  hasWorkingCopy: false,
   id: "edition-2026-07-25",
   introMd: "已審閱的 **公開** 來源整理。",
   publishedAt: "2026-07-25T03:00:00.000Z",
@@ -77,6 +79,7 @@ describe("public XML feeds", () => {
           updatedAt: "2026-07-25T04:00:00.000Z",
         },
       ],
+      generatedAt: "2026-07-25T03:00:00.000Z",
       paths: ["/", "/search"],
       posts: [publicPost],
       site: new URL("https://example.com"),
@@ -88,6 +91,33 @@ describe("public XML feeds", () => {
     );
     expect(xml).toContain("<lastmod>2026-07-25T02:00:00.000Z</lastmod>");
     expect(xml).toContain("<loc>https://example.com/editions/2026-07-25</loc>");
+  });
+
+  it("excludes future scheduled records even if a caller passes them in", () => {
+    const scheduledPost: PostRecord = {
+      ...publicPost,
+      id: "future-post",
+      scheduledAt: "2026-07-26T03:00:00.000Z",
+      slug: "future-post",
+      status: "scheduled",
+    };
+    const rss = renderRssFeed({
+      description: "Test feed",
+      generatedAt: "2026-07-25T03:00:00.000Z",
+      posts: [scheduledPost],
+      selfPath: "/rss.xml",
+      site: new URL("https://example.com"),
+      title: "Test feed",
+    });
+    const sitemap = renderSitemap({
+      generatedAt: "2026-07-25T03:00:00.000Z",
+      paths: [],
+      posts: [scheduledPost],
+      site: new URL("https://example.com"),
+    });
+
+    expect(rss).not.toContain("future-post");
+    expect(sitemap).not.toContain("future-post");
   });
 
   it("renders only published Editions in their dedicated RSS feed", () => {

@@ -30,6 +30,7 @@ if (!edition) {
                 <>
                   <p class="eyebrow">
                     {edition.date} · {edition.status}
+                    {edition.hasWorkingCopy ? " · working copy" : ""}
                   </p>
                   <h1>
                     編輯 Edition <small>Edit edition</small>
@@ -42,6 +43,11 @@ if (!edition) {
             </>
           </header>
           <p class="editor-status" aria-live="polite" data-edition-status />
+          {edition.hasWorkingCopy && (
+            <p class="working-copy-notice">
+              這是只限 Studio 的工作副本；公開 Edition 仍維持上一個已發佈版本。
+            </p>
+          )}
           <section class="editor-fields">
             <label>
               標題{" "}
@@ -121,7 +127,9 @@ if (!edition) {
           <footer class="editor-actions">
             <>
               <button class="button" type="submit" name="action" value="save">
-                儲存草稿 Save
+                {edition.status === "published"
+                  ? "儲存工作副本 Save working copy"
+                  : "儲存草稿 Save"}
               </button>
               <button
                 class="button button--primary"
@@ -195,6 +203,14 @@ if (!edition) {
   }
   .editor-status[data-state="error"] {
     color: #a23b3b;
+  }
+  .working-copy-notice {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--space-surface-blue);
+    color: var(--space-primary-strong);
+    font-weight: 650;
   }
   .editor-fields {
     display: grid;

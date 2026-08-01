@@ -1,7 +1,7 @@
 export const SITE = {
   name: "Personal Space",
   domain: "space.k-y.cc",
-  version: "v0.6.0",
+  version: "v0.7.0",
   description:
     "一個淡彩、由自己掌握，分層展示短內容、長內容與新聞整理的個人空間。",
   descriptionEn:

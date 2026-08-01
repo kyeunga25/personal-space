@@ -27,7 +27,7 @@ describe("syndication feed parsing", () => {
     ]);
   });
 
-  it("parses Atom alternate links and rejects non-http links", () => {
+  it("parses Atom alternate links and rejects non-HTTPS links", () => {
     const entries = parseSyndicationFeed(
       `<feed><entry><id>tag:example,1</id><title>Example update</title>
         <link rel="alternate" href="https://example.com/posts/1" />
@@ -39,6 +39,15 @@ describe("syndication feed parsing", () => {
 
     expect(entries).toHaveLength(1);
     expect(entries[0]?.url).toBe("https://example.com/posts/1");
+  });
+
+  it("does not ingest HTTP article links from an HTTPS feed", () => {
+    const entries = parseSyndicationFeed(
+      "<rss><channel><item><guid>plain-http</guid><title>Unsafe link</title><link>http://example.com/posts/1</link></item></channel></rss>",
+      new URL("https://example.com/feed.xml"),
+    );
+
+    expect(entries).toEqual([]);
   });
 
   it("rejects XML documents that are not RSS or Atom feeds", () => {

@@ -58,6 +58,41 @@ function contentLength(response: Response): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
+async function readBoundedBody(
+  response: Response,
+  limit: number,
+): Promise<Uint8Array> {
+  if (!response.body) return new Uint8Array();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel("feed_too_large");
+        throw new FeedFetchError("feed_too_large");
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    if (error instanceof FeedFetchError) throw error;
+    throw new FeedFetchError("network_error");
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 export async function fetchFeedDocument(
   source: SourceRecord,
   fetcher: typeof fetch = fetch,
@@ -88,8 +123,10 @@ export async function fetchFeedDocument(
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       const location = response.headers.get("location");
       if (!location || redirect === MAX_REDIRECTS) {
+        await response.body?.cancel();
         throw new FeedFetchError("redirect_error");
       }
+      await response.body?.cancel();
       url = validateFeedUrl(new URL(location, url).toString());
       continue;
     }
@@ -107,13 +144,11 @@ export async function fetchFeedDocument(
       throw new FeedFetchError(`http_${String(response.status)}`);
     }
     if ((contentLength(response) ?? 0) > MAX_FEED_BYTES) {
+      await response.body?.cancel();
       throw new FeedFetchError("feed_too_large");
     }
 
-    const bytes = await response.arrayBuffer();
-    if (bytes.byteLength > MAX_FEED_BYTES) {
-      throw new FeedFetchError("feed_too_large");
-    }
+    const bytes = await readBoundedBody(response, MAX_FEED_BYTES);
     const body = new TextDecoder().decode(bytes);
     if (!body.trimStart().startsWith("<")) {
       throw new FeedFetchError("invalid_feed");

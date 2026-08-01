@@ -14,6 +14,7 @@ function post(overrides: Partial<PostRecord> = {}): PostRecord {
     category: null,
     createdAt: "2026-07-25T00:00:00.000Z",
     excerpt: "body",
+    hasWorkingCopy: false,
     heroMediaId: null,
     id: "post-1",
     kind: "note",

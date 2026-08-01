@@ -18,8 +18,13 @@ const source: SourceRecord = {
   lastModified: "Fri, 25 Jul 2026 00:00:00 GMT",
   lastSuccessAt: null,
   name: "Example",
+  reviewNotes: null,
+  reviewedAt: "2026-07-25T00:00:00.000Z",
+  reviewStatus: "approved",
+  rightsBasis: "Public feed terms reviewed.",
   siteUrl: "https://example.com/",
   status: "enabled",
+  termsUrl: "https://example.com/terms",
   updatedAt: "2026-07-25T00:00:00.000Z",
 };
 
@@ -66,6 +71,26 @@ describe("feed fetching", () => {
       }),
     );
     await expect(fetchFeedDocument(source, largeFetcher)).rejects.toEqual(
+      new FeedFetchError("feed_too_large"),
+    );
+  });
+
+  it("stops reading a chunked response as soon as it exceeds the limit", async () => {
+    const chunk = new Uint8Array(1024 * 1024);
+    const chunkedFetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(chunk);
+            controller.enqueue(chunk);
+            controller.enqueue(new Uint8Array(1));
+            controller.close();
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchFeedDocument(source, chunkedFetcher)).rejects.toEqual(
       new FeedFetchError("feed_too_large"),
     );
   });

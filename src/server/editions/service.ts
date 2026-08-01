@@ -1,4 +1,6 @@
 import type {
+  AutomationRunStatus,
+  AutomationTrigger,
   EditionRecord,
   FeedEntry,
   IngestedEntry,
@@ -11,9 +13,39 @@ import { sha256Hex } from "./hashing";
 import { D1EditionRepository } from "./repository";
 import { normalizeStoryTitle, storyTitleSimilarity } from "./similarity";
 
-const MAX_SOURCES_PER_RUN = 12;
-const MAX_ITEMS_PER_SOURCE = 10;
+export const MAX_SOURCES_PER_RUN = 2;
+export const MAX_ITEMS_PER_SOURCE = 5;
 const CLUSTER_THRESHOLD = 0.6;
+const RUN_LEASE_MS = 14 * 60 * 1000;
+
+type CompletedRunStatus = Exclude<AutomationRunStatus, "running">;
+
+export interface AutomationExecution<T> {
+  attemptCount: number;
+  duplicate: boolean;
+  report: T | null;
+  runId: string;
+  status: CompletedRunStatus;
+}
+
+export interface AutomationRunOptions {
+  now?: Date;
+  scheduledAt?: Date;
+  trigger?: AutomationTrigger;
+}
+
+export type EditionAutomationRepository = Pick<
+  D1EditionRepository,
+  | "claimAutomationRun"
+  | "completeAutomationRun"
+  | "findExistingItems"
+  | "generateDailyEdition"
+  | "listEnabledSources"
+  | "listRecentClusters"
+  | "markSourceFailure"
+  | "markSourceNotModified"
+  | "saveIngestedEntries"
+>;
 
 function hongKongDateKey(date: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -72,13 +104,134 @@ async function prepareEntry(
   };
 }
 
+function completedStatus(status: AutomationRunStatus): CompletedRunStatus {
+  return status === "running" ? "skipped" : status;
+}
+
 export class EditionAutomationService {
   constructor(
-    private readonly repository: D1EditionRepository,
+    private readonly repository: EditionAutomationRepository,
     private readonly fetcher: typeof fetch = fetch,
   ) {}
 
-  async ingest(now = new Date()): Promise<IngestionReport> {
+  async runIngestion(
+    options: AutomationRunOptions = {},
+  ): Promise<AutomationExecution<IngestionReport>> {
+    const now = options.now ?? new Date();
+    const scheduledAt = options.scheduledAt ?? now;
+    const trigger = options.trigger ?? "manual";
+    const claim = await this.repository.claimAutomationRun(
+      "source_ingestion",
+      trigger,
+      scheduledAt.toISOString(),
+      now.toISOString(),
+      new Date(now.getTime() + RUN_LEASE_MS).toISOString(),
+    );
+    if (!claim.claimed) {
+      return {
+        attemptCount: claim.attemptCount,
+        duplicate: true,
+        report: null,
+        runId: claim.id,
+        status: completedStatus(claim.status),
+      };
+    }
+
+    try {
+      const report = await this.ingestSources(now);
+      const successfulSources =
+        report.fetchedSources + report.notModifiedSources;
+      const status: CompletedRunStatus =
+        report.attemptedSources === 0
+          ? "skipped"
+          : successfulSources === 0
+            ? "failed"
+            : report.failedSources > 0
+              ? "partial"
+              : "succeeded";
+      await this.repository.completeAutomationRun(
+        claim,
+        status,
+        {
+          attemptedSources: report.attemptedSources,
+          failedSources: report.failedSources,
+          fetchedSources: report.fetchedSources,
+          newItems: report.newItems,
+          notModifiedSources: report.notModifiedSources,
+        },
+        new Date().toISOString(),
+        status === "failed" ? "all_sources_failed" : null,
+      );
+      return {
+        attemptCount: claim.attemptCount,
+        duplicate: false,
+        report,
+        runId: claim.id,
+        status,
+      };
+    } catch (error) {
+      await this.repository.completeAutomationRun(
+        claim,
+        "failed",
+        {},
+        new Date().toISOString(),
+        "ingestion_error",
+      );
+      throw error;
+    }
+  }
+
+  async runEditionGeneration(
+    options: AutomationRunOptions = {},
+  ): Promise<AutomationExecution<EditionRecord>> {
+    const now = options.now ?? new Date();
+    const scheduledAt = options.scheduledAt ?? now;
+    const trigger = options.trigger ?? "manual";
+    const claim = await this.repository.claimAutomationRun(
+      "edition_generation",
+      trigger,
+      scheduledAt.toISOString(),
+      now.toISOString(),
+      new Date(now.getTime() + RUN_LEASE_MS).toISOString(),
+    );
+    if (!claim.claimed) {
+      return {
+        attemptCount: claim.attemptCount,
+        duplicate: true,
+        report: null,
+        runId: claim.id,
+        status: completedStatus(claim.status),
+      };
+    }
+
+    try {
+      const edition = await this.generateDailyEdition(now);
+      await this.repository.completeAutomationRun(
+        claim,
+        "succeeded",
+        { editionItems: edition.entries.length },
+        new Date().toISOString(),
+      );
+      return {
+        attemptCount: claim.attemptCount,
+        duplicate: false,
+        report: edition,
+        runId: claim.id,
+        status: "succeeded",
+      };
+    } catch (error) {
+      await this.repository.completeAutomationRun(
+        claim,
+        "failed",
+        {},
+        new Date().toISOString(),
+        "edition_generation_error",
+      );
+      throw error;
+    }
+  }
+
+  private async ingestSources(now: Date): Promise<IngestionReport> {
     const nowIso = now.toISOString();
     const clusters = await this.repository.listRecentClusters(
       new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString(),
@@ -86,6 +239,7 @@ export class EditionAutomationService {
     const sources =
       await this.repository.listEnabledSources(MAX_SOURCES_PER_RUN);
     const report: IngestionReport = {
+      attemptedSources: sources.length,
       failedSources: 0,
       fetchedSources: 0,
       newItems: 0,
@@ -136,7 +290,7 @@ export class EditionAutomationService {
     return report;
   }
 
-  async generateDailyEdition(now = new Date()): Promise<EditionRecord> {
+  private async generateDailyEdition(now: Date): Promise<EditionRecord> {
     return this.repository.generateDailyEdition(
       hongKongDateKey(now),
       new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString(),
