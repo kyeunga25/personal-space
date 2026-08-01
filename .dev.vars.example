@@ -1,4 +1,5 @@
 # Local Studio only. Copy to .dev.vars for local testing.
+# The bypass also requires a loopback request URL such as http://localhost.
 APP_ENV=development
 LOCAL_STUDIO_BYPASS=true
 LOCAL_OWNER_EMAIL=owner@local.invalid

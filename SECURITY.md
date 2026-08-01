@@ -15,6 +15,15 @@ Studio、私人媒體及寫入 API 必須同時通過 Cloudflare Access JWT 驗�
 核對。修改內容的請求另設同源檢查；Markdown 預覽及公開輸出均經 allowlist
 清理。若相關保護未設定，受保護路由會以 `404` 拒絕存取。
 
+本機 Studio bypass 只在 development 設定、明確啟用及 loopback URL 三項條件
+同時成立時生效。來源同步只處理已完成條款及權利審核的來源，並設 HTTPS、公開
+網絡、逾時、重新導向、串流大小及每次工作量限制。Automation logs 與 run
+ledger 只記錄狀態、錯誤碼及數量，不保存來源文章內容或私人草稿。
+
+已發佈內容的編輯值只寫入 owner-only working-copy tables；公開查詢只讀 canonical
+tables。Post 與封面媒體可見性由服務驗證及 D1 triggers 雙重約束。R2 bucket 不應
+直接公開，公開媒體只經過會再次核對資料庫可見性的 Worker route 提供。
+
 ## English
 
 If you discover a potential security issue, use GitHub **Private vulnerability reporting** or open a private security advisory. Do not disclose vulnerabilities, credentials, personal data, or reproducible attack details through public channels.
@@ -32,3 +41,16 @@ verification and an application-level owner email match. Content mutations also
 enforce same-origin requests, while Markdown preview and public output are
 sanitized through an allowlist. Protected routes fail closed with `404` when
 their authentication settings are unavailable.
+
+The local Studio bypass requires development mode, an explicit opt-in, and a
+loopback URL at the same time. Source ingestion only processes sources with a
+recorded terms-and-rights approval and enforces HTTPS, public-network, timeout,
+redirect, streaming-size, and per-run work limits. Automation logs and the run
+ledger contain statuses, error codes, and counts only, never source article
+content or private drafts.
+
+Edits to published content are stored in owner-only working-copy tables, while
+public queries read canonical tables only. Post and cover-media visibility is
+enforced by both service validation and D1 triggers. The R2 bucket should not be
+made directly public; public media is served through the Worker route, which
+checks database visibility again.

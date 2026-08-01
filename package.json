@@ -1,6 +1,6 @@
 {
   "name": "personal-space",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "npm run build && wrangler dev",
+    "preview": "npm run build && wrangler dev --local --host localhost --local-upstream localhost --env-file .dev.vars.example",
     "deploy": "npm run build && wrangler deploy",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
