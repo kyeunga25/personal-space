@@ -26,11 +26,11 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run worker:types:check && npm run worker:dry-run"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "14.1.5",
-    "astro": "7.1.4",
+    "@astrojs/cloudflare": "14.1.7",
+    "astro": "7.1.6",
     "fast-xml-parser": "^5.10.1",
-    "jose": "6.2.4",
-    "marked": "18.0.7",
+    "jose": "6.2.8",
+    "marked": "18.0.9",
     "sanitize-html": "2.17.6"
   },
   "devDependencies": {
@@ -39,14 +39,14 @@
     "@types/node": "26.1.2",
     "@types/sanitize-html": "2.16.1",
     "eslint": "^10.8.0",
-    "eslint-plugin-astro": "3.0.1",
-    "globals": "17.8.0",
+    "eslint-plugin-astro": "3.1.0",
+    "globals": "17.9.0",
     "prettier": "3.9.6",
     "prettier-plugin-astro": "0.14.1",
-    "typescript": "6.0.3",
-    "typescript-eslint": "8.65.0",
+    "typescript": "7.0.2",
+    "typescript-eslint": "8.66.0",
     "vitest": "4.1.10",
-    "wrangler": "4.114.0"
+    "wrangler": "4.118.0"
   },
   "allowScripts": {
     "esbuild@0.28.1": true,
