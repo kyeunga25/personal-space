@@ -1,18 +1,27 @@
 ---
 import ArchivePage from "../../components/ArchivePage.astro";
-import { parseDiscoveryFilters } from "../../server/discovery/filters";
+import {
+  parseArchiveDiscoveryFilters,
+  withCursor,
+} from "../../server/discovery/filters";
 import { getBindings } from "../../server/platform/bindings";
 import { D1PublishingRepository } from "../../server/publishing/repository";
 
 const repository = new D1PublishingRepository(getBindings().DB);
 const now = new Date().toISOString();
+const filters = parseArchiveDiscoveryFilters(
+  Astro.url.searchParams,
+  null,
+  null,
+  50,
+);
 const [months, result] = await Promise.all([
   repository.listPublicArchiveMonths(now),
-  repository.listPublicDiscovery(
-    parseDiscoveryFilters(new URLSearchParams(), 50),
-    now,
-  ),
+  repository.listPublicDiscovery(filters, now),
 ]);
+const nextHref = result.nextCursor
+  ? withCursor(filters, result.nextCursor)
+  : null;
 ---
 
-<ArchivePage {months} posts={result.posts} />
+<ArchivePage {months} posts={result.posts} {nextHref} />

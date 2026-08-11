@@ -1,23 +1,32 @@
 ---
 import ArchivePage from "../../../components/ArchivePage.astro";
-import { parseDiscoveryFilters } from "../../../server/discovery/filters";
+import { isArchiveYear } from "../../../lib/dates";
+import {
+  parseArchiveDiscoveryFilters,
+  withCursor,
+} from "../../../server/discovery/filters";
 import { getBindings } from "../../../server/platform/bindings";
 import { D1PublishingRepository } from "../../../server/publishing/repository";
 
 const year = Astro.params.year ?? "";
-if (!/^\d{4}$/.test(year)) {
+if (!isArchiveYear(year)) {
   return Astro.redirect("/archive", 302);
 }
-const params = new URLSearchParams({
-  from: `${year}-01-01`,
-  to: `${year}-12-31`,
-});
+const filters = parseArchiveDiscoveryFilters(
+  Astro.url.searchParams,
+  `${year}-01-01`,
+  `${year}-12-31`,
+  50,
+);
 const repository = new D1PublishingRepository(getBindings().DB);
 const now = new Date().toISOString();
 const [months, result] = await Promise.all([
   repository.listPublicArchiveMonths(now),
-  repository.listPublicDiscovery(parseDiscoveryFilters(params, 50), now),
+  repository.listPublicDiscovery(filters, now),
 ]);
+const nextHref = result.nextCursor
+  ? withCursor(filters, result.nextCursor)
+  : null;
 ---
 
-<ArchivePage {months} posts={result.posts} title={`${year} 年`} />
+<ArchivePage currentYear={year} {months} posts={result.posts} {nextHref} />

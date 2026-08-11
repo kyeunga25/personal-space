@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { publicNotFoundCopy, type PublicNotFoundKind } from "../lib/not-found";
+
+interface Props {
+  kind?: PublicNotFoundKind;
+}
+
+const { kind = "page" } = Astro.props;
+const copy = publicNotFoundCopy(kind);
+---
+
+<BaseLayout
+  title={copy.title}
+  titleEn={copy.titleEn}
+  description={copy.description}
+  descriptionEn={copy.descriptionEn}
+  section={copy.title}
+  sectionEn={copy.titleEn}
+  noIndex
+>
+  <section class="page-intro">
+    <p class="page-kicker">404</p>
+    <h1>
+      {copy.heading}
+      <small lang="en">{copy.headingEn}</small>
+    </h1>
+    <p>{copy.description}</p>
+    <p class="en-subline" lang="en">{copy.descriptionEn}</p>
+    <div class="button-row">
+      <a class="button button--primary" href={copy.backHref}>
+        {copy.backLabel}
+        <span lang="en">{copy.backLabelEn}</span>
+      </a>
+      <a class="button" href="/search">
+        搜尋空間 <span lang="en">Search</span>
+      </a>
+    </div>
+  </section>
+</BaseLayout>

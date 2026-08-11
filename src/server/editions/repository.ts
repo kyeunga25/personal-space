@@ -1,4 +1,5 @@
 import { UserFacingError } from "../errors";
+import type { AutomationRunPageCursor } from "./automation-run-pagination";
 import type {
   AutomationJob,
   AutomationRunClaim,
@@ -6,6 +7,7 @@ import type {
   AutomationRunStatus,
   AutomationTrigger,
   EditionEntry,
+  EditionPage,
   EditionRecord,
   EditionSaveInput,
   EditionStatus,
@@ -14,6 +16,18 @@ import type {
   StoryClusterCandidate,
 } from "./domain";
 import type { SourceInput } from "./input";
+import type { SourcePageCursor } from "./source-pagination";
+
+const DUPLICATE_SOURCE_ERROR =
+  "這個 feed 已經加入。 This feed has already been added.";
+const EDITION_NOT_FOUND_ERROR =
+  "找不到這份 Edition。 The requested Edition could not be found.";
+const EDITION_STALE_ERROR =
+  "Edition 內容已變更，請重新載入。 Edition content has changed; reload before saving.";
+const EDITION_RIGHTS_ERROR =
+  "來源權利狀態已變更，請重新核對後再發佈。 Source rights changed; review them before publishing.";
+const SOURCE_NOT_FOUND_ERROR =
+  "找不到這個來源。 The requested source could not be found.";
 
 interface SourceRow {
   created_at: string;
@@ -36,9 +50,8 @@ interface SourceRow {
   updated_at: string;
 }
 
-interface AutomationRunRow {
+interface AutomationRunDisplayRow {
   attempt_count: number;
-  claim_token: string | null;
   completed_at: string | null;
   error_code: string | null;
   id: string;
@@ -48,6 +61,14 @@ interface AutomationRunRow {
   status: AutomationRunStatus;
   summary_json: string;
   trigger_kind: AutomationTrigger;
+}
+
+interface AutomationRunRow extends AutomationRunDisplayRow {
+  claim_token: string | null;
+}
+
+interface AutomationRunPageRow extends AutomationRunDisplayRow {
+  created_at: string;
 }
 
 interface ClusterRow {
@@ -96,6 +117,47 @@ interface EditionCandidateRow {
   item_id: string;
 }
 
+interface EditionRightsSnapshotRow {
+  item_id: string;
+  reviewed_at: string;
+  rights_basis: string;
+  site_url: string | null;
+  source_name: string;
+  terms_url: string;
+}
+
+const PUBLIC_EDITION_RIGHTS_CLAUSE = `EXISTS (
+  SELECT 1 FROM edition_items public_item
+  WHERE public_item.edition_id = editions.id
+)
+AND NOT EXISTS (
+  SELECT 1
+  FROM edition_items rights_item
+  WHERE rights_item.edition_id = editions.id
+    AND (
+      NOT EXISTS (
+        SELECT 1
+        FROM source_items rights_source_item
+        JOIN sources rights_source
+          ON rights_source.id = rights_source_item.source_id
+        WHERE rights_source_item.id = rights_item.source_item_id
+          AND rights_source.review_status = 'approved'
+          AND rights_source.terms_url IS NOT NULL
+          AND length(trim(rights_source.terms_url)) > 0
+          AND rights_source.rights_basis IS NOT NULL
+          AND length(trim(rights_source.rights_basis)) > 0
+          AND rights_source.reviewed_at IS NOT NULL
+      )
+      OR rights_item.source_name_snapshot IS NULL
+      OR length(trim(rights_item.source_name_snapshot)) = 0
+      OR rights_item.source_terms_url_snapshot IS NULL
+      OR length(trim(rights_item.source_terms_url_snapshot)) = 0
+      OR rights_item.source_rights_basis_snapshot IS NULL
+      OR length(trim(rights_item.source_rights_basis_snapshot)) = 0
+      OR rights_item.source_reviewed_at_snapshot IS NULL
+    )
+)`;
+
 function mapSource(row: SourceRow): SourceRecord {
   return {
     createdAt: row.created_at,
@@ -119,7 +181,7 @@ function mapSource(row: SourceRow): SourceRecord {
   };
 }
 
-function mapAutomationRun(row: AutomationRunRow): AutomationRunRecord {
+function mapAutomationRun(row: AutomationRunDisplayRow): AutomationRunRecord {
   let summary: Record<string, number> = {};
   try {
     const parsed: unknown = JSON.parse(row.summary_json);
@@ -166,11 +228,39 @@ function mapEditionEntry(row: EditionEntryRow): EditionEntry {
 export class D1EditionRepository {
   constructor(private readonly database: D1Database) {}
 
-  async listSources(): Promise<SourceRecord[]> {
+  async listSourcePage(
+    cursor: SourcePageCursor | null,
+    limit = 20,
+  ): Promise<{
+    nextCursor: SourcePageCursor | null;
+    sources: SourceRecord[];
+  }> {
+    const pageSize = Math.min(Math.max(Math.trunc(limit), 1), 40);
+    const bindings: (number | string)[] = [];
+    if (cursor) {
+      bindings.push(cursor.before, cursor.before, cursor.beforeId);
+    }
+    bindings.push(pageSize + 1);
     const result = await this.database
-      .prepare("SELECT * FROM sources ORDER BY name, created_at")
+      .prepare(
+        `SELECT * FROM sources
+         ${cursor ? "WHERE created_at < ? OR (created_at = ? AND id < ?)" : ""}
+         ORDER BY created_at DESC, id DESC
+         LIMIT ?`,
+      )
+      .bind(...bindings)
       .all<SourceRow>();
-    return result.results.map(mapSource);
+    const hasMore = result.results.length > pageSize;
+    const pageRows = hasMore
+      ? result.results.slice(0, pageSize)
+      : result.results;
+    const last = pageRows.at(-1);
+
+    return {
+      nextCursor:
+        hasMore && last ? { before: last.created_at, beforeId: last.id } : null,
+      sources: pageRows.map(mapSource),
+    };
   }
 
   async listEnabledSources(limit = 20): Promise<SourceRecord[]> {
@@ -204,7 +294,7 @@ export class D1EditionRepository {
 
   async createSource(input: SourceInput, now: string): Promise<SourceRecord> {
     if (await this.findSourceByFeedUrl(input.feedUrl)) {
-      throw new UserFacingError("這個 feed 已經加入。", 409);
+      throw new UserFacingError(DUPLICATE_SOURCE_ERROR, 409);
     }
     const id = crypto.randomUUID();
     await this.database
@@ -240,10 +330,10 @@ export class D1EditionRepository {
     now: string,
   ): Promise<SourceRecord> {
     const current = await this.findSource(id);
-    if (!current) throw new UserFacingError("找不到這個來源。", 404);
+    if (!current) throw new UserFacingError(SOURCE_NOT_FOUND_ERROR, 404);
     const duplicate = await this.findSourceByFeedUrl(input.feedUrl);
     if (duplicate && duplicate.id !== id) {
-      throw new UserFacingError("這個 feed 已經加入。", 409);
+      throw new UserFacingError(DUPLICATE_SOURCE_ERROR, 409);
     }
     await this.database
       .prepare(
@@ -365,19 +455,61 @@ export class D1EditionRepository {
       .run();
   }
 
-  async listAutomationRuns(limit = 20): Promise<AutomationRunRecord[]> {
+  async listAutomationRunPage(
+    cursor: AutomationRunPageCursor | null,
+    limit = 12,
+  ): Promise<{
+    nextCursor: AutomationRunPageCursor | null;
+    runs: AutomationRunRecord[];
+  }> {
+    const pageSize = Math.min(Math.max(Math.trunc(limit), 1), 50);
+    const bindings: (number | string)[] = [];
+    if (cursor) {
+      bindings.push(
+        cursor.beforeScheduled,
+        cursor.beforeScheduled,
+        cursor.beforeCreated,
+        cursor.beforeScheduled,
+        cursor.beforeCreated,
+        cursor.beforeId,
+      );
+    }
+    bindings.push(pageSize + 1);
     const result = await this.database
       .prepare(
-        `SELECT id, attempt_count, claim_token, completed_at, error_code,
-                job, scheduled_at, started_at, status, summary_json,
-                trigger_kind
+        `SELECT id, attempt_count, completed_at, error_code, job,
+                scheduled_at, started_at, status, summary_json, trigger_kind,
+                created_at
          FROM automation_runs
-         ORDER BY scheduled_at DESC, created_at DESC
+         ${
+           cursor
+             ? `WHERE scheduled_at < ?
+                OR (scheduled_at = ? AND created_at < ?)
+                OR (scheduled_at = ? AND created_at = ? AND id < ?)`
+             : ""
+         }
+         ORDER BY scheduled_at DESC, created_at DESC, id DESC
          LIMIT ?`,
       )
-      .bind(Math.min(Math.max(Math.trunc(limit), 1), 50))
-      .all<AutomationRunRow>();
-    return result.results.map(mapAutomationRun);
+      .bind(...bindings)
+      .all<AutomationRunPageRow>();
+    const hasMore = result.results.length > pageSize;
+    const pageRows = hasMore
+      ? result.results.slice(0, pageSize)
+      : result.results;
+    const last = pageRows.at(-1);
+
+    return {
+      nextCursor:
+        hasMore && last
+          ? {
+              beforeCreated: last.created_at,
+              beforeId: last.id,
+              beforeScheduled: last.scheduled_at,
+            }
+          : null,
+      runs: pageRows.map(mapAutomationRun),
+    };
   }
 
   async listRecentClusters(
@@ -578,11 +710,36 @@ export class D1EditionRepository {
   }
 
   async listOwnerEditions(limit = 30): Promise<EditionRecord[]> {
+    return (await this.listOwnerEditionPage(null, limit)).editions;
+  }
+
+  async listOwnerEditionPage(
+    before: string | null,
+    limit = 30,
+  ): Promise<EditionPage> {
+    const pageSize = Math.min(Math.max(Math.trunc(limit), 1), 40);
+    const bindings: (number | string)[] = [];
+    if (before) bindings.push(before);
+    bindings.push(pageSize + 1);
     const result = await this.database
-      .prepare("SELECT * FROM editions ORDER BY edition_date DESC LIMIT ?")
-      .bind(Math.min(Math.max(Math.trunc(limit), 1), 40))
+      .prepare(
+        `SELECT * FROM editions
+         ${before ? "WHERE edition_date < ?" : ""}
+         ORDER BY edition_date DESC
+         LIMIT ?`,
+      )
+      .bind(...bindings)
       .all<EditionRow>();
-    return this.mapEditions(result.results, true);
+    const hasMore = result.results.length > pageSize;
+    const pageRows = hasMore
+      ? result.results.slice(0, pageSize)
+      : result.results;
+    const editions = await this.mapEditions(pageRows, true);
+
+    return {
+      editions,
+      nextCursor: hasMore ? (pageRows.at(-1)?.edition_date ?? null) : null,
+    };
   }
 
   async listPublicEditions(limit = 30): Promise<EditionRecord[]> {
@@ -590,12 +747,44 @@ export class D1EditionRepository {
       .prepare(
         `SELECT * FROM editions
          WHERE status = 'published'
+           AND ${PUBLIC_EDITION_RIGHTS_CLAUSE}
          ORDER BY edition_date DESC
          LIMIT ?`,
       )
       .bind(Math.min(Math.max(Math.trunc(limit), 1), 100))
       .all<EditionRow>();
     return this.mapEditions(result.results);
+  }
+
+  async listPublicEditionPage(
+    before: string | null,
+    limit = 30,
+  ): Promise<EditionPage> {
+    const pageSize = Math.min(Math.max(Math.trunc(limit), 1), 100);
+    const bindings: (number | string)[] = [];
+    if (before) bindings.push(before);
+    bindings.push(pageSize + 1);
+    const result = await this.database
+      .prepare(
+        `SELECT * FROM editions
+         WHERE status = 'published'
+           AND ${PUBLIC_EDITION_RIGHTS_CLAUSE}
+         ${before ? "AND edition_date < ?" : ""}
+         ORDER BY edition_date DESC
+         LIMIT ?`,
+      )
+      .bind(...bindings)
+      .all<EditionRow>();
+    const hasMore = result.results.length > pageSize;
+    const pageRows = hasMore
+      ? result.results.slice(0, pageSize)
+      : result.results;
+    const editions = await this.mapEditions(pageRows);
+
+    return {
+      editions,
+      nextCursor: hasMore ? (pageRows.at(-1)?.edition_date ?? null) : null,
+    };
   }
 
   async findOwnerEdition(id: string): Promise<EditionRecord | null> {
@@ -623,6 +812,7 @@ export class D1EditionRepository {
       .prepare(
         `SELECT * FROM editions
          WHERE edition_date = ? AND status = 'published'
+           AND ${PUBLIC_EDITION_RIGHTS_CLAUSE}
          LIMIT 1`,
       )
       .bind(date)
@@ -637,9 +827,9 @@ export class D1EditionRepository {
     now: string,
   ): Promise<EditionRecord> {
     const current = await this.findOwnerEdition(id);
-    if (!current) throw new UserFacingError("找不到這份 Edition。", 404);
+    if (!current) throw new UserFacingError(EDITION_NOT_FOUND_ERROR, 404);
     const canonical = await this.findCanonicalEdition(id);
-    if (!canonical) throw new UserFacingError("找不到這份 Edition。", 404);
+    if (!canonical) throw new UserFacingError(EDITION_NOT_FOUND_ERROR, 404);
     const entryById = new Map(
       current.entries.map((entry) => [entry.itemId, entry]),
     );
@@ -647,7 +837,21 @@ export class D1EditionRepository {
       entryById.get(itemId),
     );
     if (selected.some((entry) => !entry)) {
-      throw new UserFacingError("Edition 內容已變更，請重新載入。", 409);
+      throw new UserFacingError(EDITION_STALE_ERROR, 409);
+    }
+    const rightsSnapshots =
+      input.action === "publish"
+        ? await this.findApprovedRightsSnapshots(input.includedItemIds)
+        : [];
+    const rightsByItemId = new Map(
+      rightsSnapshots.map((snapshot) => [snapshot.item_id, snapshot]),
+    );
+    if (
+      input.action === "publish" &&
+      (input.includedItemIds.length === 0 ||
+        rightsByItemId.size !== new Set(input.includedItemIds).size)
+    ) {
+      throw new UserFacingError(EDITION_RIGHTS_ERROR, 409);
     }
     if (input.action === "save" && canonical.status === "published") {
       const statements: D1PreparedStatement[] = [
@@ -701,21 +905,24 @@ export class D1EditionRepository {
       status === "published"
         ? (canonical.publishedAt ?? now)
         : canonical.publishedAt;
-    const statements: D1PreparedStatement[] = [
-      this.database
-        .prepare(
-          `UPDATE editions SET
-             title = ?, intro_md = ?, status = ?, published_at = ?, updated_at = ?
-           WHERE id = ?`,
-        )
-        .bind(input.title, input.introMd, status, publishedAt, now, id),
+    const statements: D1PreparedStatement[] = [];
+    if (input.action === "archive" && canonical.status === "published") {
+      statements.push(
+        this.database
+          .prepare(
+            "UPDATE editions SET status = 'archived', updated_at = ? WHERE id = ?",
+          )
+          .bind(now, id),
+      );
+    }
+    statements.push(
       this.database
         .prepare("DELETE FROM edition_items WHERE edition_id = ?")
         .bind(id),
       this.database
         .prepare("DELETE FROM edition_working_copies WHERE edition_id = ?")
         .bind(id),
-    ];
+    );
     for (const entry of canonical.entries) {
       statements.push(
         this.database
@@ -725,12 +932,21 @@ export class D1EditionRepository {
     }
     selected.forEach((entry, position) => {
       if (!entry) return;
+      const rights = rightsByItemId.get(entry.itemId);
+      if (input.action === "publish" && !rights) return;
       statements.push(
         this.database
           .prepare(
-            `INSERT INTO edition_items (
-               edition_id, cluster_id, source_item_id, position, annotation
-             ) VALUES (?, ?, ?, ?, ?)`,
+            input.action === "publish"
+              ? `INSERT INTO edition_items (
+                   edition_id, cluster_id, source_item_id, position, annotation,
+                   source_name_snapshot, source_site_url_snapshot,
+                   source_terms_url_snapshot, source_rights_basis_snapshot,
+                   source_reviewed_at_snapshot
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              : `INSERT INTO edition_items (
+                   edition_id, cluster_id, source_item_id, position, annotation
+                 ) VALUES (?, ?, ?, ?, ?)`,
           )
           .bind(
             id,
@@ -738,12 +954,30 @@ export class D1EditionRepository {
             entry.itemId,
             position,
             input.annotations[entry.itemId] ?? "",
+            ...(rights
+              ? [
+                  rights.source_name,
+                  rights.site_url,
+                  rights.terms_url,
+                  rights.rights_basis,
+                  rights.reviewed_at,
+                ]
+              : []),
           ),
         this.database
           .prepare("UPDATE source_items SET state = 'included' WHERE id = ?")
           .bind(entry.itemId),
       );
     });
+    statements.push(
+      this.database
+        .prepare(
+          `UPDATE editions SET
+             title = ?, intro_md = ?, status = ?, published_at = ?, updated_at = ?
+           WHERE id = ?`,
+        )
+        .bind(input.title, input.introMd, status, publishedAt, now, id),
+    );
     await this.database.batch(statements);
     const edition = await this.findOwnerEdition(id);
     if (!edition) throw new Error("Edition update could not be read back");
@@ -768,8 +1002,16 @@ export class D1EditionRepository {
            si.summary,
            si.title,
            si.canonical_url AS url,
-           s.name AS source_name,
-           s.site_url
+           CASE
+             WHEN ei.source_name_snapshot IS NOT NULL
+               THEN ei.source_name_snapshot
+             ELSE s.name
+           END AS source_name,
+           CASE
+             WHEN ei.source_name_snapshot IS NOT NULL
+               THEN ei.source_site_url_snapshot
+             ELSE s.site_url
+           END AS site_url
          FROM edition_items ei
          JOIN source_items si ON si.id = ei.source_item_id
          JOIN sources s ON s.id = si.source_id
@@ -854,5 +1096,35 @@ export class D1EditionRepository {
       publishedAt: row.published_at,
       status: row.status,
     }));
+  }
+
+  private async findApprovedRightsSnapshots(
+    itemIds: string[],
+  ): Promise<EditionRightsSnapshotRow[]> {
+    const uniqueIds = [...new Set(itemIds)];
+    if (uniqueIds.length === 0) return [];
+    const placeholders = uniqueIds.map(() => "?").join(", ");
+    const result = await this.database
+      .prepare(
+        `SELECT
+           si.id AS item_id,
+           s.name AS source_name,
+           s.site_url,
+           s.terms_url,
+           s.rights_basis,
+           s.reviewed_at
+         FROM source_items si
+         JOIN sources s ON s.id = si.source_id
+         WHERE si.id IN (${placeholders})
+           AND s.review_status = 'approved'
+           AND s.terms_url IS NOT NULL
+           AND length(trim(s.terms_url)) > 0
+           AND s.rights_basis IS NOT NULL
+           AND length(trim(s.rights_basis)) > 0
+           AND s.reviewed_at IS NOT NULL`,
+      )
+      .bind(...uniqueIds)
+      .all<EditionRightsSnapshotRow>();
+    return result.results;
   }
 }

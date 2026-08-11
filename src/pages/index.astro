@@ -14,13 +14,15 @@ const result = await repository.listPublicDiscovery(
 ---
 
 <BaseLayout section="首頁" sectionEn="Home">
-  <ProfileHeader />
+  <ProfileHeader pathname={Astro.url.pathname} />
   <section class="home-feed" aria-labelledby="highlights-heading">
     <h2 id="highlights-heading" class="visually-hidden">最新內容 Latest</h2>
     <DiscoveryPostList
       posts={result.posts}
       emptyTitle="這裡準備好了"
+      emptyTitleEn="This space is ready"
       emptyDescription="公開筆記或文章發佈後，會按時間顯示在這裡。"
+      emptyDescriptionEn="Published notes or articles will appear here chronologically."
     />
   </section>
 </BaseLayout>

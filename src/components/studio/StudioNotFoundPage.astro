@@ -1,0 +1,67 @@
+---
+import StudioLayout from "../../layouts/StudioLayout.astro";
+import {
+  studioNotFoundCopy,
+  type StudioNotFoundKind,
+} from "../../lib/studio-not-found";
+
+interface Props {
+  kind: StudioNotFoundKind;
+}
+
+const { kind } = Astro.props;
+const copy = studioNotFoundCopy(kind);
+---
+
+<StudioLayout title={`${copy.title} · ${copy.titleEn}`}>
+  <section class="studio-not-found">
+    <p class="eyebrow">404 · Studio</p>
+    <h1>
+      {copy.heading}
+      <small lang="en">{copy.headingEn}</small>
+    </h1>
+    <p>{copy.description}</p>
+    <p class="english" lang="en">{copy.descriptionEn}</p>
+    <div class="button-row">
+      <a class="button button--primary" href={copy.backHref}>
+        {copy.backLabel}
+        <span lang="en">{copy.backLabelEn}</span>
+      </a>
+      <a class="button" href={copy.createHref}>
+        {copy.createLabel}
+        <span lang="en">{copy.createLabelEn}</span>
+      </a>
+    </div>
+  </section>
+</StudioLayout>
+
+<style>
+  .studio-not-found {
+    width: min(100%, 48rem);
+    margin-inline: auto;
+    padding: clamp(2rem, 8vw, 6rem) clamp(1.25rem, 5vw, 4rem);
+  }
+  .eyebrow {
+    margin: 0 0 var(--space-3);
+    color: var(--space-primary-strong);
+    font-weight: 720;
+    letter-spacing: 0.08em;
+  }
+  h1 {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-3);
+  }
+  h1 small {
+    color: var(--space-primary);
+    font-size: 0.5em;
+  }
+  .studio-not-found > p:not(.eyebrow) {
+    max-width: 42rem;
+    color: var(--space-ink-muted);
+  }
+  .english {
+    margin-top: calc(var(--space-2) * -1);
+  }
+</style>

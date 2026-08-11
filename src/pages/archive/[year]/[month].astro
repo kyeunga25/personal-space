@@ -1,26 +1,41 @@
 ---
 import ArchivePage from "../../../components/ArchivePage.astro";
-import { parseDiscoveryFilters } from "../../../server/discovery/filters";
+import { isArchiveMonth, isArchiveYear } from "../../../lib/dates";
+import {
+  parseArchiveDiscoveryFilters,
+  withCursor,
+} from "../../../server/discovery/filters";
 import { getBindings } from "../../../server/platform/bindings";
 import { D1PublishingRepository } from "../../../server/publishing/repository";
 
 const year = Astro.params.year ?? "";
 const month = Astro.params.month ?? "";
-if (!/^\d{4}$/.test(year) || !/^(0[1-9]|1[0-2])$/.test(month)) {
+if (!isArchiveYear(year) || !isArchiveMonth(month)) {
   return Astro.redirect("/archive", 302);
 }
 const currentMonth = `${year}-${month}`;
 const lastDay = new Date(Number(year), Number(month), 0).getDate();
-const params = new URLSearchParams({
-  from: `${currentMonth}-01`,
-  to: `${currentMonth}-${String(lastDay).padStart(2, "0")}`,
-});
+const filters = parseArchiveDiscoveryFilters(
+  Astro.url.searchParams,
+  `${currentMonth}-01`,
+  `${currentMonth}-${String(lastDay).padStart(2, "0")}`,
+  50,
+);
 const repository = new D1PublishingRepository(getBindings().DB);
 const now = new Date().toISOString();
 const [months, result] = await Promise.all([
   repository.listPublicArchiveMonths(now),
-  repository.listPublicDiscovery(parseDiscoveryFilters(params, 50), now),
+  repository.listPublicDiscovery(filters, now),
 ]);
+const nextHref = result.nextCursor
+  ? withCursor(filters, result.nextCursor)
+  : null;
 ---
 
-<ArchivePage {currentMonth} {months} posts={result.posts} />
+<ArchivePage
+  {currentMonth}
+  currentYear={year}
+  {months}
+  posts={result.posts}
+  {nextHref}
+/>

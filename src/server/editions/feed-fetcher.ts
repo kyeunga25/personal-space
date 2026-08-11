@@ -1,10 +1,10 @@
+import { parsePublicHttpsUrl } from "../../lib/public-https-url";
 import { UserFacingError } from "../errors";
 import type { SourceRecord } from "./domain";
 
 const MAX_FEED_BYTES = 2 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
 const FETCH_TIMEOUT_MS = 10_000;
-const BLOCKED_HOST_SUFFIXES = [".internal", ".local", ".localhost"];
 
 export class FeedFetchError extends Error {
   constructor(readonly code: string) {
@@ -22,40 +22,39 @@ export interface FeedFetchResult {
 }
 
 export function validateFeedUrl(value: string): URL {
-  if (value.length > 2048) {
-    throw new UserFacingError("Feed 網址太長。", 400);
-  }
+  const result = parsePublicHttpsUrl(value);
+  if (result.ok) return result.url;
 
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new UserFacingError("Feed 網址格式不正確。", 400);
+  switch (result.reason) {
+    case "too-long":
+      throw new UserFacingError("Feed 網址太長。 Feed URL is too long.", 400);
+    case "invalid":
+      throw new UserFacingError(
+        "Feed 網址格式不正確。 Feed URL format is invalid.",
+        400,
+      );
+    case "not-public-https":
+      throw new UserFacingError(
+        "只支援公開的 HTTPS feed 網址。 Only public HTTPS feed URLs are supported.",
+        400,
+      );
   }
-
-  const hostname = url.hostname.toLowerCase();
-  const isLiteralIp =
-    /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":");
-  const isBlockedHostname =
-    hostname === "localhost" ||
-    BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix));
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    (url.port && url.port !== "443") ||
-    isLiteralIp ||
-    isBlockedHostname
-  ) {
-    throw new UserFacingError("只支援公開的 HTTPS feed 網址。", 400);
-  }
-  url.hash = "";
-  return url;
 }
 
 function contentLength(response: Response): number | null {
   const value = Number(response.headers.get("content-length"));
   return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+async function cancelResponseBody(
+  response: Response,
+  reason: string,
+): Promise<void> {
+  try {
+    await response.body?.cancel(reason);
+  } catch {
+    // Cleanup must not replace the primary fetch result or error code.
+  }
 }
 
 async function readBoundedBody(
@@ -72,7 +71,11 @@ async function readBoundedBody(
       if (done) break;
       total += value.byteLength;
       if (total > limit) {
-        await reader.cancel("feed_too_large");
+        try {
+          await reader.cancel("feed_too_large");
+        } catch {
+          // The bounded size error remains the primary failure mode.
+        }
         throw new FeedFetchError("feed_too_large");
       }
       chunks.push(value);
@@ -98,6 +101,7 @@ export async function fetchFeedDocument(
   fetcher: typeof fetch = fetch,
 ): Promise<FeedFetchResult> {
   let url = validateFeedUrl(source.feedUrl);
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
   const headers = new Headers({
     Accept:
       "application/atom+xml, application/rss+xml, application/xml, text/xml;q=0.9",
@@ -114,7 +118,7 @@ export async function fetchFeedDocument(
       response = await fetcher(url, {
         headers,
         redirect: "manual",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        signal,
       });
     } catch {
       throw new FeedFetchError("network_error");
@@ -123,15 +127,16 @@ export async function fetchFeedDocument(
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       const location = response.headers.get("location");
       if (!location || redirect === MAX_REDIRECTS) {
-        await response.body?.cancel();
+        await cancelResponseBody(response, "redirect_error");
         throw new FeedFetchError("redirect_error");
       }
-      await response.body?.cancel();
+      await cancelResponseBody(response, "redirect_followed");
       url = validateFeedUrl(new URL(location, url).toString());
       continue;
     }
 
     if (response.status === 304) {
+      await cancelResponseBody(response, "not_modified");
       return {
         body: null,
         etag: source.etag,
@@ -141,10 +146,11 @@ export async function fetchFeedDocument(
       };
     }
     if (!response.ok) {
+      await cancelResponseBody(response, "http_error");
       throw new FeedFetchError(`http_${String(response.status)}`);
     }
     if ((contentLength(response) ?? 0) > MAX_FEED_BYTES) {
-      await response.body?.cancel();
+      await cancelResponseBody(response, "feed_too_large");
       throw new FeedFetchError("feed_too_large");
     }
 

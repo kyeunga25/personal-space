@@ -1,42 +1,68 @@
 ---
 import { SITE } from "../../config/site";
-import { isActivePath } from "../../lib/navigation";
+import {
+  studioNavigationItemIsActive,
+  type StudioNavigationItem,
+} from "../../lib/navigation";
 import BrandMark from "../BrandMark.astro";
 import StudioIcon from "./StudioIcon.astro";
 
 interface Props {
+  contentKind?: "article" | "note" | null;
   pathname: string;
 }
 
-const { pathname } = Astro.props;
+const { contentKind = null, pathname } = Astro.props;
 const items = [
-  { href: "/studio", icon: "dashboard", label: "總覽", labelEn: "Dashboard" },
+  {
+    href: "/studio",
+    icon: "dashboard",
+    id: "dashboard",
+    label: "總覽",
+    labelEn: "Dashboard",
+  },
   {
     href: "/studio/notes/new",
     icon: "note",
+    id: "note",
     label: "快速筆記",
     labelEn: "Quick Note",
   },
   {
     href: "/studio/articles/new",
     icon: "article",
+    id: "article",
     label: "文章",
     labelEn: "Articles",
   },
   {
     href: "/studio/sources",
     icon: "source",
+    id: "sources",
     label: "來源",
     labelEn: "Sources",
   },
   {
     href: "/studio/editions",
     icon: "edition",
+    id: "editions",
     label: "Editions",
     labelEn: "Daily editions",
   },
-  { href: "/studio#media", icon: "media", label: "媒體", labelEn: "Media" },
-] as const;
+  {
+    href: "/studio#media",
+    icon: "media",
+    id: "media",
+    label: "媒體",
+    labelEn: "Media",
+  },
+] as const satisfies ReadonlyArray<{
+  href: string;
+  icon: "article" | "dashboard" | "edition" | "media" | "note" | "source";
+  id: StudioNavigationItem;
+  label: string;
+  labelEn: string;
+}>;
 ---
 
 <aside class="studio-nav" aria-label="Studio 導覽 Studio navigation">
@@ -48,20 +74,11 @@ const items = [
     <ul>
       {
         items.map((item) => {
-          const active =
-            item.href === "/studio"
-              ? pathname === "/studio" || pathname === "/studio/"
-              : item.href === "/studio#media"
-                ? false
-                : item.href === "/studio/articles/new"
-                  ? pathname.includes("/studio/articles") ||
-                    pathname.includes("/studio/posts")
-                  : item.href === "/studio/editions"
-                    ? pathname.includes("/studio/editions")
-                    : isActivePath(
-                        pathname,
-                        item.href.split("#")[0] ?? item.href,
-                      );
+          const active = studioNavigationItemIsActive(
+            item.id,
+            pathname,
+            contentKind,
+          );
           return (
             <li>
               <a

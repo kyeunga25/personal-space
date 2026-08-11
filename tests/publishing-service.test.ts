@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  ARTICLE_TITLE_REQUIRED_ERROR,
+  POST_CONTENT_REQUIRED_ERROR,
+  SCHEDULE_FUTURE_REQUIRED_ERROR,
+} from "../src/config/publishing";
 import type {
   MediaRecord,
   PostRecord,
@@ -104,7 +109,24 @@ describe("publishing workflow", () => {
     expect(saved.tags).toHaveLength(1);
   });
 
-  it("allows empty autosaved drafts but blocks an untitled published Article", async () => {
+  it("generates an excerpt from the body when the optional field is blank", async () => {
+    const service = new PublishingService(new MemoryPublishingRepository());
+    const saved = await service.savePost(
+      {
+        action: "save",
+        bodyMd: "**給一般讀者** 的摘要",
+        excerpt: "  ",
+        kind: "article",
+        title: "摘要測試",
+        visibility: "private",
+      },
+      now,
+    );
+
+    expect(saved.excerpt).toBe("給一般讀者 的摘要");
+  });
+
+  it("allows empty drafts but blocks an explicit untitled Article publication", async () => {
     const repository = new MemoryPublishingRepository();
     const service = new PublishingService(repository);
     await expect(
@@ -128,7 +150,106 @@ describe("publishing workflow", () => {
         },
         now,
       ),
-    ).rejects.toThrow("必須有標題");
+    ).rejects.toThrow(ARTICLE_TITLE_REQUIRED_ERROR);
+  });
+
+  it("requires content before publishing", async () => {
+    const service = new PublishingService(new MemoryPublishingRepository());
+
+    await expect(
+      service.savePost(
+        {
+          action: "publish",
+          bodyMd: "",
+          kind: "note",
+          visibility: "public",
+        },
+        now,
+      ),
+    ).rejects.toThrow(POST_CONTENT_REQUIRED_ERROR);
+  });
+
+  it("requires content readiness before archiving an existing draft", async () => {
+    const repository = new MemoryPublishingRepository();
+    const service = new PublishingService(repository);
+    const draft = await service.savePost(
+      {
+        action: "save",
+        bodyMd: "",
+        kind: "article",
+        visibility: "private",
+      },
+      now,
+    );
+
+    await expect(
+      service.savePost(
+        {
+          action: "archive",
+          bodyMd: "  ",
+          id: draft.id,
+          kind: "article",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(POST_CONTENT_REQUIRED_ERROR);
+    await expect(
+      service.savePost(
+        {
+          action: "archive",
+          bodyMd: "正文",
+          id: draft.id,
+          kind: "article",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(ARTICLE_TITLE_REQUIRED_ERROR);
+  });
+
+  it("reports missing content updates and immutable content types bilingually", async () => {
+    const repository = new MemoryPublishingRepository();
+    const service = new PublishingService(repository);
+
+    await expect(
+      service.savePost(
+        {
+          action: "save",
+          bodyMd: "內容",
+          id: "missing-post",
+          kind: "note",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(
+      "找不到要更新的內容。 The content to update could not be found.",
+    );
+
+    const note = await service.savePost(
+      {
+        action: "save",
+        bodyMd: "內容",
+        kind: "note",
+        visibility: "private",
+      },
+      now,
+    );
+    await expect(
+      service.savePost(
+        {
+          action: "save",
+          bodyMd: "內容",
+          id: note.id,
+          kind: "article",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(
+      "內容類型不能在建立後更改。 Content type cannot be changed after creation.",
+    );
   });
 
   it("requires a future time for scheduling", async () => {
@@ -144,7 +265,107 @@ describe("publishing workflow", () => {
         },
         now,
       ),
-    ).rejects.toThrow("晚於現在");
+    ).rejects.toThrow(SCHEDULE_FUTURE_REQUIRED_ERROR);
+
+    await expect(
+      service.savePost(
+        {
+          action: "schedule",
+          bodyMd: "內容",
+          kind: "note",
+          scheduledAt: "not-a-date",
+          visibility: "public",
+        },
+        now,
+      ),
+    ).rejects.toThrow(
+      "排程時間必須是有效日期。 Schedule time must be a valid date.",
+    );
+  });
+
+  it("reports scheduled content readiness before time errors", async () => {
+    const service = new PublishingService(new MemoryPublishingRepository());
+
+    await expect(
+      service.savePost(
+        {
+          action: "schedule",
+          bodyMd: "  ",
+          kind: "note",
+          scheduledAt: "",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(POST_CONTENT_REQUIRED_ERROR);
+    await expect(
+      service.savePost(
+        {
+          action: "schedule",
+          bodyMd: "內容",
+          kind: "article",
+          scheduledAt: "",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(ARTICLE_TITLE_REQUIRED_ERROR);
+  });
+
+  it("normalizes a valid future schedule to UTC", async () => {
+    const service = new PublishingService(new MemoryPublishingRepository());
+
+    const scheduled = await service.savePost(
+      {
+        action: "schedule",
+        bodyMd: "內容",
+        kind: "note",
+        scheduledAt: "2026-07-26T08:00:00+08:00",
+        visibility: "public",
+      },
+      now,
+    );
+
+    expect(scheduled).toMatchObject({
+      publishedAt: "2026-07-26T00:00:00.000Z",
+      scheduledAt: "2026-07-26T00:00:00.000Z",
+      status: "scheduled",
+    });
+  });
+
+  it("preserves a planned schedule on a private draft", async () => {
+    const service = new PublishingService(new MemoryPublishingRepository());
+
+    await expect(
+      service.savePost(
+        {
+          action: "save",
+          bodyMd: "草稿內容",
+          kind: "note",
+          scheduledAt: "2026-07-26T08:00:00+08:00",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).resolves.toMatchObject({
+      publishedAt: null,
+      scheduledAt: "2026-07-26T00:00:00.000Z",
+      status: "draft",
+    });
+    await expect(
+      service.savePost(
+        {
+          action: "save",
+          bodyMd: "草稿內容",
+          kind: "note",
+          scheduledAt: "not-a-date",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(
+      "排程時間必須是有效日期。 Schedule time must be a valid date.",
+    );
   });
 
   it("keeps autosaved changes in a working copy until explicit publish", async () => {
@@ -203,6 +424,58 @@ describe("publishing workflow", () => {
     });
   });
 
+  it("keeps an incomplete rewrite private until it is ready to publish", async () => {
+    const repository = new MemoryPublishingRepository();
+    const service = new PublishingService(repository);
+    const published = await service.savePost(
+      {
+        action: "publish",
+        bodyMd: "公開正文",
+        kind: "article",
+        title: "公開標題",
+        visibility: "public",
+      },
+      now,
+    );
+
+    await expect(
+      service.savePost(
+        {
+          action: "save",
+          bodyMd: "  ",
+          id: published.id,
+          kind: "article",
+          title: null,
+          visibility: "public",
+        },
+        new Date("2026-07-25T12:10:00.000Z"),
+      ),
+    ).resolves.toMatchObject({
+      bodyMd: "",
+      hasWorkingCopy: true,
+      status: "published",
+      title: null,
+    });
+    expect(repository.posts.get(published.id)).toMatchObject({
+      bodyMd: "公開正文",
+      hasWorkingCopy: false,
+      title: "公開標題",
+    });
+    await expect(
+      service.savePost(
+        {
+          action: "publish",
+          bodyMd: "  ",
+          id: published.id,
+          kind: "article",
+          title: null,
+          visibility: "public",
+        },
+        new Date("2026-07-25T12:20:00.000Z"),
+      ),
+    ).rejects.toThrow(POST_CONTENT_REQUIRED_ERROR);
+  });
+
   it("requires cover media visibility to match the post", async () => {
     const repository = new MemoryPublishingRepository();
     repository.media.set("private-cover", {
@@ -230,7 +503,38 @@ describe("publishing workflow", () => {
         },
         now,
       ),
-    ).rejects.toThrow("可見性與內容不一致");
+    ).rejects.toThrow(
+      "封面媒體的可見性與內容不一致，請重新上傳或清除封面。 Cover media visibility does not match the content; upload it again or clear the cover.",
+    );
+  });
+
+  it("reports missing cover media bilingually", async () => {
+    const service = new PublishingService(new MemoryPublishingRepository());
+
+    await expect(
+      service.savePost(
+        {
+          action: "save",
+          bodyMd: "內容",
+          heroMediaId: "missing-cover",
+          kind: "note",
+          visibility: "private",
+        },
+        now,
+      ),
+    ).rejects.toThrow(
+      "找不到所選封面媒體。 The selected cover media could not be found.",
+    );
+  });
+
+  it("reports a missing revision with a bilingual error", async () => {
+    const service = new PublishingService(new MemoryPublishingRepository());
+
+    await expect(
+      service.restoreRevision("missing-post", "missing-revision", now),
+    ).rejects.toThrow(
+      "找不到要還原的修訂版本。 The revision to restore could not be found.",
+    );
   });
 
   it("does not let a scheduled update take a published post offline", async () => {
@@ -258,6 +562,8 @@ describe("publishing workflow", () => {
         },
         now,
       ),
-    ).rejects.toThrow("不可直接排程更新");
+    ).rejects.toThrow(
+      "已發佈內容不可直接排程更新；請立即發佈，或建立另一篇內容。 Published content cannot be scheduled directly; publish the update now or create a separate post.",
+    );
   });
 });

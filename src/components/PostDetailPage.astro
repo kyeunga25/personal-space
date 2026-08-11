@@ -1,7 +1,11 @@
 ---
 import { formatHongKongDate } from "../lib/dates";
+import { buildPostTaxonomyLinks } from "../lib/navigation";
+import { getPublicPostDisplayTitle } from "../lib/post-display";
+import { getReadingTime } from "../lib/reading-time";
 import type { MediaRecord, PostRecord } from "../server/publishing/domain";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import ReadingTimeLabel from "./ReadingTimeLabel.astro";
 
 interface Props {
   media?: MediaRecord | null;
@@ -11,11 +15,13 @@ interface Props {
 const { media = null, post } = Astro.props;
 const isArticle = post.kind === "article";
 const backHref = isArticle ? "/articles" : "/notes";
-const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
+const displayTitle = getPublicPostDisplayTitle(post);
+const readingTime = getReadingTime(post.bodyMd);
+const taxonomyLinks = buildPostTaxonomyLinks(post.category, post.tags);
 ---
 
 <BaseLayout
-  title={post.title ?? "筆記"}
+  title={displayTitle}
   titleEn={isArticle ? "Article" : "Note"}
   description={post.excerpt ?? "Personal Space 公開內容"}
   descriptionEn="Published in Personal Space"
@@ -33,7 +39,7 @@ const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
         {isArticle ? "文章" : "筆記"}
         <span lang="en">{isArticle ? "Article" : "Note"}</span>
       </p>
-      <h1>{post.title ?? post.excerpt ?? "無標題筆記"}</h1>
+      <h1>{displayTitle}</h1>
       {
         post.title && post.excerpt && (
           <p class="reading-header__excerpt">{post.excerpt}</p>
@@ -43,13 +49,7 @@ const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
         <time datetime={post.publishedAt ?? post.scheduledAt ?? undefined}>
           {formatHongKongDate(post.publishedAt ?? post.scheduledAt)}
         </time>
-        {
-          isArticle && (
-            <span>
-              {readingMinutes} 分鐘閱讀 · {readingMinutes} min read
-            </span>
-          )
-        }
+        {isArticle && <ReadingTimeLabel {readingTime} />}
         {post.visibility === "unlisted" && <span>不公開列出 · Unlisted</span>}
       </div>
     </header>
@@ -70,15 +70,25 @@ const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
     <div class="reading-body" set:html={post.bodyHtml} />
 
     {
-      (post.category || post.tags.length > 0) && (
+      taxonomyLinks.length > 0 && (
         <footer class="reading-taxonomy">
           <h2>
             整理 <small lang="en">Filed under</small>
           </h2>
-          <ul>
-            {post.category && <li>{post.category.name}</li>}
-            {post.tags.map((tag) => (
-              <li>#{tag.name}</li>
+          <ul aria-label="分類與標籤 Categories and tags">
+            {taxonomyLinks.map((item) => (
+              <li>
+                {item.href ? (
+                  <a href={item.href} aria-label={item.accessibleLabel}>
+                    {item.label}
+                  </a>
+                ) : (
+                  <span>
+                    <span class="visually-hidden">{item.accessibleLabel}</span>
+                    <span aria-hidden="true">{item.label}</span>
+                  </span>
+                )}
+              </li>
             ))}
           </ul>
         </footer>
@@ -90,6 +100,7 @@ const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
 <style>
   .reading-page {
     min-height: 100svh;
+    overflow-wrap: anywhere;
   }
 
   .reading-header {
@@ -118,9 +129,13 @@ const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
 
   .reading-header__kind {
     margin: var(--space-7) 0 0;
-    color: var(--space-blue-strong);
+    color: var(--space-primary-strong);
     font-size: var(--font-size--1);
     font-weight: 720;
+  }
+
+  .reading-page--article .reading-header__kind {
+    color: var(--space-blue-strong);
   }
 
   h1 {
@@ -237,6 +252,21 @@ const readingMinutes = Math.max(1, Math.ceil(post.bodyMd.length / 500));
     color: var(--space-blue-strong);
     font-size: var(--font-size--1);
     list-style: none;
+  }
+
+  .reading-taxonomy a,
+  .reading-taxonomy span {
+    display: inline-block;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--space-surface-blue);
+    color: inherit;
+    font-weight: 650;
+  }
+
+  .reading-taxonomy a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
   }
 
   @media (max-width: 47.99rem) {

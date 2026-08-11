@@ -1,17 +1,25 @@
 ---
 import { formatHongKongDate } from "../lib/dates";
+import { buildPostTaxonomyLinks } from "../lib/navigation";
+import { getPublicPostDisplayTitle } from "../lib/post-display";
+import { getReadingTime } from "../lib/reading-time";
 import type { PostRecord } from "../server/publishing/domain";
+import ReadingTimeLabel from "./ReadingTimeLabel.astro";
 
 interface Props {
   emptyDescription?: string;
+  emptyDescriptionEn?: string;
   emptyTitle?: string;
+  emptyTitleEn?: string;
   nextHref?: string | null;
   posts: PostRecord[];
 }
 
 const {
   emptyDescription = "目前沒有符合條件的公開內容。",
+  emptyDescriptionEn = "No public entries match the current view.",
   emptyTitle = "找不到內容",
+  emptyTitleEn = "No matching entries",
   nextHref = null,
   posts,
 } = Astro.props;
@@ -22,14 +30,22 @@ const {
     posts.length === 0 ? (
       <div class="discovery-results__empty">
         <h2>
-          {emptyTitle} <small lang="en">No matching entries</small>
+          {emptyTitle} <small lang="en">{emptyTitleEn}</small>
         </h2>
         <p>{emptyDescription}</p>
+        <p class="en-subline" lang="en">
+          {emptyDescriptionEn}
+        </p>
       </div>
     ) : (
       <ol>
         {posts.map((post) => {
           const href = `/${post.kind === "note" ? "notes" : "articles"}/${encodeURIComponent(post.slug ?? "")}`;
+          const displayTitle = getPublicPostDisplayTitle(post);
+          const taxonomyLinks = buildPostTaxonomyLinks(
+            post.category,
+            post.tags,
+          );
           return (
             <li>
               <article
@@ -37,38 +53,55 @@ const {
               >
                 <a class="discovery-row__main" href={href}>
                   <span class="discovery-row__meta">
-                    <span>
-                      {post.kind === "note" ? "筆記 Note" : "文章 Article"}
+                    <span class="discovery-row__kind">
+                      {post.kind === "note" ? "筆記" : "文章"}
+                      <span lang="en">
+                        {post.kind === "note" ? "Note" : "Article"}
+                      </span>
                     </span>
-                    <time
-                      datetime={
-                        post.publishedAt ?? post.scheduledAt ?? undefined
-                      }
-                    >
-                      {formatHongKongDate(post.publishedAt ?? post.scheduledAt)}
-                    </time>
+                    <span class="discovery-row__details">
+                      <time
+                        datetime={
+                          post.publishedAt ?? post.scheduledAt ?? undefined
+                        }
+                      >
+                        {formatHongKongDate(
+                          post.publishedAt ?? post.scheduledAt,
+                        )}
+                      </time>
+                      {post.kind === "article" && (
+                        <span>
+                          <ReadingTimeLabel
+                            readingTime={getReadingTime(post.bodyMd)}
+                          />
+                        </span>
+                      )}
+                    </span>
                   </span>
-                  <strong>{post.title ?? post.excerpt ?? "無標題筆記"}</strong>
+                  <strong>{displayTitle}</strong>
                   {post.title && post.excerpt && (
                     <span class="discovery-row__excerpt">{post.excerpt}</span>
                   )}
                 </a>
-                {(post.category || post.tags.length > 0) && (
-                  <ul class="discovery-row__taxonomy" aria-label="分類與標籤">
-                    {post.category && (
+                {taxonomyLinks.length > 0 && (
+                  <ul
+                    class="discovery-row__taxonomy"
+                    aria-label="分類與標籤 Categories and tags"
+                  >
+                    {taxonomyLinks.map((item) => (
                       <li>
-                        <a
-                          href={`/categories/${encodeURIComponent(post.category.slug)}`}
-                        >
-                          {post.category.name}
-                        </a>
-                      </li>
-                    )}
-                    {post.tags.map((tag) => (
-                      <li>
-                        <a href={`/tags/${encodeURIComponent(tag.slug)}`}>
-                          #{tag.name}
-                        </a>
+                        {item.href ? (
+                          <a href={item.href} aria-label={item.accessibleLabel}>
+                            {item.label}
+                          </a>
+                        ) : (
+                          <span>
+                            <span class="visually-hidden">
+                              {item.accessibleLabel}
+                            </span>
+                            <span aria-hidden="true">{item.label}</span>
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -104,17 +137,20 @@ const {
 
   .discovery-row {
     padding: clamp(1.35rem, 4vw, 2.15rem);
+    overflow-wrap: anywhere;
     transition:
       background-color var(--motion-fast) ease,
       box-shadow var(--motion-fast) ease;
   }
 
-  .discovery-row:hover {
+  .discovery-row:hover,
+  .discovery-row:focus-within {
     background: var(--space-surface-hover);
     box-shadow: inset 3px 0 var(--space-primary);
   }
 
-  .discovery-row--article:hover {
+  .discovery-row--article:hover,
+  .discovery-row--article:focus-within {
     box-shadow: inset 3px 0 var(--space-blue);
   }
 
@@ -133,13 +169,31 @@ const {
     font-size: var(--font-size--1);
   }
 
-  .discovery-row__meta > span {
+  .discovery-row__kind {
     color: var(--space-primary-strong);
     font-weight: 720;
   }
 
-  .discovery-row--article .discovery-row__meta > span {
+  .discovery-row__kind span {
+    margin-left: 0.35em;
+    color: var(--space-ink-faint);
+    font-size: 0.86em;
+  }
+
+  .discovery-row--article .discovery-row__kind {
     color: var(--space-blue-strong);
+  }
+
+  .discovery-row__details {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-1) var(--space-3);
+    text-align: right;
+  }
+
+  .discovery-row__details > span {
+    white-space: nowrap;
   }
 
   .discovery-row strong,
@@ -174,9 +228,13 @@ const {
     list-style: none;
   }
 
-  .discovery-row__taxonomy a {
+  .discovery-row__taxonomy a,
+  .discovery-row__taxonomy span {
     color: var(--space-teal-strong);
     font-weight: 650;
+  }
+
+  .discovery-row__taxonomy a {
     text-decoration-thickness: 1px;
     text-underline-offset: 0.2em;
   }

@@ -3,6 +3,8 @@
 APP_ENV=development
 LOCAL_STUDIO_BYPASS=true
 LOCAL_OWNER_EMAIL=owner@local.invalid
+INGEST_CRON="0 0 * * *"
+EDITION_CRON="0 1 * * *"
 
 # Production uses Cloudflare secrets instead. Never commit real values.
 # ACCESS_TEAM_DOMAIN=https://your-team.cloudflareaccess.com

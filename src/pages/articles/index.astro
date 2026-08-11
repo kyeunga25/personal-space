@@ -1,11 +1,23 @@
 ---
 import PostListPage from "../../components/PostListPage.astro";
+import {
+  parseKindDiscoveryFilters,
+  withCursor,
+} from "../../server/discovery/filters";
 import { getBindings } from "../../server/platform/bindings";
 import { D1PublishingRepository } from "../../server/publishing/repository";
 
-const posts = await new D1PublishingRepository(
+const filters = parseKindDiscoveryFilters(
+  Astro.url.searchParams,
+  "article",
+  20,
+);
+const result = await new D1PublishingRepository(
   getBindings().DB,
-).listPublicPosts("article", new Date().toISOString());
+).listPublicDiscovery(filters, new Date().toISOString());
+const nextHref = result.nextCursor
+  ? withCursor(filters, result.nextCursor)
+  : null;
 ---
 
 <PostListPage
@@ -14,5 +26,6 @@ const posts = await new D1PublishingRepository(
   description="以完整結構整理想法、故事與作品。"
   descriptionEn="Long-form writing for ideas, stories, and considered work."
   kind="article"
-  posts={posts}
+  posts={result.posts}
+  {nextHref}
 />

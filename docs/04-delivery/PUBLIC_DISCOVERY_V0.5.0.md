@@ -1,69 +1,36 @@
 # Public Discovery v0.5.0
 
-Status: historical v0.5.0 delivery record. These capabilities are included in
-later verified production releases; candidate-time evidence and gates are kept
-below for audit context.
+Status: historical public release summary. Later releases include these
+capabilities; current deployment status must be verified separately.
 
 ## Included
 
-- Public full-text search across titles, excerpts, and Markdown content.
-- Type, category, tag, Hong Kong date range, and relevance filters.
-- Chronological Stream without engagement ranking.
-- Month, year, category, and tag archive routes.
-- Combined RSS, separate Note and Article feeds, and a public sitemap.
-- Live public entries on the home page instead of sample content.
-- Permanent redirects from the earlier Shorts, Longform, and Briefings paths.
-
-## Public routes
-
-| Route | Purpose |
-| --- | --- |
-| `/search` | Public content search and filters |
-| `/stream` | Newest-first public timeline |
-| `/archive` | Hong Kong month archive |
-| `/archive/YYYY` | Year archive |
-| `/archive/YYYY/MM` | Month archive |
-| `/categories/:slug` | Public category page |
-| `/tags/:slug` | Public tag page |
-| `/rss.xml` | Combined public RSS |
-| `/feeds/notes.xml` | Public Note RSS |
-| `/feeds/articles.xml` | Public Article RSS |
-| `/sitemap.xml` | Public sitemap |
+- Public search across published content.
+- Type, category, tag, date, and relevance filters.
+- A newest-first public stream.
+- Month, year, category, and tag archives.
+- Combined and content-specific RSS feeds.
+- A public sitemap and permanent redirects from earlier public routes.
 
 ## Privacy and visibility
 
-Discovery queries require `public` visibility and either published status or a
-scheduled time that has already arrived. Draft, archived, private, unlisted,
-and future scheduled records are excluded. RSS and sitemap renderers repeat the
-public visibility check so a future caller cannot accidentally serialize a
-private record.
+Discovery only returns content intended for public discovery and whose release
+time has arrived. Private, draft, archived, unlisted, or future content is
+excluded from search, archives, feeds, and sitemap output.
 
-The FTS index is derived from the canonical posts table. Migration
-`0002_public_discovery.sql` creates the FTS5 table, update triggers, and archive
-indexes without storing deployment or account identifiers in source control.
+The public repository contains only migration code needed to build a fresh
+self-hosted environment. It does not contain production content, search output,
+row counts, resource identifiers, or database exports. This summary also avoids
+publishing the internal database organization.
 
-## Local acceptance
+## Verification categories
 
-- Prettier, ESLint, Astro typecheck, Vitest, and the production build pass.
-- 12 test files and 43 tests pass.
-- RSS and sitemap output pass XML parsing.
-- Legacy routes return permanent redirects to their canonical destinations.
-- Search, Stream, and Archive return expected status codes through the built
-  Worker.
-- WebKit checks passed at 1440px and 390px with no console errors or horizontal
-  overflow.
+- formatting, lint, Astro／TypeScript checks, tests, and production build;
+- valid XML for RSS and sitemap output;
+- correct redirects for legacy public URLs;
+- expected public and non-public visibility behavior;
+- responsive rendering without console errors or horizontal overflow.
 
-## Historical production gates
-
-1. Complete the owner-only Cloudflare Access configuration required by v0.4.0.
-2. Confirm private Worker secrets and bindings without writing their values to
-   the repository.
-3. Upload a non-active Worker version and verify the public routes, feeds,
-   security headers, and owner route protection.
-4. Promote only the exact verified version, then check the live custom domain,
-   GitHub checks, and final Git refs.
-
-Remote D1 migrations through `0002_public_discovery.sql` were applied and
-verified on 2026-07-26. The v0.5.0 release candidate was uploaded without
-receiving production traffic at the time this candidate record was written.
-Later release records supersede the pending state in this file.
+Historical candidate or CI evidence does not prove the current live state.
+Self-hosters should follow [`../SELF_HOSTING.md`](../SELF_HOSTING.md) and verify
+their own deployment directly.

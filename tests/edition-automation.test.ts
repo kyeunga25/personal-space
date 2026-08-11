@@ -175,6 +175,74 @@ describe("edition automation", () => {
     );
   });
 
+  it("does not classify a storage failure as an invalid source", async () => {
+    const storageFailure = new Error("synthetic storage failure");
+    const data = repository({
+      listEnabledSources: vi.fn().mockResolvedValue([source]),
+      saveIngestedEntries: vi.fn().mockRejectedValue(storageFailure),
+    });
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(
+          "<rss><channel><item><guid>1</guid><title>Update</title><link>https://example.com/1</link></item></channel></rss>",
+        ),
+      );
+
+    await expect(
+      new EditionAutomationService(data, fetcher).runIngestion({
+        now: new Date("2026-08-01T00:00:00.000Z"),
+      }),
+    ).rejects.toBe(storageFailure);
+    expect(data.markSourceFailure).not.toHaveBeenCalled();
+    expect(data.completeAutomationRun).toHaveBeenCalledWith(
+      claimedRun,
+      "failed",
+      {},
+      expect.any(String),
+      "ingestion_error",
+    );
+  });
+
+  it("does not classify a source-state write failure as invalid content", async () => {
+    const stateFailure = new Error("synthetic source state failure");
+    const data = repository({
+      listEnabledSources: vi.fn().mockResolvedValue([source]),
+      markSourceNotModified: vi.fn().mockRejectedValue(stateFailure),
+    });
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(null, { status: 304 }));
+
+    await expect(
+      new EditionAutomationService(data, fetcher).runIngestion({
+        now: new Date("2026-08-01T00:00:00.000Z"),
+      }),
+    ).rejects.toBe(stateFailure);
+    expect(data.markSourceFailure).not.toHaveBeenCalled();
+  });
+
+  it("keeps malformed feed content as a source failure", async () => {
+    const data = repository({
+      listEnabledSources: vi.fn().mockResolvedValue([source]),
+    });
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response("<not-a-feed />"));
+
+    const result = await new EditionAutomationService(
+      data,
+      fetcher,
+    ).runIngestion({ now: new Date("2026-08-01T00:00:00.000Z") });
+
+    expect(result.status).toBe("failed");
+    expect(data.markSourceFailure).toHaveBeenCalledWith(
+      source.id,
+      "invalid_feed",
+      expect.any(String),
+    );
+  });
+
   it("does not repeat a completed Cron run", async () => {
     const listEnabledSources = vi.fn().mockResolvedValue([source]);
     const data = repository({

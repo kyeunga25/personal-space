@@ -1,25 +1,32 @@
 ---
 import DiscoveryPostList from "../../components/DiscoveryPostList.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { parseDiscoveryFilters } from "../../server/discovery/filters";
+import {
+  parseTaxonomyDiscoveryFilters,
+  withCursor,
+} from "../../server/discovery/filters";
 import { getBindings } from "../../server/platform/bindings";
 import { D1PublishingRepository } from "../../server/publishing/repository";
 
 const slug = Astro.params.slug ?? "";
 const repository = new D1PublishingRepository(getBindings().DB);
 const now = new Date().toISOString();
-const taxonomy = await repository.listPublicTaxonomy(now);
-const category = taxonomy.categories.find((item) => item.slug === slug);
+const category = await repository.findPublicTaxonomyTerm("category", slug, now);
 if (!category) {
   Astro.response.status = 404;
 }
-const filters = parseDiscoveryFilters(
-  new URLSearchParams({ category: slug }),
+const filters = parseTaxonomyDiscoveryFilters(
+  Astro.url.searchParams,
+  "category",
+  slug,
   50,
 );
 const result = category
   ? await repository.listPublicDiscovery(filters, now)
   : { nextCursor: null, posts: [] };
+const nextHref = result.nextCursor
+  ? withCursor(filters, result.nextCursor)
+  : null;
 ---
 
 <BaseLayout
@@ -46,6 +53,6 @@ const result = category
       </p>
       <p class="en-subline" lang="en">Public writing grouped by category.</p>
     </header>
-    <DiscoveryPostList posts={result.posts} />
+    <DiscoveryPostList posts={result.posts} {nextHref} />
   </div>
 </BaseLayout>

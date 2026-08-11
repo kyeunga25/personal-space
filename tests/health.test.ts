@@ -10,7 +10,7 @@ describe("health endpoint", () => {
     await expect(response.json()).resolves.toEqual({
       service: "personal-space",
       status: "ok",
-      version: "v0.7.0",
+      version: "v0.8.0",
     });
   });
 });

@@ -247,37 +247,9 @@ export class EditionAutomationService {
     };
 
     for (const source of sources) {
+      let fetched: Awaited<ReturnType<typeof fetchFeedDocument>>;
       try {
-        const fetched = await fetchFeedDocument(source, this.fetcher);
-        if (fetched.notModified) {
-          await this.repository.markSourceNotModified(source.id, nowIso);
-          report.notModifiedSources += 1;
-          continue;
-        }
-        const parsed = parseSyndicationFeed(
-          fetched.body ?? "",
-          fetched.finalUrl,
-        ).slice(0, MAX_ITEMS_PER_SOURCE);
-        const prepared: IngestedEntry[] = [];
-        for (const entry of parsed) {
-          prepared.push(await prepareEntry(source.id, entry, clusters));
-        }
-        const existing = await this.repository.findExistingItems(
-          source.id,
-          prepared.map((entry) => entry.id),
-          prepared.map((entry) => entry.url),
-        );
-        const newEntries = prepared.filter(
-          (entry) =>
-            !existing.ids.has(entry.id) && !existing.urls.has(entry.url),
-        );
-        report.newItems += await this.repository.saveIngestedEntries(
-          source.id,
-          newEntries,
-          { etag: fetched.etag, lastModified: fetched.lastModified },
-          nowIso,
-        );
-        report.fetchedSources += 1;
+        fetched = await fetchFeedDocument(source, this.fetcher);
       } catch (error) {
         await this.repository.markSourceFailure(
           source.id,
@@ -285,7 +257,51 @@ export class EditionAutomationService {
           nowIso,
         );
         report.failedSources += 1;
+        continue;
       }
+
+      if (fetched.notModified) {
+        await this.repository.markSourceNotModified(source.id, nowIso);
+        report.notModifiedSources += 1;
+        continue;
+      }
+
+      let parsed: FeedEntry[];
+      try {
+        parsed = parseSyndicationFeed(
+          fetched.body ?? "",
+          fetched.finalUrl,
+          MAX_ITEMS_PER_SOURCE,
+        );
+      } catch (error) {
+        await this.repository.markSourceFailure(
+          source.id,
+          errorCode(error),
+          nowIso,
+        );
+        report.failedSources += 1;
+        continue;
+      }
+
+      const prepared: IngestedEntry[] = [];
+      for (const entry of parsed) {
+        prepared.push(await prepareEntry(source.id, entry, clusters));
+      }
+      const existing = await this.repository.findExistingItems(
+        source.id,
+        prepared.map((entry) => entry.id),
+        prepared.map((entry) => entry.url),
+      );
+      const newEntries = prepared.filter(
+        (entry) => !existing.ids.has(entry.id) && !existing.urls.has(entry.url),
+      );
+      report.newItems += await this.repository.saveIngestedEntries(
+        source.id,
+        newEntries,
+        { etag: fetched.etag, lastModified: fetched.lastModified },
+        nowIso,
+      );
+      report.fetchedSources += 1;
     }
     return report;
   }

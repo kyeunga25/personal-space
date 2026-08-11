@@ -13,7 +13,7 @@ export const POST: APIRoute = async () => {
     ).runIngestion();
     if (result.status === "failed") {
       throw new UserFacingError(
-        "所有已啟用來源均同步失敗，請查看執行紀錄。",
+        "所有已啟用來源均同步失敗，請查看執行紀錄。 All enabled sources failed to sync; review the run log.",
         502,
       );
     }

@@ -11,12 +11,15 @@ import { D1PublishingRepository } from "../../../../server/publishing/repository
 import { PublishingService } from "../../../../server/publishing/service";
 
 export const POST: APIRoute = async ({ request }) => {
-  const input = parseSavePostInput(await readJsonBody(request));
-  if (!input || input.id) {
-    return jsonResponse({ error: "內容格式不正確。" }, { status: 400 });
-  }
-
   try {
+    const input = parseSavePostInput(await readJsonBody(request));
+    if (!input || input.id) {
+      return jsonResponse(
+        { error: "內容格式不正確。 Invalid content format." },
+        { status: 400 },
+      );
+    }
+
     const bindings = getBindings();
     const service = new PublishingService(
       new D1PublishingRepository(bindings.DB),

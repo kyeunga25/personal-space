@@ -24,14 +24,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   };
 
   if (isProtectedPath(url.pathname)) {
-    const owner = await verifyOwnerRequest(request, getBindings());
-    if (!owner) {
-      return withSecurityHeaders(privateResponse("Not found", 404), {
+    if (!isSameOriginWrite(request)) {
+      return withSecurityHeaders(privateResponse("Forbidden", 403), {
         noIndex: true,
       });
     }
-    if (!isSameOriginWrite(request)) {
-      return withSecurityHeaders(privateResponse("Forbidden", 403), {
+    const owner = await verifyOwnerRequest(request, getBindings());
+    if (!owner) {
+      return withSecurityHeaders(privateResponse("Not found", 404), {
         noIndex: true,
       });
     }

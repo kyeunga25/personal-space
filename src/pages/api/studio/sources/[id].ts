@@ -14,7 +14,10 @@ export const PUT: APIRoute = async ({ params, request }) => {
     const id = params.id ?? "";
     const input = parseSourceInput(await readJsonBody(request));
     if (!id || !input) {
-      return jsonResponse({ error: "來源格式不正確。" }, { status: 400 });
+      return jsonResponse(
+        { error: "來源格式不正確。 Source data is invalid." },
+        { status: 400 },
+      );
     }
     const source = await new D1EditionRepository(getBindings().DB).updateSource(
       id,

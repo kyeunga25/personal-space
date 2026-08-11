@@ -1,0 +1,15 @@
+---
+import type { ReadingTime } from "../lib/reading-time";
+
+interface Props {
+  readingTime: ReadingTime;
+}
+
+const { readingTime } = Astro.props;
+---
+
+<span class="reading-time-label">
+  {readingTime.labelZh}<span aria-hidden="true"> · </span><span lang="en"
+    >{readingTime.labelEn}</span
+  >
+</span>

@@ -10,6 +10,7 @@ import {
   escapeFtsPhrase,
   escapeLikePattern,
   hktDateRange,
+  isDiscoveryRelevanceAvailable,
 } from "../discovery/filters";
 import type {
   ArchiveMonth,
@@ -19,6 +20,7 @@ import type {
   PublicTaxonomy,
   TaxonomyCount,
 } from "../discovery/types";
+import type { RevisionPage, RevisionPageCursor } from "./revision-pagination";
 
 interface PostRow {
   author_id: string;
@@ -35,6 +37,7 @@ interface PostRow {
   pinned: number;
   published_at: string | null;
   scheduled_at: string | null;
+  search_rank?: number;
   slug: string | null;
   status: PostRecord["status"];
   tags_json: string;
@@ -85,6 +88,18 @@ interface RevisionRow {
   visibility: PostRecord["visibility"];
 }
 
+interface TaxonomyCountRow {
+  count: number;
+  name: string;
+  slug: string;
+}
+
+interface OwnerPostStatusCountRow {
+  draft_count: number;
+  published_count: number;
+  scheduled_count: number;
+}
+
 const POST_SELECT = `
   SELECT
     p.*,
@@ -124,13 +139,15 @@ const DISCOVERY_POST_SELECT = `
   LEFT JOIN categories c ON c.id = p.category_id
 `;
 
+const DISCOVERY_SEARCH_RANK = "bm25(posts_fts, 8.0, 4.0, 1.0)";
+
 const DISCOVERY_FTS_SELECT = `
   SELECT
     p.*,
     c.id AS category_id,
     c.name AS category_name,
     c.slug AS category_slug,
-    bm25(posts_fts, 8.0, 4.0, 1.0) AS search_rank,
+    ${DISCOVERY_SEARCH_RANK} AS search_rank,
     COALESCE(
       (
         SELECT json_group_array(
@@ -154,6 +171,14 @@ const PUBLIC_POST_STATE = `
     OR (p.status = 'scheduled' AND p.scheduled_at <= ?)
   )
 `;
+
+function mapTaxonomyCount(row: TaxonomyCountRow): TaxonomyCount {
+  return {
+    count: row.count,
+    name: row.name,
+    slug: row.slug,
+  };
+}
 
 function parseTags(value: string): TaxonomyTerm[] {
   const parsed: unknown = JSON.parse(value);
@@ -259,6 +284,22 @@ function mapMedia(row: MediaRow): MediaRecord {
   };
 }
 
+function mapRevision(row: RevisionRow): PostRevision {
+  return {
+    bodyMd: row.body_md,
+    categoryId: row.category_id,
+    createdAt: row.created_at,
+    excerpt: row.excerpt,
+    heroMediaId: row.hero_media_id,
+    id: row.id,
+    postId: row.post_id,
+    slug: row.slug,
+    tags: parseTags(row.tags_json),
+    title: row.title,
+    visibility: row.visibility,
+  };
+}
+
 export interface PublishingRepository {
   findMedia(id: string, owner?: boolean): Promise<MediaRecord | null>;
   findOwnerPost(id: string): Promise<PostRecord | null>;
@@ -324,6 +365,31 @@ export class D1PublishingRepository implements PublishingRepository {
     return row ? mapPost(row) : null;
   }
 
+  async countOwnerPostsByStatus(): Promise<{
+    draft: number;
+    published: number;
+    scheduled: number;
+  }> {
+    const row = await this.database
+      .prepare(
+        `SELECT
+           COALESCE(SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END), 0)
+             AS draft_count,
+           COALESCE(SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END), 0)
+             AS published_count,
+           COALESCE(SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END), 0)
+             AS scheduled_count
+         FROM posts`,
+      )
+      .first<OwnerPostStatusCountRow>();
+
+    return {
+      draft: row?.draft_count ?? 0,
+      published: row?.published_count ?? 0,
+      scheduled: row?.scheduled_count ?? 0,
+    };
+  }
+
   async listOwnerPosts(limit = 50): Promise<PostRecord[]> {
     const result = await this.database
       .prepare(
@@ -357,12 +423,8 @@ export class D1PublishingRepository implements PublishingRepository {
   ): Promise<DiscoveryPage> {
     const bindings: (number | string)[] = [now];
     const conditions = [PUBLIC_POST_STATE];
-    const queryLength = Array.from(
-      new Intl.Segmenter("zh-Hant", { granularity: "grapheme" }).segment(
-        filters.query,
-      ),
-    ).length;
-    const useFts = queryLength >= 3;
+    const useFts = isDiscoveryRelevanceAvailable(filters.query);
+    const useRelevance = useFts && filters.sort === "relevance";
 
     if (filters.query) {
       if (useFts) {
@@ -407,7 +469,33 @@ export class D1PublishingRepository implements PublishingRepository {
       conditions.push(`${publicationTime} < ?`);
       bindings.push(toExclusiveUtc);
     }
-    if (filters.before && filters.beforeId) {
+    if (
+      useRelevance &&
+      filters.before &&
+      filters.beforeId &&
+      filters.beforeRank !== null
+    ) {
+      conditions.push(`(
+        ${DISCOVERY_SEARCH_RANK} > ?
+        OR (
+          ${DISCOVERY_SEARCH_RANK} = ?
+          AND ${publicationTime} < ?
+        )
+        OR (
+          ${DISCOVERY_SEARCH_RANK} = ?
+          AND ${publicationTime} = ?
+          AND p.id < ?
+        )
+      )`);
+      bindings.push(
+        filters.beforeRank,
+        filters.beforeRank,
+        filters.before,
+        filters.beforeRank,
+        filters.before,
+        filters.beforeId,
+      );
+    } else if (!useRelevance && filters.before && filters.beforeId) {
       conditions.push(`(
         ${publicationTime} < ?
         OR (${publicationTime} = ? AND p.id < ?)
@@ -415,8 +503,7 @@ export class D1PublishingRepository implements PublishingRepository {
       bindings.push(filters.before, filters.before, filters.beforeId);
     }
 
-    const relevanceOrder =
-      useFts && filters.sort === "relevance" ? "search_rank ASC," : "";
+    const relevanceOrder = useRelevance ? "search_rank ASC," : "";
     bindings.push(filters.limit + 1);
     const result = await this.database
       .prepare(
@@ -434,11 +521,25 @@ export class D1PublishingRepository implements PublishingRepository {
       : result.results;
     const posts = pageRows.map(mapPost);
     const last = posts.at(-1);
+    const lastRow = pageRows.at(-1);
     const before = last?.publishedAt ?? last?.scheduledAt ?? null;
+    const rank =
+      useRelevance &&
+      typeof lastRow?.search_rank === "number" &&
+      Number.isFinite(lastRow.search_rank)
+        ? lastRow.search_rank
+        : null;
+    let nextCursor: DiscoveryPage["nextCursor"] = null;
+    if (hasMore && last && before && (!useRelevance || rank !== null)) {
+      nextCursor = {
+        before,
+        beforeId: last.id,
+        ...(rank === null ? {} : { rank }),
+      };
+    }
 
     return {
-      nextCursor:
-        hasMore && last && before ? { before, beforeId: last.id } : null,
+      nextCursor,
       posts,
     };
   }
@@ -479,12 +580,6 @@ export class D1PublishingRepository implements PublishingRepository {
   }
 
   async listPublicTaxonomy(now: string): Promise<PublicTaxonomy> {
-    interface TaxonomyRow {
-      count: number;
-      name: string;
-      slug: string;
-    }
-
     const [categories, tags] = await Promise.all([
       this.database
         .prepare(
@@ -496,7 +591,7 @@ export class D1PublishingRepository implements PublishingRepository {
            ORDER BY c.name`,
         )
         .bind(now)
-        .all<TaxonomyRow>(),
+        .all<TaxonomyCountRow>(),
       this.database
         .prepare(
           `SELECT t.name, t.slug, COUNT(DISTINCT p.id) AS count
@@ -508,20 +603,40 @@ export class D1PublishingRepository implements PublishingRepository {
            ORDER BY t.name`,
         )
         .bind(now)
-        .all<TaxonomyRow>(),
+        .all<TaxonomyCountRow>(),
     ]);
 
-    const mapTaxonomy = (rows: TaxonomyRow[]): TaxonomyCount[] =>
-      rows.map((row) => ({
-        count: row.count,
-        name: row.name,
-        slug: row.slug,
-      }));
-
     return {
-      categories: mapTaxonomy(categories.results),
-      tags: mapTaxonomy(tags.results),
+      categories: categories.results.map(mapTaxonomyCount),
+      tags: tags.results.map(mapTaxonomyCount),
     };
+  }
+
+  async findPublicTaxonomyTerm(
+    kind: "category" | "tag",
+    slug: string,
+    now: string,
+  ): Promise<TaxonomyCount | null> {
+    const query =
+      kind === "category"
+        ? `SELECT c.name, c.slug, COUNT(DISTINCT p.id) AS count
+           FROM categories c
+           JOIN posts p ON p.category_id = c.id
+           WHERE c.slug = ? AND ${PUBLIC_POST_STATE}
+           GROUP BY c.id, c.name, c.slug
+           LIMIT 1`
+        : `SELECT t.name, t.slug, COUNT(DISTINCT p.id) AS count
+           FROM tags t
+           JOIN post_tags pt ON pt.tag_id = t.id
+           JOIN posts p ON p.id = pt.post_id
+           WHERE t.slug = ? AND ${PUBLIC_POST_STATE}
+           GROUP BY t.id, t.name, t.slug
+           LIMIT 1`;
+    const row = await this.database
+      .prepare(query)
+      .bind(slug, now)
+      .first<TaxonomyCountRow>();
+    return row ? mapTaxonomyCount(row) : null;
   }
 
   async listPublicFeedPosts(
@@ -772,29 +887,37 @@ export class D1PublishingRepository implements PublishingRepository {
     return existing ?? term;
   }
 
-  async listRevisions(postId: string): Promise<PostRevision[]> {
+  async listRevisionPage(
+    postId: string,
+    cursor: RevisionPageCursor | null,
+    limit = 20,
+  ): Promise<RevisionPage> {
+    const pageSize = Math.min(Math.max(Math.trunc(limit), 1), 50);
+    const bindings: (number | string)[] = [postId];
+    if (cursor) {
+      bindings.push(cursor.before, cursor.before, cursor.beforeId);
+    }
+    bindings.push(pageSize + 1);
     const result = await this.database
       .prepare(
         `SELECT * FROM post_revisions
          WHERE post_id = ?
-         ORDER BY created_at DESC
-         LIMIT 20`,
+         ${cursor ? "AND (created_at < ? OR (created_at = ? AND id < ?))" : ""}
+         ORDER BY created_at DESC, id DESC
+         LIMIT ?`,
       )
-      .bind(postId)
+      .bind(...bindings)
       .all<RevisionRow>();
-    return result.results.map((row) => ({
-      bodyMd: row.body_md,
-      categoryId: row.category_id,
-      createdAt: row.created_at,
-      excerpt: row.excerpt,
-      heroMediaId: row.hero_media_id,
-      id: row.id,
-      postId: row.post_id,
-      slug: row.slug,
-      tags: parseTags(row.tags_json),
-      title: row.title,
-      visibility: row.visibility,
-    }));
+    const hasMore = result.results.length > pageSize;
+    const pageRows = hasMore
+      ? result.results.slice(0, pageSize)
+      : result.results;
+    const last = pageRows.at(-1);
+    return {
+      nextCursor:
+        hasMore && last ? { before: last.created_at, beforeId: last.id } : null,
+      revisions: pageRows.map(mapRevision),
+    };
   }
 
   async findRevision(id: string): Promise<PostRevision | null> {
@@ -802,21 +925,7 @@ export class D1PublishingRepository implements PublishingRepository {
       .prepare("SELECT * FROM post_revisions WHERE id = ? LIMIT 1")
       .bind(id)
       .first<RevisionRow>();
-    return row
-      ? {
-          bodyMd: row.body_md,
-          categoryId: row.category_id,
-          createdAt: row.created_at,
-          excerpt: row.excerpt,
-          heroMediaId: row.hero_media_id,
-          id: row.id,
-          postId: row.post_id,
-          slug: row.slug,
-          tags: parseTags(row.tags_json),
-          title: row.title,
-          visibility: row.visibility,
-        }
-      : null;
+    return row ? mapRevision(row) : null;
   }
 
   async restoreRevision(
@@ -967,6 +1076,30 @@ export class D1PublishingRepository implements PublishingRepository {
          LIMIT 1`,
       )
       .bind(id)
+      .first<MediaRow>();
+    return row ? mapMedia(row) : null;
+  }
+
+  async findPublicMedia(id: string, now: string): Promise<MediaRecord | null> {
+    const row = await this.database
+      .prepare(
+        `SELECT DISTINCT m.*
+         FROM media m
+         JOIN posts p ON p.hero_media_id = m.id
+         WHERE m.id = ?
+           AND m.visibility = 'public'
+           AND p.visibility IN ('public', 'unlisted')
+           AND (
+             p.status = 'published'
+             OR (
+               p.status = 'scheduled'
+               AND p.scheduled_at IS NOT NULL
+               AND p.scheduled_at <= ?
+             )
+           )
+         LIMIT 1`,
+      )
+      .bind(id, now)
       .first<MediaRow>();
     return row ? mapMedia(row) : null;
   }

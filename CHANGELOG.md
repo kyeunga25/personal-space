@@ -1,151 +1,102 @@
 # 更新記錄 / Changelog
 
-本檔記錄可公開驗證的產品版本；未部署版本會清楚標示。
+本檔只記錄適合公開的產品變更。它不包含 production 資料、Cloudflare identifiers、
+完整資料庫組織、私人 Access 設定或內部營運記錄。
 
-This file records publicly verifiable product versions. Versions that are not
-yet deployed are marked explicitly.
+This file contains public-safe product changes only. It excludes production
+data, Cloudflare identifiers, detailed database organization, private Access
+configuration, and internal operational records.
+
+## [0.8.0] - 2026-08-11
+
+- 改善 Markdown 快捷操作、可逆格式、分頁導覽、儲存回饋及高風險操作確認，讓一般
+  使用者更容易編輯及管理不同內容。
+- 改善 Notes、Articles、Editions、來源及修訂記錄的狀態文字、空白狀態、鍵盤操作
+  與窄螢幕展示。
+- 發佈 Edition 前重新核對來源權利，並保存當次審閱的署名依據；權利撤回時公開頁
+  會 fail closed。
+- 讓公開媒體跟隨內容發佈生命週期，並加強圖片與外部 feed 的結構及資源限制。
+- 加強私人管理認證的資源控制、Static Assets 的 Worker-first 邊界，以及不含實際
+  route、資源識別資料或營運時間表的公開部署範本。
+- 更新公開安全、自部署及法律責任說明；正式設定仍只保留在 Git 忽略的私人檔案。
+
+- Improved reversible Markdown actions, navigation, save feedback, guarded
+  high-risk actions, and responsive editing for ordinary users.
+- Clarified status, empty states, keyboard use, and narrow-screen presentation
+  across Notes, Articles, Editions, sources, and revisions.
+- Revalidated source rights at Edition publication and retained reviewed
+  attribution evidence; public output now fails closed after rights withdrawal.
+- Tied public media to live content and strengthened structural and resource
+  limits for images and external feeds.
+- Hardened management authentication, Worker-first Static Assets handling, and
+  the public-safe deployment template without real routes, identifiers, or
+  operational schedules.
+- Updated public security, self-hosting, and legal-responsibility guidance while
+  keeping production configuration in a Git-ignored private file.
 
 ## [0.7.0] - 2026-08-02
 
-- 將來源權利審核加入 Studio 及 D1 不變量：來源需有條款網址、權利依據、審核
-  時間及 `approved` 狀態才可啟用；既有來源在 migration 後先暫停並重新審核。
-- 將每次同步限制為最多兩個來源、每個來源五項內容；feed body 使用串流 2 MiB
-  硬上限，並在超限或重新導向時主動取消回應。
-- 加入 Cron／手動工作 run ledger、唯一 run key、十四分鐘租約、過期重試、
-  `succeeded`／`partial`／`failed`／`skipped` 狀態及只含數量的結構化 logs。
-- 為已發佈或已排程的 Note／Article 加入只限 Studio 的工作副本；自動儲存不會
-  改動公開 canonical 內容，明確發佈時才建立修訂並提升新版本。
-- 為已發佈 Edition 加入同樣的工作副本與明確提升流程，避免編輯中的標題、
-  引言、項目及註解提前進入公開頁、RSS 或 sitemap。
-- 在服務層及 D1 triggers 同時約束 Post 與封面媒體的可見性；公開及 unlisted
-  內容只可連結公開媒體，私人內容只可連結私人媒體。
-- 將公開媒體 cache 改為五分鐘並容許短暫 stale-while-revalidate，不再對可變
-  媒體使用一年 immutable cache。
-- 限制本機 Studio bypass 只接受 loopback URL，並在 RSS／sitemap renderer
-  再次排除未到期排程內容。
-- 在無快取的公開 health response 加入 release version，方便部署後核對 exact build。
-- 在 build 後將 server modules 的本機 project path 改為中性 workspace path，避免
-  Astro manifest 或 component metadata 將開發機路徑帶入 Worker artifact。
-- 已發佈或已排程 Post 的儲存及修訂還原按鈕明確標示 working copy，避免把
-  owner-only 修改誤稱為 canonical 草稿。
-- Note 編輯器未提供 slug 欄位時明確傳送「未提供」而不是 `null`，服務層會保留
-  既有 slug，避免 working-copy autosave 或提升時意外改變公開 URL。
-- Studio 編輯器會按包含側欄的完整可用寬度切換雙欄版面，避免 1280px 桌面視窗
-  出現橫向捲動。
+- 加強外部來源的條款及使用權審閱邊界。
+- 限制及保護網絡擷取、重試和排程工作，並減少 logs 保存的資料。
+- 讓已公開內容的編輯維持私人，直至部署者明確發佈。
+- 加強內容、媒體、feeds、sitemap 及排程可見度的 fail-closed 檢查。
+- 限制本機管理測試只在 loopback development 環境生效。
+- 清理建置輸出中的開發機路徑資料。
+- 改善管理介面的操作文字、URL 穩定性及桌面 layout。
 
-- Added an explicit Studio and D1 source-rights gate. A source needs a terms
-  URL, rights basis, review time, and approved status before it can be enabled;
-  existing sources are paused for re-review by the migration.
-- Bounded each ingestion run to two sources and five items per source, with a
-  streaming 2 MiB feed-body hard limit and response cancellation on oversize
-  bodies or redirects.
-- Added an idempotent Cron/manual run ledger with unique run keys, 14-minute
-  leases, stale-run recovery, explicit terminal states, and count-only logs.
-- Added owner-only working copies for published or scheduled Notes and
-  Articles, so autosave cannot mutate public canonical content before an
-  explicit publish action.
-- Added the same working-copy promotion boundary for published Editions,
-  including their titles, introductions, selected items, and annotations.
-- Enforced Post/cover-media visibility alignment in both the service and D1
-  triggers, and replaced one-year immutable caching for mutable public media
-  with a five-minute cache policy.
-- Restricted the local Studio bypass to loopback URLs and repeated the
-  not-yet-due scheduled-content guard inside RSS and sitemap renderers.
-- Added the release version to the uncached public health response for exact
-  post-deployment build verification.
-- Replaced the local project path in built server modules with a neutral
-  workspace path, preventing Astro manifest or component metadata from carrying
-  a developer-machine path into the Worker artifact.
-- Labeled save and revision-restore actions on published or scheduled Posts as
-  working-copy operations instead of canonical drafts.
-- Preserved an existing Note slug when its editor omits the slug field, avoiding
-  accidental public-URL changes during working-copy autosave or promotion.
-- Switched the Studio editor to two columns based on the full shell width,
-  removing horizontal overflow at a 1280px desktop viewport.
+- Strengthened source rights review and bounded network automation.
+- Reduced log data and improved retry-safe scheduled work.
+- Kept edits to already-public content private until explicit publication.
+- Added defence-in-depth visibility checks for content, media, feeds, sitemap,
+  and scheduling.
+- Restricted local management testing to loopback development environments.
+- Removed developer-machine path data from build artifacts.
+- Improved management copy, URL stability, and desktop layout.
 
 ## [0.6.0] - 2026-07-28
 
-- 加入站主專用的公開 RSS／Atom 來源管理、手動同步及安全狀態顯示。
-- 加入 HTTPS-only feed 擷取、條件請求、大小／逾時／重新導向限制及公開網絡檢查。
-- 將來源項目清理後存入 D1，使用相近標題分組，避免同一故事重複進入 Edition。
-- 加入每日 Edition 草稿、項目取捨、站主註解、發佈／封存及公開詳情頁。
-- 加入每日兩次來源同步和每晚草稿建立的 Cron Triggers；不需要額外 Queue 資源。
-- 加入 Edition RSS、sitemap 條目、短摘錄、原文連結及來源版權提示。
-- Studio scripts 維持同源外部檔案，保留不容許 inline script 的嚴格 CSP。
-- 完成公開 About 頁，並將舊 Channels placeholder 永久轉向目前的搜尋與主題篩選。
-- 將示例內容改成中性、可公開審閱的測試文字，不加入非必要的個人化或自動生成聲稱。
-- 更新 Astro、Cloudflare adapter、Astro 檢查工具及 Node.js 型別等相容工具鏈；
-  TypeScript 維持目前 Astro 檢查工具可支援的 6.0.3。
+- 加入站主管理的 RSS／Atom 來源、人工同步及可選排程。
+- 加入安全擷取、文字清理、相近標題整理及人工審閱 Edition 流程。
+- 加入公開 Edition 頁、RSS、sitemap 條目及來源權利提示。
+- 完成 About 頁、舊路徑轉向及中性測試範例。
 
-- Added owner-only management and manual synchronization for public RSS/Atom
-  sources.
-- Added HTTPS-only feed fetching with conditional requests, size, timeout,
-  redirect, and public-network safeguards.
-- Added sanitized D1 source items and title-similarity grouping to reduce
-  duplicate stories.
-- Added daily Edition drafts, item review, annotations, publishing, archiving,
-  and public detail pages.
-- Added twice-daily ingestion and nightly draft Cron Triggers without an
-  additional Queue resource.
-- Added an Edition RSS feed, sitemap entries, short excerpts, source links, and
-  a publisher-rights notice.
-- Kept Studio scripts in same-origin external assets under the strict CSP.
-- Completed the public About page and permanently redirected the legacy
-  Channels placeholder to the current search and topic filters.
-- Replaced stale examples with neutral, reviewable test content without
-  unnecessary personalization or automated-authorship claims.
-- Updated the compatible Astro, Cloudflare adapter, Astro checking, and Node.js
-  type toolchain while retaining TypeScript 6.0.3, the newest release supported
-  by the current Astro checker.
+- Added owner-managed RSS／Atom sources, manual sync, and optional scheduling.
+- Added guarded retrieval, text sanitization, similar-title grouping, and a
+  reviewed Edition workflow.
+- Added public Edition pages, feed and sitemap entries, and source-rights
+  notices.
+- Completed the About page, legacy redirects, and neutral test examples.
 
 ## [0.5.0] - 2026-07-28
 
-- 加入公開搜尋、時間動態、香港時間月份封存、分類及標籤頁。
-- 使用 D1 FTS5 搜尋三個字或以上的內容，較短查詢使用安全轉義的相符搜尋。
-- 加入公開內容 RSS、筆記／文章獨立 feeds、sitemap 及頁面自動探索連結。
-- 首頁改用真實公開內容，舊內容路徑永久轉向目前使用的筆記、文章及 Editions 路徑。
-- 非公開、未到期排程及草稿在搜尋、封存、feeds 與 sitemap 全部 fail closed。
-- 更新 ESLint 至 10.8.0；TypeScript 維持目前工具鏈可支援的 6.0.3。
+- 加入公開搜尋、時間動態、月份封存、分類及標籤頁。
+- 加入內容 RSS feeds、sitemap 及 feed discovery links。
+- 排除私人、草稿、未列出及未到期內容。
 
-- Added public search, a chronological stream, Hong Kong month archives,
-  category pages, and tag pages.
-- Added D1 FTS5 search for queries of three or more characters, with safely
-  escaped matching for shorter queries.
-- Added a public RSS feed, separate Note and Article feeds, a sitemap, and feed
-  discovery links.
-- Replaced sample home entries with live public content and permanently
-  redirected legacy content paths.
-- Kept private, not-yet-due scheduled, and draft records out of discovery,
-  archives, feeds, and the sitemap by default.
-- Updated ESLint to 10.8.0 while retaining TypeScript 6.0.3, the newest version
-  supported by the current lint toolchain.
+- Added public search, a chronological stream, archives, category pages, and
+  tag pages.
+- Added public RSS feeds, sitemap output, and feed discovery links.
+- Excluded private, draft, unlisted, and not-yet-due content.
 
 ## [0.4.0] - 2026-07-28
 
-- 加入站主專用 Studio、Cloudflare Access 雙重身分核對及同源寫入保護。
-- 加入 Note／Article 草稿、自動儲存、預覽、發佈、排程、封存與修訂還原。
-- 使用 D1 儲存內容及修訂，使用 R2 儲存經驗證的 PNG／JPEG 圖片。
-- 加入公開列表、詳情頁、媒體路由，以及私人／不公開／公開可見度規則。
-- 加強 Markdown 清理、JSON 輸入限制、錯誤資料隱藏及圖片大小預檢。
+- 加入只限站主的管理介面及 Cloudflare Access 保護。
+- 加入 Note／Article 的草稿、預覽、發佈、排程、封存及修訂功能。
+- 使用 D1 保存部署者內容資料，R2 保存經驗證的媒體。
+- 加強 Markdown、輸入、錯誤及媒體處理。
 
-- Added the owner-only Studio with Cloudflare Access verification and
-  same-origin write protection.
-- Added Note and Article drafts, autosave, preview, publishing, scheduling,
-  archiving, and revision restore.
-- Added D1-backed content and revisions plus R2-backed validated PNG/JPEG
-  media.
-- Added public lists, detail pages, media routes, and private/unlisted/public
-  visibility rules.
-- Hardened Markdown sanitization, JSON input limits, error disclosure, and
-  image size preflight checks.
+- Added an owner-only management surface protected by Cloudflare Access.
+- Added Note／Article draft, preview, publish, schedule, archive, and revision
+  workflows.
+- Used D1 for operator content data and R2 for validated media.
+- Hardened Markdown, input, error, and media handling.
 
 ## [0.3.0] - 2026-07-25
 
 - 發佈 Clear Sky Feed 響應式公開介面。
-- 加入公開健康檢查、Workers Static Assets、完整安全標頭及 fail-closed 私人路由。
+- 加入 Cloudflare Workers Static Assets、安全標頭及 fail-closed 私人路由。
 - 加入 GitHub Actions 與 Cloudflare Workers Builds 驗證流程。
 
-- Released the responsive Clear Sky Feed public interface.
-- Added a public health check, Workers Static Assets, complete security
-  headers, and fail-closed private routes.
-- Added GitHub Actions and Cloudflare Workers Builds verification.
+- Released the responsive Clear Sky Feed interface.
+- Added Workers Static Assets, security headers, and fail-closed private routes.
+- Added GitHub Actions and Cloudflare Workers Builds validation.
