@@ -12,7 +12,15 @@ coverage/
 .env
 .env.*
 !.env.example
+wrangler.self-host.jsonc
 
 # Local tooling
 *.log
 .DS_Store
+
+# Public documentation entry points (also override local repository excludes)
+!docs/
+docs/*
+!docs/README.md
+!docs/PROJECT_OVERVIEW.md
+!docs/SELF_HOSTING.md

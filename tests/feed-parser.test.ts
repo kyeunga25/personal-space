@@ -41,9 +41,25 @@ describe("syndication feed parsing", () => {
     expect(entries[0]?.url).toBe("https://example.com/posts/1");
   });
 
-  it("does not ingest HTTP article links from an HTTPS feed", () => {
+  it("preserves fragments on allowed public article links", () => {
     const entries = parseSyndicationFeed(
-      "<rss><channel><item><guid>plain-http</guid><title>Unsafe link</title><link>http://example.com/posts/1</link></item></channel></rss>",
+      "<rss><channel><item><guid>fragment</guid><title>Fragment link</title><link>https://example.com/posts/1#section</link></item></channel></rss>",
+      new URL("https://example.com/feed.xml"),
+    );
+
+    expect(entries[0]?.url).toBe("https://example.com/posts/1#section");
+  });
+
+  it.each([
+    ["plain HTTP", "http://example.com/posts/1"],
+    ["localhost", "https://localhost/posts/1"],
+    ["a literal IP", "https://127.0.0.1/posts/1"],
+    ["embedded credentials", "https://user:pass@example.com/posts/1"],
+    ["a non-standard port", "https://example.com:8443/posts/1"],
+    ["an overlong URL", `https://example.com/${"a".repeat(2040)}`],
+  ])("does not ingest %s article links", (_, url) => {
+    const entries = parseSyndicationFeed(
+      `<rss><channel><item><guid>unsafe-link</guid><title>Unsafe link</title><link>${url}</link></item></channel></rss>`,
       new URL("https://example.com/feed.xml"),
     );
 
@@ -57,6 +73,45 @@ describe("syndication feed parsing", () => {
         new URL("https://example.com/feed.xml"),
       ),
     ).toThrow("Unsupported feed document");
+  });
+
+  it.each([
+    [
+      "a document type declaration",
+      '<!DOCTYPE rss [<!ENTITY x "expanded">]><rss><channel /></rss>',
+    ],
+    ["an entity declaration", '<!ENTITY x "expanded"><rss><channel /></rss>'],
+    ["excessive nesting", `${"<group>".repeat(65)}${"</group>".repeat(65)}`],
+  ])("rejects %s before XML parsing", (_, xml) => {
+    expect(() =>
+      parseSyndicationFeed(xml, new URL("https://example.com/feed.xml")),
+    ).toThrow();
+  });
+
+  it("bounds feed entry work before per-entry cleanup", () => {
+    const items = Array.from({ length: 101 }, (_, index) => {
+      const itemId = String(index);
+      return `<item><guid>${itemId}</guid><title>Item ${itemId}</title><link>https://example.com/${itemId}</link></item>`;
+    }).join("");
+    expect(() =>
+      parseSyndicationFeed(
+        `<rss><channel>${items}</channel></rss>`,
+        new URL("https://example.com/feed.xml"),
+        5,
+      ),
+    ).toThrow("Feed contains too many entries");
+  });
+
+  it("maps only the caller-requested number of entries", () => {
+    const entries = parseSyndicationFeed(
+      `<rss><channel>
+        <item><guid>1</guid><title>One</title><link>https://example.com/1</link></item>
+        <item><guid>2</guid><title>Two</title><link>https://example.com/2</link></item>
+      </channel></rss>`,
+      new URL("https://example.com/feed.xml"),
+      1,
+    );
+    expect(entries.map((entry) => entry.title)).toEqual(["One"]);
   });
 });
 

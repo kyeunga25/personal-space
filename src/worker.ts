@@ -1,10 +1,8 @@
 import { handle } from "@astrojs/cloudflare/handler";
 
 import { D1EditionRepository } from "./server/editions/repository";
+import { scheduledAutomationJob } from "./server/editions/schedule";
 import { EditionAutomationService } from "./server/editions/service";
-
-const INGEST_CRON = "15 0,12 * * *";
-const EDITION_CRON = "0 14 * * *";
 
 function logAutomation(
   job: "edition_generation" | "source_ingestion",
@@ -52,7 +50,8 @@ export default {
     );
     try {
       const scheduledAt = new Date(controller.scheduledTime);
-      if (controller.cron === INGEST_CRON) {
+      const job = scheduledAutomationJob(controller.cron, environment);
+      if (job === "source_ingestion") {
         const result = await service.runIngestion({
           scheduledAt,
           trigger: "cron",
@@ -63,7 +62,7 @@ export default {
         }
         return;
       }
-      if (controller.cron === EDITION_CRON) {
+      if (job === "edition_generation") {
         const result = await service.runEditionGeneration({
           scheduledAt,
           trigger: "cron",

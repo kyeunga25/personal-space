@@ -2,7 +2,10 @@
 import DiscoveryFilters from "../../components/DiscoveryFilters.astro";
 import DiscoveryPostList from "../../components/DiscoveryPostList.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { parseDiscoveryFilters } from "../../server/discovery/filters";
+import {
+  parseDiscoveryFilters,
+  withCursor,
+} from "../../server/discovery/filters";
 import { getBindings } from "../../server/platform/bindings";
 import { D1PublishingRepository } from "../../server/publishing/repository";
 
@@ -13,6 +16,9 @@ const [result, taxonomy] = await Promise.all([
   repository.listPublicDiscovery(filters, now),
   repository.listPublicTaxonomy(now),
 ]);
+const nextHref = result.nextCursor
+  ? withCursor(filters, result.nextCursor)
+  : null;
 ---
 
 <BaseLayout
@@ -30,6 +36,6 @@ const [result, taxonomy] = await Promise.all([
       </p>
     </header>
     <DiscoveryFilters action="/search" {filters} {taxonomy} />
-    <DiscoveryPostList posts={result.posts} />
+    <DiscoveryPostList posts={result.posts} {nextHref} />
   </div>
 </BaseLayout>

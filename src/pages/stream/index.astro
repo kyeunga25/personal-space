@@ -10,17 +10,15 @@ import { getBindings } from "../../server/platform/bindings";
 import { D1PublishingRepository } from "../../server/publishing/repository";
 
 const filters = parseDiscoveryFilters(Astro.url.searchParams);
+const effectiveFilters = { ...filters, query: "", sort: "newest" as const };
 const repository = new D1PublishingRepository(getBindings().DB);
 const now = new Date().toISOString();
 const [result, taxonomy] = await Promise.all([
-  repository.listPublicDiscovery(
-    { ...filters, query: "", sort: "newest" },
-    now,
-  ),
+  repository.listPublicDiscovery(effectiveFilters, now),
   repository.listPublicTaxonomy(now),
 ]);
 const nextHref = result.nextCursor
-  ? withCursor(Astro.url.searchParams, result.nextCursor)
+  ? withCursor(effectiveFilters, result.nextCursor)
   : null;
 ---
 

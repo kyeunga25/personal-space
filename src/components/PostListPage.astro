@@ -1,19 +1,36 @@
 ---
 import { formatHongKongDate } from "../lib/dates";
+import { buildPostTaxonomyLinks } from "../lib/navigation";
+import {
+  getPublicPostDisplayTitle,
+  getPublicPostListEmptyState,
+} from "../lib/post-display";
+import { getReadingTime } from "../lib/reading-time";
 import type { PostKind, PostRecord } from "../server/publishing/domain";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import ReadingTimeLabel from "./ReadingTimeLabel.astro";
 
 interface Props {
   description: string;
   descriptionEn: string;
   kind: PostKind;
+  nextHref?: string | null;
   posts: PostRecord[];
   title: string;
   titleEn: string;
 }
 
-const { description, descriptionEn, kind, posts, title, titleEn } = Astro.props;
+const {
+  description,
+  descriptionEn,
+  kind,
+  nextHref = null,
+  posts,
+  title,
+  titleEn,
+} = Astro.props;
 const routeBase = kind === "note" ? "/notes" : "/articles";
+const emptyState = getPublicPostListEmptyState(kind);
 ---
 
 <BaseLayout
@@ -34,41 +51,96 @@ const routeBase = kind === "note" ? "/notes" : "/articles";
         posts.length === 0 ? (
           <div class="post-list__empty">
             <h2>
-              暫未有公開內容 <small lang="en">No public entries yet</small>
+              {emptyState.title} <small lang="en">{emptyState.titleEn}</small>
             </h2>
-            <p>這裡會保留經過選擇、適合公開閱讀的內容。</p>
+            <p>{emptyState.description}</p>
             <p class="en-subline" lang="en">
-              Selected public entries will appear here.
+              {emptyState.descriptionEn}
             </p>
           </div>
         ) : (
-          posts.map((post) => (
-            <article class:list={["post-row", `post-row--${kind}`]}>
-              <a href={`${routeBase}/${encodeURIComponent(post.slug ?? "")}`}>
-                <div class="post-row__meta">
-                  <span>{kind === "note" ? "筆記 Note" : "文章 Article"}</span>
-                  <time
-                    datetime={post.publishedAt ?? post.scheduledAt ?? undefined}
+          posts.map((post) => {
+            const displayTitle = getPublicPostDisplayTitle(post);
+            const taxonomyLinks = buildPostTaxonomyLinks(
+              post.category,
+              post.tags,
+            );
+            return (
+              <article class:list={["post-row", `post-row--${kind}`]}>
+                <a
+                  class="post-row__main"
+                  href={`${routeBase}/${encodeURIComponent(post.slug ?? "")}`}
+                >
+                  <div class="post-row__meta">
+                    <span class="post-row__kind">
+                      {kind === "note" ? "筆記" : "文章"}
+                      <span lang="en">
+                        {kind === "note" ? "Note" : "Article"}
+                      </span>
+                    </span>
+                    <span class="post-row__details">
+                      <time
+                        datetime={
+                          post.publishedAt ?? post.scheduledAt ?? undefined
+                        }
+                      >
+                        {formatHongKongDate(
+                          post.publishedAt ?? post.scheduledAt,
+                        )}
+                      </time>
+                      {kind === "article" && (
+                        <span>
+                          <ReadingTimeLabel
+                            readingTime={getReadingTime(post.bodyMd)}
+                          />
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <h2>{displayTitle}</h2>
+                  {post.title && post.excerpt && <p>{post.excerpt}</p>}
+                </a>
+                {taxonomyLinks.length > 0 && (
+                  <ul
+                    class="taxonomy-list"
+                    aria-label="分類與標籤 Categories and tags"
                   >
-                    {formatHongKongDate(post.publishedAt ?? post.scheduledAt)}
-                  </time>
-                </div>
-                <h2>{post.title ?? post.excerpt ?? "無標題筆記"}</h2>
-                {post.title && post.excerpt && <p>{post.excerpt}</p>}
-                {(post.category || post.tags.length > 0) && (
-                  <ul class="taxonomy-list" aria-label="分類與標籤">
-                    {post.category && <li>{post.category.name}</li>}
-                    {post.tags.map((tag) => (
-                      <li>#{tag.name}</li>
+                    {taxonomyLinks.map((item) => (
+                      <li>
+                        {item.href ? (
+                          <a href={item.href} aria-label={item.accessibleLabel}>
+                            {item.label}
+                          </a>
+                        ) : (
+                          <span>
+                            <span class="visually-hidden">
+                              {item.accessibleLabel}
+                            </span>
+                            <span aria-hidden="true">{item.label}</span>
+                          </span>
+                        )}
+                      </li>
                     ))}
                   </ul>
                 )}
-              </a>
-            </article>
-          ))
+              </article>
+            );
+          })
         )
       }
     </section>
+    {
+      nextHref && (
+        <nav
+          class="post-list__more"
+          aria-label={`${title}分頁 ${titleEn} pagination`}
+        >
+          <a class="button" href={nextHref}>
+            載入較早內容 <span lang="en">Load older</span>
+          </a>
+        </nav>
+      )
+    }
   </div>
 </BaseLayout>
 
@@ -91,26 +163,35 @@ const routeBase = kind === "note" ? "/notes" : "/articles";
     color: var(--space-ink-muted);
   }
 
-  .post-row {
-    border-bottom: 1px solid var(--space-border);
+  .post-list__more {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-5) var(--page-gutter);
   }
 
-  .post-row a {
-    display: block;
+  .post-row {
     padding: clamp(1.5rem, 4vw, 2.25rem);
-    color: var(--space-ink);
-    text-decoration: none;
+    border-bottom: 1px solid var(--space-border);
+    overflow-wrap: anywhere;
     transition:
       background-color var(--motion-fast) ease,
       box-shadow var(--motion-fast) ease;
   }
 
-  .post-row a:hover {
+  .post-row__main {
+    display: block;
+    color: var(--space-ink);
+    text-decoration: none;
+  }
+
+  .post-row:hover,
+  .post-row:focus-within {
     background: var(--space-surface-hover);
     box-shadow: inset 3px 0 var(--space-primary);
   }
 
-  .post-row--article a:hover {
+  .post-row--article:hover,
+  .post-row--article:focus-within {
     box-shadow: inset 3px 0 var(--space-blue);
   }
 
@@ -123,13 +204,31 @@ const routeBase = kind === "note" ? "/notes" : "/articles";
     font-size: var(--font-size--1);
   }
 
-  .post-row__meta span {
+  .post-row__kind {
     color: var(--space-primary-strong);
     font-weight: 720;
   }
 
-  .post-row--article .post-row__meta span {
+  .post-row__kind span {
+    margin-left: 0.35em;
+    color: var(--space-ink-faint);
+    font-size: 0.86em;
+  }
+
+  .post-row--article .post-row__kind {
     color: var(--space-blue-strong);
+  }
+
+  .post-row__details {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-1) var(--space-3);
+    text-align: right;
+  }
+
+  .post-row__details > span {
+    white-space: nowrap;
   }
 
   h2 {
@@ -158,5 +257,16 @@ const routeBase = kind === "note" ? "/notes" : "/articles";
     color: var(--space-blue-strong);
     font-size: var(--font-size--1);
     list-style: none;
+  }
+
+  .taxonomy-list a,
+  .taxonomy-list span {
+    color: var(--space-blue-strong);
+    font-weight: 650;
+  }
+
+  .taxonomy-list a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
   }
 </style>

@@ -3,6 +3,11 @@ import type {
   DiscoveryFilters,
   PublicTaxonomy,
 } from "../server/discovery/types";
+import {
+  DISCOVERY_QUERY_MAX_LENGTH,
+  DISCOVERY_RELEVANCE_MIN_GRAPHEMES,
+  isDiscoveryRelevanceAvailable,
+} from "../server/discovery/filters";
 
 interface Props {
   action: string;
@@ -12,6 +17,7 @@ interface Props {
 }
 
 const { action, filters, showQuery = true, taxonomy } = Astro.props;
+const relevanceAvailable = isDiscoveryRelevanceAvailable(filters.query);
 ---
 
 <form class="discovery-filters" method="get" action={action}>
@@ -25,7 +31,7 @@ const { action, filters, showQuery = true, taxonomy } = Astro.props;
           type="search"
           name="q"
           value={filters.query}
-          maxlength="120"
+          maxlength={DISCOVERY_QUERY_MAX_LENGTH}
           placeholder="搜尋標題、摘要或內容…"
           autocomplete="off"
         />
@@ -101,9 +107,10 @@ const { action, filters, showQuery = true, taxonomy } = Astro.props;
             <option
               value="relevance"
               selected={filters.sort === "relevance"}
-              disabled={!filters.query}
+              disabled={!relevanceAvailable}
             >
-              相關程度 Relevance
+              相關程度（至少 {DISCOVERY_RELEVANCE_MIN_GRAPHEMES} 字元）
+              Relevance ({DISCOVERY_RELEVANCE_MIN_GRAPHEMES}+ characters)
             </option>
           </select>
         </label>

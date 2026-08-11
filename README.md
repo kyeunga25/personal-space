@@ -1,158 +1,184 @@
 # Personal Space
 
+> 以 Astro 建立、部署於 **Cloudflare Workers** 的雙語個人發佈空間。
+>
+> A bilingual publishing space built with Astro and deployed on **Cloudflare Workers**.
+
 公開網站 / Public site: [space.k-y.cc](https://space.k-y.cc)
 
-目前正式版本 / Current production release: **v0.7.0**
+## 專案簡介
 
-v0.7.0 已於 2026-08-02 完成遠端 D1 migrations、固定 commit 的 GitHub CI、
-Cloudflare Workers Build 及正式站驗證。私人 Studio 與寫入 API 仍由 Cloudflare
-Access 保護；公開 repository 不保存帳戶、資料庫、儲存空間或部署識別資料。
+Personal Space 是一個由站主自行管理的發佈網站，集中整理筆記、文章、經審閱的
+每日選輯，以及公開搜尋、分類、標籤、封存、RSS 和 sitemap。公開讀者不需要
+帳戶；內容管理介面只供部署者本人使用。
 
-## 中文
+本專案不是純靜態網站。Astro 會產生前端資產及伺服器端輸出，再由一個
+Cloudflare Worker 處理動態頁面、API 和排程事件，靜態檔案則透過 Workers
+Static Assets 提供。
 
-Personal Space 是一個簡潔、由自己管理的個人發佈空間，公開內容分為：
+## 主要功能
 
-- **筆記 / Notes** — 短小、即時的內容。
-- **文章 / Articles** — 有完整結構的長篇內容。
-- **每日整理 / Editions** — 由公開 feed 收集、去重並經站主審閱的來源摘要。
-- **動態、搜尋與封存 / Stream, Search, Archive** — 以時間、關鍵字、分類及標籤尋回公開內容。
+- 筆記與長篇文章的公開列表及詳情頁；
+- 公開搜尋、時間動態、分類、標籤與月份封存；
+- RSS feeds 與 sitemap；
+- 只限站主使用的內容管理介面；
+- 草稿、預覽、發佈、排程、封存及修訂流程；
+- 可選的公開 RSS／Atom 來源整理與人工審閱選輯；
+- 響應式桌面及手機介面；
+- 對私人內容、未發佈內容及受保護路由採取 fail-closed 行為。
 
-v0.4.0 加入只供站主使用的 Studio 發佈流程，以及公開的 Note 與 Article
-列表／詳情頁。內容及修訂記錄存放於 Cloudflare D1，圖片存放於 R2；私人內容、
-未發佈草稿及 Studio API 不會成為 repository 內容。
+詳細說明見 [專案概覽](docs/PROJECT_OVERVIEW.md)。
 
-v0.5.0 加入 D1 FTS5 公開搜尋、時間動態、香港時間月份封存、分類／標籤頁、
-RSS feeds 及 sitemap。首頁只會讀取真實公開內容；私人、未列出、草稿及未到期
-排程內容不會出現在搜尋、封存、feeds 或 sitemap。
+## 部署平台與技術棧
 
-v0.6.0 加入私人來源管理、RSS／Atom 安全擷取、相近標題去重及每日 Edition
-審閱流程。Cloudflare Cron Triggers 每日兩次同步已啟用來源，並在香港時間晚上
-建立草稿；只有站主明確發佈的 Edition 才會出現在公開頁、獨立 RSS 及 sitemap。
-repository 不預設加入第三方來源，來源條款及使用權需由站主在加入前確認。
+| 範疇                   | 技術                                     | 用途                              |
+| ---------------------- | ---------------------------------------- | --------------------------------- |
+| Web framework          | Astro                                    | 頁面、API、伺服器端渲染與建置輸出 |
+| Language               | TypeScript（strictest）                  | 應用程式及 Worker 程式碼          |
+| Runtime                | Cloudflare Workers                       | 動態請求、API 及排程事件          |
+| Static delivery        | Workers Static Assets                    | CSS、SVG 及其他建置後資產         |
+| Relational data        | Cloudflare D1                            | 部署者自己的內容及應用資料        |
+| Object storage         | Cloudflare R2                            | 部署者自己的媒體檔案              |
+| Private access         | Cloudflare Access                        | 保護管理介面及寫入操作            |
+| Scheduling             | Workers Cron Triggers                    | 可選的定時整理工作                |
+| Content handling       | Marked、sanitize-html、fast-xml-parser   | Markdown、HTML 清理及 feed 解析   |
+| Authentication helpers | jose                                     | 驗證 Access 提供的簽署資料        |
+| Quality                | ESLint、Prettier、Vitest、Astro check    | 格式、靜態分析、型別及測試        |
+| Delivery               | Wrangler、GitHub Actions、Workers Builds | 建置、驗證及 Cloudflare 部署      |
 
-v0.7.0 將來源條款核對變成資料庫及 Studio 的明確權利閘門；既有來源會先暫停，
-只有記錄條款網址、使用依據及審核時間後才可重新啟用。每次同步最多處理兩個
-來源、每個來源五項內容，回應內容以串流方式限制為 2 MiB。Cron 與手動工作均
-寫入可重入 run ledger，只保存狀態與數量摘要，不在 logs 保存文章或來源內容。
+套件的實際固定版本以 [`package.json`](package.json) 及
+[`package-lock.json`](package-lock.json) 為準。
 
-已發佈的 Note、Article 與 Edition 現在使用只限 Studio 的工作副本；自動儲存
-不再直接改動公開 canonical 記錄，只有明確發佈才會提升工作副本。封面媒體的
-私人／公開可見性由服務層和 D1 triggers 同時約束，公開媒體亦不再使用永久
-immutable cache，降低變更可見性時的殘留風險。
+## 本地開發
 
-目前介面採用原創 **Clear Sky Feed** 視覺系統，以淡天藍、晴空青、
-薄荷青與少量日光黃構成清新、青春而俐落的信息流。所有圖標、SVG
-與 CSS 裝飾均為原創抽象圖形，不使用第三方角色或受版權保護資產。
-
-技術基礎：
-
-- Astro full-stack；
-- TypeScript strict mode；
-- Cloudflare Workers 與 Static Assets；
-- Cloudflare D1 內容資料庫與 R2 圖片儲存；
-- Cloudflare Access 驗證及應用程式層站主核對；
-- Note／Article 草稿、預覽、發佈、排程、封存及修訂還原；
-- 已發佈 Post／Edition 的 Studio 工作副本與明確提升流程；
-- 公開全文搜尋、分類／標籤篩選、香港時間封存及時間動態；
-- 來源權利審核、bounded 同步、相近標題去重及 Edition 審閱／發佈；
-- 可重入 Cron automation、租約回收、數量式狀態記錄及失敗可觀察性；
-- RSS、獨立 Note／Article／Edition feeds 及公開 sitemap；
-- 響應式桌面／手機導覽；
-- ESLint、Prettier、Vitest、Astro typecheck；
-- GitHub Actions 與 Cloudflare Workers Builds。
-
-### 本地開發
-
-需要 Node.js 22.22.3 或更新版本，以及 npm 10 或更新版本。
+需求：Node.js 22.22.3 或以上、npm 10 或以上。
 
 ```bash
-npm install
+npm ci
 npm run db:migrate:local
 npm run dev
+```
+
+預設本地網址由 Astro 顯示。完整檢查及 built-Worker 預覽：
+
+```bash
 npm run check
 npm run preview
 ```
 
-本機 Studio 測試可由 `.dev.vars.example` 複製出未追蹤的 `.dev.vars`。本機
-bypass 同時要求 development 設定和 loopback URL；正式主機即使誤設本機變數
-仍會 fail closed。正式環境需要以 secret 提供 `ACCESS_TEAM_DOMAIN`、
-`ACCESS_AUD` 及 `OWNER_EMAIL`，並先套用 D1 migration。不要把實際電郵、
-Access audience 或任何憑證提交到 Git。
+如需在本機測試管理介面，可將 `.dev.vars.example` 複製成已被 Git 忽略的
+`.dev.vars`，並只使用虛構測試值。不要在本地範例中填入正式電郵、Access
+識別資料、token 或任何真實內容。
 
-`npm run preview` 會以 production build、`.dev.vars.example`、local bindings 及
-localhost upstream 啟動 built Worker，方便用中性測試身分驗證 D1／R2／Studio
-整合；runtime 不會部署或連接遠端資源。
+## 自行部署摘要
 
-公開 Wrangler 設定只宣告程式使用的 binding。最新版 Wrangler 可在部署時自動
-配置所需資源；實際名稱及 identifiers 應只保留在 Cloudflare 的私人環境，不應
-回寫到公開 repository。自動配置可能在部署工作目錄內寫入 identifiers，因此每次
-提交前都必須重新檢查 `git diff`，不可提交這類變更。
+完整步驟、驗證方式及安全清單見
+[Cloudflare 自部署指南](docs/SELF_HOSTING.md)。以下只列出流程摘要。
 
-正式發布次序固定為：先建立不會接管流量的 Worker version 並確認 bindings，
-再套用遠端 D1 migration 及設定 Access secrets，最後才提升為正式部署。未完成
-這些條件時，正式站繼續使用上一個已驗證版本。
+1. 使用你自己的 Cloudflare 帳戶及全新的 D1、R2 資源。
+2. 安裝相依套件並先在本機套用 migration、執行 `npm run check`。
+3. 將公開安全範本複製成不受 Git 追蹤的私人 Wrangler 設定：
 
-公開 repository 只應包含應用程式碼、通用測試及公開安全文件。私人內容、
-草稿、憑證、存取 token、部署識別資料和本地規劃文件不得提交到 Git。
+   ```bash
+   cp wrangler.self-host.example.jsonc wrangler.self-host.jsonc
+   ```
 
-## English
+4. 使用 `npx wrangler login` 登入，建立自己的 D1 database 及 R2 bucket，再把
+   你自己的名稱與 identifiers 只填入 `wrangler.self-host.jsonc`。
+5. 以 `PERSONAL_SPACE_WRANGLER_CONFIG` 讓 Astro build 讀取私人設定，先套用遠端
+   migration，再以受保護的 `npm run deploy` 部署至 `workers.dev` 測試網址。
+6. 在 Cloudflare Access 建立只允許部署者進入的規則，並以 Cloudflare secret
+   設定必要值；不要把值寫入 Git、README、issue、CI log 或聊天內容。
+7. 確認公開頁正常、受保護路由 fail closed、R2 沒有直接公開後，才連接自訂
+   domain；需要排程時再於私人設定加入 Cron Triggers。
 
-Personal Space is a focused, self-managed publishing space for Notes and
-Articles, with chronological, searchable, and archived public discovery.
+遠端 migration、secret 更新及 deploy 都會改動你的 Cloudflare 環境。執行前請
+確認目前帳戶、Worker 名稱及目標資源。
 
-The current production release is **v0.7.0**. On 2026-08-02 it completed the
-remote D1 migrations, fixed-commit GitHub CI, Cloudflare Workers Build, and live
-production verification. Cloudflare Access continues to protect the private
-Studio and write APIs.
+> **授權提醒：** repository 目前沒有獨立的開源 LICENSE。以下自部署內容是
+> 技術說明，不等同授予複製、修改或再發佈權。除非你是權利人，否則應先取得
+> 明確授權；專案維護者亦應在公開邀請他人部署前選擇合適的 LICENSE。
 
-The current interface uses the original **Clear Sky Feed** visual system: a
-fresh, crisp information feed built from pale sky blue, cyan, teal, and
-restrained sunlight-yellow accents. All icons, SVGs, and CSS decorations are
-original abstract graphics.
+## 文檔
 
-The application uses Astro, strict TypeScript, Cloudflare Workers with Static
-Assets, D1 content storage, R2 image storage, responsive navigation, GitHub
-Actions, and Cloudflare Workers Builds. v0.4.0 adds an owner-only Studio with
-draft, preview, publish, scheduling, archive, and revision restore workflows.
-v0.5.0 adds public full-text search, taxonomy filters, a chronological stream,
-Hong Kong month archives, RSS feeds, and a public-only sitemap.
-v0.6.0 adds owner-managed RSS/Atom sources, guarded ingestion, title-based
-deduplication, reviewed daily Editions, scheduled draft generation, an Edition
-feed, and Edition sitemap entries. No third-party source is seeded by the
-repository; the owner must review source terms before adding a feed.
+- [文檔索引](docs/README.md)
+- [專案概覽與公開資料邊界](docs/PROJECT_OVERVIEW.md)
+- [Cloudflare 自部署指南](docs/SELF_HOSTING.md)
+- [安全政策](SECURITY.md)
+- [更新記錄](CHANGELOG.md)
 
-v0.7.0 makes source-rights review an explicit Studio and database gate, pauses
-existing sources for re-review, bounds each ingestion run to two sources and
-five items per source, and enforces a streaming 2 MiB response limit. Cron and
-manual jobs use an idempotent run ledger with leases, count-only summaries, and
-visible failure states. Published Posts and Editions now autosave to owner-only
-working copies; public canonical records change only on explicit publish.
-Service validation and D1 triggers also keep cover-media visibility aligned
-with its Post.
+## 公開 repository 與私隱邊界
 
-For local Studio testing, copy `.dev.vars.example` to the ignored `.dev.vars`
-file and apply the local D1 migrations first. The development bypass also
-requires a loopback URL, so the same variables fail closed on a public host.
-Production requires `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, and `OWNER_EMAIL` as
-secrets, plus the remote D1 migrations. Never commit real account identifiers
-or credentials.
+可以提交：
 
-`npm run preview` starts the production build with `.dev.vars.example`, local
-bindings, and a localhost upstream for built-Worker D1/R2/Studio testing. It
-does not deploy or connect its runtime to remote resources.
+- 應用程式碼、公開安全設定範本、migration 程式碼；
+- 不含真實資料的測試、範例及截圖；
+- 不含實際資源識別資料的公開文檔。
 
-The public Wrangler configuration declares binding names only. Current Wrangler
-can provision the backing resources during deployment, while their real names
-and identifiers remain in the private Cloudflare environment. Automatic
-provisioning can write identifiers into the deployment workspace, so every
-commit must be checked with `git diff` to prevent those values from entering the
-repository.
+不得提交：
 
-Production releases follow a fixed order: upload a non-active Worker version
-and confirm its bindings, apply the remote D1 migration and Access secrets, and
-only then promote the verified version. Production stays on the previous
-verified release until every gate is ready.
+- `.dev.vars`、`.env`、API key、token、cookie 或憑證；
+- Cloudflare account、database、bucket、Access policy／audience 等 identifiers；
+- 真實電郵、私人內容、草稿、媒體、來源清單或應用程式資料匯出；
+- 正式 logs、資料庫查詢結果、備份、部署輸出或本機絕對路徑；
+- 未公開的內部架構、營運細節或可降低安全邊界的資料。
 
-Only application code, general tests, and public-safe documentation belong in
-this repository. Private content, drafts, credentials, access tokens,
-deployment identifiers, and local planning material must remain outside Git.
+提交前至少執行：
+
+```bash
+git status --short
+git diff --check
+git diff --cached
+npm run check
+```
+
+並確認私人設定確實被忽略：
+
+```bash
+git check-ignore -v .dev.vars wrangler.self-host.jsonc
+```
+
+## English summary
+
+Personal Space is an Astro full-stack publishing application deployed as a
+Cloudflare Worker with Workers Static Assets. It uses D1 for operator-owned
+application data, R2 for operator-owned media, Cloudflare Access for the
+private management surface, and optional Cron Triggers for scheduled work.
+
+Install with `npm ci`, apply the local migrations, and run `npm run dev`.
+Self-hosters must create fresh resources in their own Cloudflare account, keep
+all resource identifiers in the ignored `wrangler.self-host.jsonc`, configure
+Access before attaching a custom domain, and never copy production data or
+secrets into the repository. See the [self-hosting guide](docs/SELF_HOSTING.md)
+for the complete procedure.
+
+This repository currently has no standalone open-source license. The technical
+self-hosting guide does not itself grant permission to copy, modify, or
+redistribute the project.
+
+## 參考與使用說明 / Technology, AI and references
+
+本專案的實際執行環境**沒有整合生成式 AI 模型，也不會在 runtime 把訪客內容或
+站主資料傳送給 AI 供應商**。
+
+部分開發、檢查及文檔整理曾使用 **OpenAI Codex（GPT-5 系列）**作為輔助工具；
+AI 並不是 production dependency，模型亦不參與網站請求、內容發佈或資料處理。
+AI 產出需經人工審閱、測試與敏感資料檢查後才可採用。
+
+主要官方參考資料：
+
+- [Cloudflare Workers 文件](https://developers.cloudflare.com/workers/)
+- [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)
+- [Cloudflare D1 文件](https://developers.cloudflare.com/d1/)
+- [Cloudflare R2 文件](https://developers.cloudflare.com/r2/)
+- [Cloudflare Access 自託管應用程式](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/)
+- [Workers Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+- [Workers secrets](https://developers.cloudflare.com/workers/configuration/secrets/)
+- [Astro Cloudflare adapter（中文）](https://docs.astro.build/zh-cn/guides/integrations-guide/cloudflare/)
+- [TypeScript 文件](https://www.typescriptlang.org/docs/)
+- [Vitest 文件](https://vitest.dev/guide/)
+- [GitHub push protection](https://docs.github.com/en/code-security/concepts/secret-security/push-protection)
+- [OpenAI Codex](https://openai.com/codex/)
+
+第三方 feed、文章、圖片及連結的條款、版權、私隱與署名責任由部署者逐一核對；
+repository 不內置真實來源清單或第三方內容資料。

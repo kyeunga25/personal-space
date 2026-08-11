@@ -95,6 +95,11 @@ export interface EditionRecord {
   updatedAt: string;
 }
 
+export interface EditionPage {
+  editions: EditionRecord[];
+  nextCursor: string | null;
+}
+
 export interface EditionSaveInput {
   action: "archive" | "publish" | "save";
   annotations: Record<string, string>;

@@ -6,6 +6,7 @@ export type DiscoverySort = "newest" | "relevance";
 export interface DiscoveryFilters {
   before: string | null;
   beforeId: string | null;
+  beforeRank: number | null;
   category: string | null;
   from: string | null;
   kind: DiscoveryKind;
@@ -17,7 +18,7 @@ export interface DiscoveryFilters {
 }
 
 export interface DiscoveryPage {
-  nextCursor: { before: string; beforeId: string } | null;
+  nextCursor: { before: string; beforeId: string; rank?: number } | null;
   posts: PostRecord[];
 }
 

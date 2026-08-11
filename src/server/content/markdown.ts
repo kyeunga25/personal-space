@@ -1,4 +1,4 @@
-import { marked } from "marked";
+import { marked, Renderer } from "marked";
 import sanitizeHtml from "sanitize-html";
 
 const SAFE_PROTOCOLS = ["http", "https", "mailto"];
@@ -8,8 +8,20 @@ marked.setOptions({
   gfm: true,
 });
 
+function createContentRenderer(): Renderer {
+  const renderer = new Renderer();
+  renderer.heading = ({ tokens, depth }) => {
+    const level = String(Math.min(depth + 1, 6));
+    return `<h${level}>${renderer.parser.parseInline(tokens)}</h${level}>\n`;
+  };
+  return renderer;
+}
+
 export function renderMarkdown(markdown: string): string {
-  const rendered = marked.parse(markdown, { async: false });
+  const rendered = marked.parse(markdown, {
+    async: false,
+    renderer: createContentRenderer(),
+  });
 
   return sanitizeHtml(rendered, {
     allowedTags: [
@@ -41,6 +53,7 @@ export function renderMarkdown(markdown: string): string {
       a: sanitizeHtml.simpleTransform("a", {
         rel: "nofollow noopener noreferrer",
       }),
+      h1: sanitizeHtml.simpleTransform("h2", {}),
     },
   });
 }

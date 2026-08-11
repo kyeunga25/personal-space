@@ -1,65 +1,85 @@
 # 安全政策 / Security Policy
 
-## 中文
+## 漏洞回報
 
-如果你發現可能影響此項目的安全問題，請使用 GitHub 的 **Private vulnerability reporting** 或建立私人 security advisory。請勿在公開管道披露漏洞、憑證、個人資料或可重現的攻擊細節。
+如發現可能影響此專案的安全問題，請使用 GitHub 的 **Private vulnerability
+reporting** 或私人 security advisory。不要在公開 issue、discussion、PR 或社交
+平台披露漏洞、憑證、個人資料、Cloudflare identifiers 或可直接重現的攻擊細節。
 
-回報時請包括：受影響版本或路徑、重現步驟、可能影響，以及任何可安全分享的緩解建議。請只使用測試資料，不要存取、修改或下載不屬於你的資料。
+回報內容應只包含安全分享所需的最少資料：
 
-目前支援範圍是 `main` 分支的最新部署版本。Repository 不應包含私人內容、部署憑證或雲端資源識別資料。
+- 受影響版本或功能範圍；
+- 使用虛構測試資料的重現步驟；
+- 可能影響；
+- 可安全公開的緩解建議。
 
-公開設定只可包含程式所需的通用 binding 名稱。Cloudflare 帳戶、資料庫、儲存
-空間及部署 identifiers 必須只保留在服務提供者的私人設定中。
+不要嘗試存取、修改、下載或公開不屬於你的資料。
 
-Studio、私人媒體及寫入 API 必須同時通過 Cloudflare Access JWT 驗證與站主電郵
-核對。修改內容的請求另設同源檢查；Markdown 預覽及公開輸出均經 allowlist
-清理。若相關保護未設定，受保護路由會以 `404` 拒絕存取。
+## 支援範圍
 
-本機 Studio bypass 只在 development 設定、明確啟用及 loopback URL 三項條件
-同時成立時生效。來源同步只處理已完成條款及權利審核的來源，並設 HTTPS、公開
-網絡、逾時、重新導向、串流大小及每次工作量限制。Automation logs 與 run
-ledger 只記錄狀態、錯誤碼及數量，不保存來源文章內容或私人草稿。
+安全修正以 `main` 最新版本為準。歷史 release note、preview、CI 結果或本機測試
+不能單獨證明目前 production 狀態；部署者應直接核對自己的 Cloudflare 環境。
 
-已發佈內容的編輯值只寫入 owner-only working-copy tables；公開查詢只讀 canonical
-tables。Post 與封面媒體可見性由服務驗證及 D1 triggers 雙重約束。R2 bucket 不應
-直接公開，公開媒體只經過會再次核對資料庫可見性的 Worker route 提供。
+## 公開 repository 邊界
 
-Production build 完成後會清理 Astro server modules 內的本機 project path，避免
-開發機目錄經 manifest 或 component metadata 進入 Worker artifact。Wrangler 的
-本機 redirect config 不屬於上傳 module，仍保留實際路徑供 CLI 解析。
+Repository 可以保存程式碼、通用設定範本、空白環境所需 migration、虛構測試與
+公開安全文檔，但不得保存：
+
+- API key、token、cookie、JWT、憑證、private key 或 secret value；
+- 真實電郵、私人內容、草稿、媒體、來源清單或應用資料匯出；
+- Cloudflare account、database、bucket、deployment、Access policy 或 audience
+  identifiers；
+- production logs、查詢結果、備份、本機絕對路徑或私人營運文件；
+- 未公開的內部拓撲、完整資料庫組織或會降低防護效果的細節。
+
+本機 secret 只放在被 Git 忽略的 `.dev.vars` 或等效私人設定；正式 secret 只放在
+Cloudflare secrets 或受控 CI secret。不要用公開 Wrangler `vars` 保存敏感值。
+
+## 部署安全要求
+
+- 管理介面及寫入操作須同時受 Cloudflare Access 與應用程式層 owner 核對保護。
+- Access path 規則要分別覆蓋 parent 及 wildcard，避免只保護深層路徑。
+- 缺少或無法驗證認證設定時，受保護功能必須 fail closed。
+- 修改內容的請求須限制為預期的 same-origin 使用情境。
+- Markdown、XML、URL、圖片及公開輸出須經適當驗證或清理。
+- D1 及 R2 使用部署者自己的私人資源；R2 bucket 不應直接公開。
+- logs 應只保存必要的狀態與最少診斷資料，不記錄內容本文、owner 資料、secret 或
+  完整外部來源資料。
+- 本機測試只能使用 loopback、明確 development 設定及虛構資料，不得連接正式
+  D1、R2 或 production 內容。
+
+## 外部內容與法律責任
+
+可選的 RSS／Atom 來源必須由部署者逐一核對條款、版權、連結、署名及私隱要求。
+Repository 不內置真實來源清單，也不保證任何第三方內容可被擷取、摘要或再發佈。
+
+## 自部署者責任
+
+自部署者應建立全新的 Cloudflare 資源、啟用 secret scanning／push protection、
+設定 Access 後才連接自訂 domain，並在每次發佈前審查 staged diff。完整流程見
+[`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)。
+
+如 secret 曾進入 Git，即使後續 commit 已刪除，仍應立即在供應商端撤銷及輪替，
+並評估 repository 歷史是否需要由具權限的維護者另行處理。
 
 ## English
 
-If you discover a potential security issue, use GitHub **Private vulnerability reporting** or open a private security advisory. Do not disclose vulnerabilities, credentials, personal data, or reproducible attack details through public channels.
+Report vulnerabilities through GitHub Private vulnerability reporting or a
+private security advisory. Do not disclose credentials, personal data,
+Cloudflare identifiers, or reproducible exploit details in public channels.
 
-Include the affected version or path, reproduction steps, potential impact, and any safely shareable mitigation ideas. Use test data only; do not access, modify, or download data that does not belong to you.
+The public repository may contain application code, generic configuration
+templates, migrations for a fresh environment, synthetic tests, and public-safe
+documentation. It must not contain real content, owner details, secrets,
+resource identifiers, database exports, logs, backups, local absolute paths,
+private topology, or detailed database organization.
 
-The supported surface is the latest deployment from `main`. The repository must not contain private content, deployment credentials, or cloud resource identifiers.
+Protect the management surface and write operations with Cloudflare Access plus
+an application-level owner check. Cover both parent and wildcard paths, fail
+closed when authentication is unavailable, keep D1 and R2 private, sanitize
+untrusted input, and minimize logs. Local testing must use loopback-only
+development settings and synthetic data.
 
-Public configuration may contain generic application binding names only.
-Cloudflare account, database, storage, and deployment identifiers must remain in
-the provider's private configuration.
-
-Studio, private media, and write APIs require both Cloudflare Access JWT
-verification and an application-level owner email match. Content mutations also
-enforce same-origin requests, while Markdown preview and public output are
-sanitized through an allowlist. Protected routes fail closed with `404` when
-their authentication settings are unavailable.
-
-The local Studio bypass requires development mode, an explicit opt-in, and a
-loopback URL at the same time. Source ingestion only processes sources with a
-recorded terms-and-rights approval and enforces HTTPS, public-network, timeout,
-redirect, streaming-size, and per-run work limits. Automation logs and the run
-ledger contain statuses, error codes, and counts only, never source article
-content or private drafts.
-
-Edits to published content are stored in owner-only working-copy tables, while
-public queries read canonical tables only. Post and cover-media visibility is
-enforced by both service validation and D1 triggers. The R2 bucket should not be
-made directly public; public media is served through the Worker route, which
-checks database visibility again.
-
-After a production build, local project paths are removed from Astro server
-modules so manifest and component metadata cannot carry a developer-machine
-directory into the Worker artifact. Wrangler's local redirect config is not an
-uploaded module and retains its real path for CLI resolution.
+Self-hosters should create fresh Cloudflare resources and follow
+[`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md). If a secret ever enters Git,
+revoke and rotate it immediately; deleting it from a later commit is not enough.

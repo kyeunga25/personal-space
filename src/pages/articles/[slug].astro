@@ -1,20 +1,24 @@
 ---
 import PostDetailPage from "../../components/PostDetailPage.astro";
+import PublicNotFoundPage from "../../components/PublicNotFoundPage.astro";
 import { getBindings } from "../../server/platform/bindings";
 import { D1PublishingRepository } from "../../server/publishing/repository";
 
-const slug = Astro.params.slug;
-if (!slug) return Astro.redirect("/404", 302);
+const slug = Astro.params.slug ?? "";
 const repository = new D1PublishingRepository(getBindings().DB);
-const post = await repository.findPublicPost(
-  "article",
-  slug,
-  new Date().toISOString(),
-);
-if (!post) return new Response("Not found", { status: 404 });
-const media = post.heroMediaId
+const post = slug
+  ? await repository.findPublicPost("article", slug, new Date().toISOString())
+  : null;
+if (!post) Astro.response.status = 404;
+const media = post?.heroMediaId
   ? await repository.findMedia(post.heroMediaId)
   : null;
 ---
 
-<PostDetailPage post={post} media={media} />
+{
+  post ? (
+    <PostDetailPage {post} {media} />
+  ) : (
+    <PublicNotFoundPage kind="article" />
+  )
+}

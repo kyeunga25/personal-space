@@ -1,27 +1,35 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatHongKongDate } from "../../lib/dates";
+import { editionSourceLinkLabel } from "../../lib/edition-source-link";
+import { publicNotFoundCopy } from "../../lib/not-found";
 import { createExcerpt, renderMarkdown } from "../../server/content/markdown";
+import { normalizeEditionDate } from "../../server/editions/pagination";
 import { D1EditionRepository } from "../../server/editions/repository";
 import { getBindings } from "../../server/platform/bindings";
 
-const date = Astro.params.date ?? "";
-const edition = /^\d{4}-\d{2}-\d{2}$/.test(date)
+const date = normalizeEditionDate(Astro.params.date ?? "");
+const edition = date
   ? await new D1EditionRepository(getBindings().DB).findPublicEditionByDate(
       date,
     )
   : null;
 if (!edition) Astro.response.status = 404;
 const introHtml = edition ? renderMarkdown(edition.introMd) : "";
+const missingCopy = publicNotFoundCopy("edition");
 ---
 
 <BaseLayout
-  title={edition?.title ?? "找不到 Edition"}
-  titleEn="Edition"
+  title={edition?.title ?? missingCopy.title}
+  titleEn={edition ? "Edition" : missingCopy.titleEn}
   description={edition?.introMd
     ? createExcerpt(edition.introMd, 155)
-    : "公開來源整理。"}
-  descriptionEn="A reviewed edition with links to original public sources."
+    : edition
+      ? "公開來源整理。"
+      : missingCopy.description}
+  descriptionEn={edition
+    ? "A reviewed edition with links to original public sources."
+    : missingCopy.descriptionEn}
   noIndex={!edition}
 >
   <div class="page-stack">
@@ -45,15 +53,7 @@ const introHtml = edition ? renderMarkdown(edition.introMd) : "";
                         {formatHongKongDate(entry.publishedAt)}
                       </time>
                     </div>
-                    <h2>
-                      <a
-                        href={entry.url}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow"
-                      >
-                        {entry.title}
-                      </a>
-                    </h2>
+                    <h2>{entry.title}</h2>
                     {entry.summary && (
                       <p>{createExcerpt(entry.summary, 280)}</p>
                     )}
@@ -65,6 +65,7 @@ const introHtml = edition ? renderMarkdown(edition.introMd) : "";
                       href={entry.url}
                       target="_blank"
                       rel="noopener noreferrer nofollow"
+                      aria-label={editionSourceLinkLabel(entry.title)}
                     >
                       閱讀原文 <span lang="en">Read source ↗</span>
                     </a>
@@ -85,13 +86,24 @@ const introHtml = edition ? renderMarkdown(edition.introMd) : "";
         </article>
       ) : (
         <section class="edition-missing">
-          <>
-            <h1>找不到 Edition</h1>
-            <p>這份內容不存在或尚未公開。</p>
-            <a class="button" href="/editions">
-              返回 Editions
+          <p class="page-kicker">404</p>
+          <h1>
+            {missingCopy.heading}
+            <small lang="en">{missingCopy.headingEn}</small>
+          </h1>
+          <p>{missingCopy.description}</p>
+          <p class="en-subline" lang="en">
+            {missingCopy.descriptionEn}
+          </p>
+          <div class="button-row">
+            <a class="button button--primary" href={missingCopy.backHref}>
+              {missingCopy.backLabel}
+              <span lang="en">{missingCopy.backLabelEn}</span>
             </a>
-          </>
+            <a class="button" href="/search">
+              搜尋空間 <span lang="en">Search</span>
+            </a>
+          </div>
         </section>
       )
     }
@@ -162,13 +174,6 @@ const introHtml = edition ? renderMarkdown(edition.introMd) : "";
     margin: var(--space-3) 0 0;
     font-size: var(--font-size-2);
   }
-  h2 a {
-    color: var(--space-ink);
-    text-decoration: none;
-  }
-  h2 a:hover {
-    color: var(--space-primary-strong);
-  }
   li p,
   blockquote {
     max-width: 42rem;
@@ -200,6 +205,23 @@ const introHtml = edition ? renderMarkdown(edition.introMd) : "";
   .edition-missing {
     padding: var(--space-8) var(--page-gutter);
     text-align: center;
+  }
+  .edition-missing h1 {
+    max-width: none;
+  }
+  .edition-missing h1 small {
+    display: block;
+    margin-top: var(--space-2);
+    color: var(--space-primary);
+    font-size: 0.5em;
+  }
+  .edition-missing > p:not(.page-kicker) {
+    max-width: 46rem;
+    margin-inline: auto;
+    color: var(--space-ink-muted);
+  }
+  .edition-missing .button-row {
+    justify-content: center;
   }
   @media (max-width: 47.99rem) {
     h1 {

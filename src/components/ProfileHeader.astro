@@ -1,5 +1,13 @@
 ---
+import { profileNavigation } from "../config/navigation";
+import { isActivePath } from "../lib/navigation";
 import BrandMark from "./BrandMark.astro";
+
+interface Props {
+  pathname: string;
+}
+
+const { pathname } = Astro.props;
 ---
 
 <section class="profile-header" aria-labelledby="profile-title">
@@ -16,26 +24,29 @@ import BrandMark from "./BrandMark.astro";
       <h1 id="profile-title">
         我的空間 <small lang="en">My Space</small>
       </h1>
-      <p>嗨，這裡是我整理想法、作品與興趣的地方。</p>
+      <p>這裡集中整理已公開的筆記、文章與選輯。</p>
       <p class="profile-header__english" lang="en">
-        A soft, colorful place for what I notice, make, and want to keep.
+        A clear place for public notes, articles, and reviewed editions.
       </p>
     </div>
   </div>
 
   <nav class="profile-tabs" aria-label="內容分類 Content categories">
-    <a class="is-active" href="/shorts">
-      <span>短內容</span>
-      <small lang="en">Shorts</small>
-    </a>
-    <a href="/longform">
-      <span>長內容</span>
-      <small lang="en">Longform</small>
-    </a>
-    <a href="/briefings">
-      <span>新聞整理</span>
-      <small lang="en">Briefings</small>
-    </a>
+    {
+      profileNavigation.map((item) => {
+        const active = isActivePath(pathname, item.href);
+        return (
+          <a
+            class:list={{ "is-active": active }}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+          >
+            <span>{item.label}</span>
+            <small lang="en">{item.labelEn}</small>
+          </a>
+        );
+      })
+    }
   </nav>
 </section>
 

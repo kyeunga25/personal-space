@@ -49,3 +49,8 @@ export const primaryNavigation = [
 export const mobileNavigation = primaryNavigation.filter(({ href }) =>
   ["/", "/notes", "/articles", "/stream", "/search"].includes(href),
 );
+
+export const profileNavigation = primaryNavigation.filter(
+  ({ href }) =>
+    href === "/notes" || href === "/articles" || href === "/editions",
+);

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  accessJwksForIssuer,
+  isCompactAccessToken,
   isLocalStudioBypassAllowed,
   isLoopbackRequest,
   isOwnerEmail,
@@ -32,6 +34,23 @@ describe("Studio owner authorization", () => {
     await expect(
       verifyOwnerRequest(new Request("https://space.example/studio"), {}),
     ).resolves.toBeNull();
+  });
+
+  it("rejects malformed or oversized Access tokens before verification", () => {
+    expect(isCompactAccessToken("header.payload.signature")).toBe(true);
+    expect(isCompactAccessToken("missing-segments")).toBe(false);
+    expect(isCompactAccessToken("header.payload.bad+signature")).toBe(false);
+    expect(isCompactAccessToken(`header.${"a".repeat(16_384)}.signature`)).toBe(
+      false,
+    );
+  });
+
+  it("reuses the remote key resolver for the same trusted issuer", () => {
+    const issuer = "https://team.example";
+    expect(accessJwksForIssuer(issuer)).toBe(accessJwksForIssuer(issuer));
+    expect(accessJwksForIssuer("https://other.example")).not.toBe(
+      accessJwksForIssuer(issuer),
+    );
   });
 
   it("limits the development bypass to loopback requests", async () => {

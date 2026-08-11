@@ -1,23 +1,45 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { formatHongKongMonth } from "../lib/dates";
+import { archivePeriod } from "../lib/navigation";
 import type { ArchiveMonth } from "../server/discovery/types";
 import type { PostRecord } from "../server/publishing/domain";
 import DiscoveryPostList from "./DiscoveryPostList.astro";
 
 interface Props {
   currentMonth?: string | null;
+  currentYear?: string | null;
   months: ArchiveMonth[];
+  nextHref?: string | null;
   posts: PostRecord[];
   title?: string;
 }
 
 const {
   currentMonth = null,
+  currentYear = null,
   months,
+  nextHref = null,
   posts,
-  title = currentMonth ? formatHongKongMonth(currentMonth) : "全部封存",
+  title = currentMonth
+    ? formatHongKongMonth(currentMonth)
+    : currentYear
+      ? `${currentYear} 年`
+      : "全部封存",
 } = Astro.props;
+const activePeriod = archivePeriod(currentYear, currentMonth);
+const emptyDescription =
+  activePeriod === "month"
+    ? "這個月份暫未有公開內容。"
+    : activePeriod === "year"
+      ? "這個年份暫未有公開內容。"
+      : "目前沒有公開封存內容。";
+const emptyDescriptionEn =
+  activePeriod === "month"
+    ? "No public entries in this month."
+    : activePeriod === "year"
+      ? "No public entries in this year."
+      : "No public archive entries yet.";
 ---
 
 <BaseLayout
@@ -36,16 +58,23 @@ const {
     </header>
 
     <nav class="archive-months" aria-label="月份封存 Monthly archive">
-      <a class:list={{ active: !currentMonth }} href="/archive">
+      <a
+        class:list={{ active: activePeriod === "all" }}
+        href="/archive"
+        aria-current={activePeriod === "all" ? "page" : undefined}
+      >
         全部 <small lang="en">All</small>
       </a>
       {
         months.map((month) => {
           const [year, monthNumber] = month.month.split("-");
+          const isCurrentMonth =
+            activePeriod === "month" && currentMonth === month.month;
           return (
             <a
-              class:list={{ active: currentMonth === month.month }}
+              class:list={{ active: isCurrentMonth }}
               href={`/archive/${year}/${monthNumber}`}
+              aria-current={isCurrentMonth ? "page" : undefined}
             >
               <span>{formatHongKongMonth(month.month)}</span>
               <small>
@@ -60,11 +89,15 @@ const {
 
     <header class="archive-heading">
       <h2>{title}</h2>
-      <p>{posts.length} 項公開內容 · {posts.length} public entries</p>
+      <p>
+        本頁 {posts.length} 項公開內容 · {posts.length} public entries on this page
+      </p>
     </header>
     <DiscoveryPostList
       posts={posts}
-      emptyDescription="這個月份暫未有公開內容。"
+      {nextHref}
+      {emptyDescription}
+      {emptyDescriptionEn}
     />
   </div>
 </BaseLayout>

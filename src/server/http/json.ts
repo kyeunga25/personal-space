@@ -1,4 +1,5 @@
 import { UserFacingError } from "../errors";
+import { readBoundedBody } from "./bounded-body";
 
 export const MAX_JSON_BODY_BYTES = 1024 * 1024;
 
@@ -12,17 +13,9 @@ export function jsonResponse(
 }
 
 export async function readJsonBody(request: Request): Promise<unknown> {
-  const declaredLength = Number(request.headers.get("content-length"));
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_JSON_BODY_BYTES) {
-    return null;
-  }
-
+  const body = await readBoundedBody(request, MAX_JSON_BODY_BYTES);
   try {
-    const body = await request.text();
-    if (new TextEncoder().encode(body).byteLength > MAX_JSON_BODY_BYTES) {
-      return null;
-    }
-    return JSON.parse(body) as unknown;
+    return JSON.parse(new TextDecoder().decode(body)) as unknown;
   } catch {
     return null;
   }
@@ -35,7 +28,10 @@ export function errorResponse(error: unknown, fallbackStatus = 500): Response {
 
   if (error instanceof Error && error.message.includes("UNIQUE constraint")) {
     return jsonResponse(
-      { error: "內容網址已被使用，請更改網址識別。" },
+      {
+        error:
+          "內容網址已被使用，請更改網址識別。 This content URL is already in use; choose a different slug.",
+      },
       { status: 409 },
     );
   }
@@ -44,7 +40,9 @@ export function errorResponse(error: unknown, fallbackStatus = 500): Response {
     errorType: error instanceof Error ? error.name : typeof error,
   });
   return jsonResponse(
-    { error: "暫時無法完成要求。" },
+    {
+      error: "暫時無法完成要求。 The request could not be completed right now.",
+    },
     { status: fallbackStatus },
   );
 }

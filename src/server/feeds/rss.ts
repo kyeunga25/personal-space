@@ -1,3 +1,4 @@
+import { getPublicPostDisplayTitle } from "../../lib/post-display";
 import type { PostRecord } from "../publishing/domain";
 import { escapeXml, publicPostPath } from "./xml";
 
@@ -24,7 +25,7 @@ export function renderRssFeed(options: RssFeedOptions): string {
     if (!path) return [];
     const link = new URL(path, site).toString();
     const publishedAt = post.publishedAt ?? post.scheduledAt ?? post.createdAt;
-    const postTitle = post.title ?? post.excerpt ?? "無標題筆記";
+    const postTitle = getPublicPostDisplayTitle(post);
 
     return [
       `    <item>

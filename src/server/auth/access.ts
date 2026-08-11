@@ -1,5 +1,9 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
+const MAX_ACCESS_TOKEN_LENGTH = 16_384;
+type RemoteJwkSet = ReturnType<typeof createRemoteJWKSet>;
+let remoteJwkCache: { issuer: string; jwks: RemoteJwkSet } | null = null;
+
 export interface AccessEnvironment {
   ACCESS_AUD?: string;
   ACCESS_TEAM_DOMAIN?: string;
@@ -19,6 +23,26 @@ function normalizeTeamDomain(value: string): string {
     ? value
     : `https://${value}`;
   return new URL(withProtocol).origin;
+}
+
+export function isCompactAccessToken(value: string): boolean {
+  if (value.length === 0 || value.length > MAX_ACCESS_TOKEN_LENGTH) {
+    return false;
+  }
+  const segments = value.split(".");
+  return (
+    segments.length === 3 &&
+    segments.every(
+      (segment) => segment.length > 0 && /^[A-Za-z0-9_-]+$/u.test(segment),
+    )
+  );
+}
+
+export function accessJwksForIssuer(issuer: string): RemoteJwkSet {
+  if (remoteJwkCache?.issuer === issuer) return remoteJwkCache.jwks;
+  const jwks = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));
+  remoteJwkCache = { issuer, jwks };
+  return jwks;
 }
 
 export function isLocalStudioBypassAllowed(
@@ -60,13 +84,19 @@ export async function verifyOwnerRequest(
   const teamDomain = environment.ACCESS_TEAM_DOMAIN;
   const token = request.headers.get("cf-access-jwt-assertion");
 
-  if (!audience || !ownerEmail || !teamDomain || !token) {
+  if (
+    !audience ||
+    !ownerEmail ||
+    !teamDomain ||
+    !token ||
+    !isCompactAccessToken(token)
+  ) {
     return null;
   }
 
   try {
     const issuer = normalizeTeamDomain(teamDomain);
-    const jwks = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));
+    const jwks = accessJwksForIssuer(issuer);
     const { payload } = await jwtVerify(token, jwks, {
       audience,
       issuer,

@@ -2,20 +2,120 @@ import { XMLParser } from "fast-xml-parser";
 import sanitizeHtml from "sanitize-html";
 
 import type { FeedEntry } from "./domain";
+import { validateFeedUrl } from "./feed-fetcher";
 
 const parser = new XMLParser({
   attributeNamePrefix: "@_",
   ignoreAttributes: false,
   parseTagValue: false,
+  processEntities: false,
   removeNSPrefix: true,
   trimValues: true,
 });
+
+const MAX_FEED_ELEMENTS = 4_096;
+const MAX_FEED_ENTRIES = 100;
+const MAX_XML_DEPTH = 64;
+const MAX_XML_TAG_BYTES = 4_096;
 
 type XmlValue = Record<string, unknown> | string | number | null | undefined;
 
 function asArray(value: unknown): unknown[] {
   if (value === undefined || value === null) return [];
   return Array.isArray(value) ? value : [value];
+}
+
+function findTagEnd(xml: string, start: number): number {
+  let quote: '"' | "'" | null = null;
+  for (let index = start; index < xml.length; index += 1) {
+    const character = xml[index];
+    if (quote) {
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === ">") return index;
+  }
+  return -1;
+}
+
+function localElementName(name: string): string {
+  return (name.split(":").at(-1) ?? name).toLowerCase();
+}
+
+function assertBoundedXmlStructure(xml: string): void {
+  let depth = 0;
+  let elementCount = 0;
+  let entryCount = 0;
+  let offset = 0;
+
+  while (offset < xml.length) {
+    const opening = xml.indexOf("<", offset);
+    if (opening === -1) break;
+
+    if (xml.startsWith("<!--", opening)) {
+      const end = xml.indexOf("-->", opening + 4);
+      if (end === -1) throw new Error("Invalid feed document");
+      offset = end + 3;
+      continue;
+    }
+    if (xml.startsWith("<![CDATA[", opening)) {
+      const end = xml.indexOf("]]>", opening + 9);
+      if (end === -1) throw new Error("Invalid feed document");
+      offset = end + 3;
+      continue;
+    }
+    if (xml.startsWith("<?", opening)) {
+      const end = xml.indexOf("?>", opening + 2);
+      if (end === -1) throw new Error("Invalid feed document");
+      offset = end + 2;
+      continue;
+    }
+    if (xml.startsWith("<!", opening)) {
+      throw new Error("Feed declarations are not supported");
+    }
+
+    const end = findTagEnd(xml, opening + 1);
+    if (end === -1 || end - opening + 1 > MAX_XML_TAG_BYTES) {
+      throw new Error("Invalid feed document");
+    }
+    const token = xml.slice(opening + 1, end).trim();
+    const closing = token.startsWith("/");
+    const selfClosing = token.endsWith("/");
+    const name = (closing ? token.slice(1) : token).match(
+      /^([A-Za-z_][\w:.-]*)/u,
+    )?.[1];
+    if (!name) throw new Error("Invalid feed document");
+
+    if (closing) {
+      depth -= 1;
+      if (depth < 0) throw new Error("Invalid feed document");
+    } else {
+      elementCount += 1;
+      if (elementCount > MAX_FEED_ELEMENTS) {
+        throw new Error("Feed contains too many elements");
+      }
+      const localName = localElementName(name);
+      if (localName === "item" || localName === "entry") {
+        entryCount += 1;
+        if (entryCount > MAX_FEED_ENTRIES) {
+          throw new Error("Feed contains too many entries");
+        }
+      }
+      if (!selfClosing) {
+        depth += 1;
+        if (depth > MAX_XML_DEPTH) {
+          throw new Error("Feed nesting is too deep");
+        }
+      }
+    }
+    offset = end + 1;
+  }
+
+  if (depth !== 0) throw new Error("Invalid feed document");
 }
 
 function textValue(value: XmlValue): string {
@@ -68,11 +168,14 @@ function cleanText(value: string, limit: number): string {
     .slice(0, limit);
 }
 
-function resolvedHttpsUrl(value: string, baseUrl: URL): string | null {
+function resolvedPublicHttpsUrl(value: string, baseUrl: URL): string | null {
   if (!value) return null;
   try {
-    const url = new URL(value, baseUrl);
-    return url.protocol === "https:" ? url.toString() : null;
+    const resolved = new URL(value, baseUrl);
+    const fragment = resolved.hash;
+    const validated = validateFeedUrl(resolved.toString());
+    validated.hash = fragment;
+    return validated.toString();
   } catch {
     return null;
   }
@@ -82,7 +185,7 @@ function atomLink(entry: Record<string, unknown>, baseUrl: URL): string | null {
   const links = asArray(entry.link);
   for (const link of links) {
     if (typeof link === "string") {
-      const resolved = resolvedHttpsUrl(link, baseUrl);
+      const resolved = resolvedPublicHttpsUrl(link, baseUrl);
       if (resolved) return resolved;
       continue;
     }
@@ -90,7 +193,7 @@ function atomLink(entry: Record<string, unknown>, baseUrl: URL): string | null {
     const record = link as Record<string, unknown>;
     const relation = textValue(record["@_rel"] as XmlValue) || "alternate";
     if (relation !== "alternate") continue;
-    const resolved = resolvedHttpsUrl(
+    const resolved = resolvedPublicHttpsUrl(
       textValue(record["@_href"] as XmlValue),
       baseUrl,
     );
@@ -109,7 +212,7 @@ function parseRssItem(value: unknown, baseUrl: URL): FeedEntry | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;
   const title = cleanText(textValue(item.title as XmlValue), 300);
-  const url = resolvedHttpsUrl(textValue(item.link as XmlValue), baseUrl);
+  const url = resolvedPublicHttpsUrl(textValue(item.link as XmlValue), baseUrl);
   if (!title || !url) return null;
   const externalId = cleanText(textValue(item.guid as XmlValue), 500) || url;
   const summary = cleanText(
@@ -149,12 +252,22 @@ function parseAtomEntry(value: unknown, baseUrl: URL): FeedEntry | null {
   };
 }
 
-export function parseSyndicationFeed(xml: string, baseUrl: URL): FeedEntry[] {
+export function parseSyndicationFeed(
+  xml: string,
+  baseUrl: URL,
+  entryLimit = MAX_FEED_ENTRIES,
+): FeedEntry[] {
+  assertBoundedXmlStructure(xml);
+  const boundedEntryLimit = Math.min(
+    Math.max(Math.trunc(entryLimit), 1),
+    MAX_FEED_ENTRIES,
+  );
   const parsed = parser.parse(xml) as Record<string, unknown>;
   const rss = parsed.rss as Record<string, unknown> | undefined;
   const channel = rss?.channel as Record<string, unknown> | undefined;
   if (channel) {
     return asArray(channel.item)
+      .slice(0, boundedEntryLimit)
       .map((item) => parseRssItem(item, baseUrl))
       .filter((item): item is FeedEntry => item !== null);
   }
@@ -162,6 +275,7 @@ export function parseSyndicationFeed(xml: string, baseUrl: URL): FeedEntry[] {
   const feed = parsed.feed as Record<string, unknown> | undefined;
   if (feed) {
     return asArray(feed.entry)
+      .slice(0, boundedEntryLimit)
       .map((entry) => parseAtomEntry(entry, baseUrl))
       .filter((entry): entry is FeedEntry => entry !== null);
   }

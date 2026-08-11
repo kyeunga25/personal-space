@@ -1,20 +1,16 @@
 ---
 import StudioIcon from "../../components/studio/StudioIcon.astro";
 import StudioLayout from "../../layouts/StudioLayout.astro";
+import { formatContentStatus } from "../../lib/content-status";
 import { formatHongKongDate } from "../../lib/dates";
 import { getBindings } from "../../server/platform/bindings";
 import { D1PublishingRepository } from "../../server/publishing/repository";
 
-const posts = await new D1PublishingRepository(
-  getBindings().DB,
-).listOwnerPosts();
-const draftCount = posts.filter((post) => post.status === "draft").length;
-const scheduledCount = posts.filter(
-  (post) => post.status === "scheduled",
-).length;
-const publishedCount = posts.filter(
-  (post) => post.status === "published",
-).length;
+const repository = new D1PublishingRepository(getBindings().DB);
+const [posts, statusCounts] = await Promise.all([
+  repository.listOwnerPosts(12),
+  repository.countOwnerPostsByStatus(),
+]);
 ---
 
 <StudioLayout title="Studio 總覽">
@@ -45,15 +41,17 @@ const publishedCount = posts.filter(
 
     <section class="status-ribbon" aria-label="內容狀態 Content status">
       <div>
-        <strong>{draftCount}</strong><span>草稿 <small>Drafts</small></span>
+        <strong>{statusCounts.draft}</strong><span
+          >草稿 <small>Drafts</small></span
+        >
       </div>
       <div>
-        <strong>{scheduledCount}</strong><span
+        <strong>{statusCounts.scheduled}</strong><span
           >已排程 <small>Scheduled</small></span
         >
       </div>
       <div>
-        <strong>{publishedCount}</strong><span
+        <strong>{statusCounts.published}</strong><span
           >已發佈 <small>Published</small></span
         >
       </div>
@@ -75,7 +73,7 @@ const publishedCount = posts.filter(
           </div>
         ) : (
           <ul>
-            {posts.slice(0, 12).map((post) => (
+            {posts.map((post) => (
               <li>
                 <a href={`/studio/posts/${post.id}`}>
                   <span
@@ -87,12 +85,16 @@ const publishedCount = posts.filter(
                   </span>
                   <span class="content-copy">
                     <strong>
-                      {post.title ?? post.excerpt ?? "未命名草稿"}
+                      {post.title ??
+                        post.excerpt ??
+                        "未命名草稿 Untitled draft"}
                     </strong>
                     <small>
                       {post.kind === "note" ? "筆記 Note" : "文章 Article"} ·{" "}
-                      {post.status}
-                      {post.hasWorkingCopy ? " · 未發佈修改" : ""}
+                      {formatContentStatus(post.status)}
+                      {post.hasWorkingCopy
+                        ? " · 未發佈修改 Unpublished changes"
+                        : ""}
                     </small>
                   </span>
                   <time datetime={post.updatedAt}>

@@ -1,6 +1,10 @@
 ---
+import { EDITION_INPUT_LIMITS } from "../../../config/editions";
 import StudioLayout from "../../../layouts/StudioLayout.astro";
+import { formatContentStatus } from "../../../lib/content-status";
 import { formatHongKongDate } from "../../../lib/dates";
+import { formatEditionItemPosition } from "../../../scripts/edition-item-order";
+import { getEditorCharacterCount } from "../../../scripts/editor-input";
 import { createExcerpt } from "../../../server/content/markdown";
 import { D1EditionRepository } from "../../../server/editions/repository";
 import { getBindings } from "../../../server/platform/bindings";
@@ -12,6 +16,14 @@ const edition = await new D1EditionRepository(
 if (!edition) {
   Astro.response.status = 404;
 }
+const titleCount = getEditorCharacterCount(
+  edition?.title ?? "",
+  EDITION_INPUT_LIMITS.title,
+);
+const introCount = getEditorCharacterCount(
+  edition?.introMd ?? "",
+  EDITION_INPUT_LIMITS.introMd,
+);
 ---
 
 <StudioLayout title={edition?.title ?? "找不到 Edition"}>
@@ -29,8 +41,10 @@ if (!edition) {
               <div>
                 <>
                   <p class="eyebrow">
-                    {edition.date} · {edition.status}
-                    {edition.hasWorkingCopy ? " · working copy" : ""}
+                    {edition.date} · {formatContentStatus(edition.status)}
+                    {edition.hasWorkingCopy
+                      ? " · 未發佈修改 Unpublished changes"
+                      : ""}
                   </p>
                   <h1>
                     編輯 Edition <small>Edit edition</small>
@@ -46,6 +60,10 @@ if (!edition) {
           {edition.hasWorkingCopy && (
             <p class="working-copy-notice">
               這是只限 Studio 的工作副本；公開 Edition 仍維持上一個已發佈版本。
+              <span lang="en">
+                This working copy is visible only in Studio; the public Edition
+                still uses the previous published version.
+              </span>
             </p>
           )}
           <section class="editor-fields">
@@ -55,19 +73,49 @@ if (!edition) {
                 <small>Title</small>
                 <input
                   name="title"
-                  maxlength="180"
+                  maxlength={EDITION_INPUT_LIMITS.title}
+                  aria-describedby="edition-title-count"
                   value={edition.title}
                   required
                 />
+                <small
+                  id="edition-title-count"
+                  class="edition-character-count"
+                  data-edition-character-count
+                  data-field-name="title"
+                  data-limit={EDITION_INPUT_LIMITS.title}
+                  data-state={titleCount.state}
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {titleCount.label}
+                </small>
               </>
             </label>
             <label>
               引言{" "}
               <>
                 <small>Introduction · Markdown</small>
-                <textarea name="introMd" rows="6" maxlength="5000">
+                <textarea
+                  name="introMd"
+                  rows="6"
+                  maxlength={EDITION_INPUT_LIMITS.introMd}
+                  aria-describedby="edition-intro-count"
+                >
                   {edition.introMd}
                 </textarea>
+                <small
+                  id="edition-intro-count"
+                  class="edition-character-count"
+                  data-edition-character-count
+                  data-field-name="introMd"
+                  data-limit={EDITION_INPUT_LIMITS.introMd}
+                  data-state={introCount.state}
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {introCount.label}
+                </small>
               </>
             </label>
           </section>
@@ -78,20 +126,56 @@ if (!edition) {
             {edition.entries.length === 0 ? (
               <p class="empty">
                 最近 36 小時未有新的來源項目；先到來源頁同步 feeds。
+                <span lang="en">
+                  No new source items were found in the last 36 hours. Sync
+                  feeds on the Sources page first.
+                </span>
               </p>
             ) : (
-              <ol>
-                {edition.entries.map((entry) => (
-                  <li>
-                    <label class="item-toggle">
-                      <input
-                        type="checkbox"
-                        name="includedItemIds"
-                        value={entry.itemId}
-                        checked
-                      />
-                      <span>保留 Include</span>
-                    </label>
+              <ol data-edition-item-list>
+                {edition.entries.map((entry, entryIndex) => (
+                  <li data-edition-item>
+                    <div class="item-controls">
+                      <span class="item-position" data-edition-item-position>
+                        {formatEditionItemPosition(
+                          entryIndex,
+                          edition.entries.length,
+                        )}
+                      </span>
+                      <label class="item-toggle">
+                        <input
+                          type="checkbox"
+                          name="includedItemIds"
+                          value={entry.itemId}
+                          checked
+                        />
+                        <span>保留 Include</span>
+                      </label>
+                      <div
+                        class="item-order-controls"
+                        role="group"
+                        aria-label={`調整「${entry.title}」次序 Reorder: ${entry.title}`}
+                      >
+                        <button
+                          class="item-order-button"
+                          type="button"
+                          data-edition-item-move="up"
+                          aria-label={`向上移動：${entry.title} Move up: ${entry.title}`}
+                          disabled={entryIndex === 0}
+                        >
+                          ↑ 上移 <span lang="en">Up</span>
+                        </button>
+                        <button
+                          class="item-order-button"
+                          type="button"
+                          data-edition-item-move="down"
+                          aria-label={`向下移動：${entry.title} Move down: ${entry.title}`}
+                          disabled={entryIndex === edition.entries.length - 1}
+                        >
+                          ↓ 下移 <span lang="en">Down</span>
+                        </button>
+                      </div>
+                    </div>
                     <div>
                       <strong>{entry.title}</strong>
                       {entry.summary && (
@@ -113,10 +197,33 @@ if (!edition) {
                         <textarea
                           name={`annotation:${entry.itemId}`}
                           rows="3"
-                          maxlength="600"
+                          maxlength={EDITION_INPUT_LIMITS.annotation}
+                          aria-describedby={`edition-annotation-count-${entryIndex}`}
                         >
                           {entry.annotation}
                         </textarea>
+                        <small
+                          id={`edition-annotation-count-${entryIndex}`}
+                          class="edition-character-count"
+                          data-edition-character-count
+                          data-field-name={`annotation:${entry.itemId}`}
+                          data-limit={EDITION_INPUT_LIMITS.annotation}
+                          data-state={
+                            getEditorCharacterCount(
+                              entry.annotation,
+                              EDITION_INPUT_LIMITS.annotation,
+                            ).state
+                          }
+                          aria-live="polite"
+                          aria-atomic="true"
+                        >
+                          {
+                            getEditorCharacterCount(
+                              entry.annotation,
+                              EDITION_INPUT_LIMITS.annotation,
+                            ).label
+                          }
+                        </small>
                       </label>
                     </div>
                   </li>
@@ -212,6 +319,13 @@ if (!edition) {
     color: var(--space-primary-strong);
     font-weight: 650;
   }
+  .working-copy-notice span,
+  .empty span {
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--space-ink-faint);
+    font-weight: 520;
+  }
   .editor-fields {
     display: grid;
     gap: var(--space-4);
@@ -228,6 +342,20 @@ if (!edition) {
   }
   label small {
     color: var(--space-ink-faint);
+  }
+  .edition-character-count {
+    display: block;
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    font-weight: 540;
+  }
+  .edition-character-count[data-state="near"] {
+    color: var(--space-primary-strong);
+    font-weight: 700;
+  }
+  .edition-character-count[data-state="limit"] {
+    color: #9a3030;
+    font-weight: 750;
   }
   input[type="text"],
   input:not([type]),
@@ -270,6 +398,43 @@ if (!edition) {
   }
   .item-toggle {
     align-content: start;
+  }
+  .item-controls {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    min-width: 8.5rem;
+  }
+  .item-position {
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    font-weight: 650;
+  }
+  .item-order-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .item-order-button {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--space-primary-strong);
+    font: inherit;
+    font-size: var(--font-size--1);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .item-order-button:disabled {
+    color: var(--space-ink-faint);
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .item-order-button span {
+    display: block;
+    font-size: 0.82em;
   }
   li strong {
     font-size: var(--font-size-1);

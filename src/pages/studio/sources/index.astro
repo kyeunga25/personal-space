@@ -1,18 +1,46 @@
 ---
 import StudioLayout from "../../../layouts/StudioLayout.astro";
 import { formatHongKongDate } from "../../../lib/dates";
+import {
+  formatAutomationError,
+  formatAutomationJob,
+  formatAutomationRunStatus,
+  formatAutomationRunSummary,
+  formatAutomationTrigger,
+  formatSourceError,
+  formatSourceReviewStatus,
+  formatSourceStatus,
+} from "../../../lib/edition-status";
+import { PUBLIC_HTTPS_URL_MAX_LENGTH } from "../../../lib/public-https-url";
+import {
+  automationRunPageHref,
+  parseAutomationRunPageCursor,
+} from "../../../server/editions/automation-run-pagination";
 import { D1EditionRepository } from "../../../server/editions/repository";
+import {
+  parseSourcePageCursor,
+  sourceLatestHref,
+  sourcePageHref,
+} from "../../../server/editions/source-pagination";
 import { getBindings } from "../../../server/platform/bindings";
 
 const repository = new D1EditionRepository(getBindings().DB);
-const [sources, automationRuns] = await Promise.all([
-  repository.listSources(),
-  repository.listAutomationRuns(12),
+const automationRunCursor = parseAutomationRunPageCursor(
+  Astro.url.searchParams,
+);
+const sourceCursor = parseSourcePageCursor(Astro.url.searchParams);
+const [sourcePage, automationRunPage] = await Promise.all([
+  repository.listSourcePage(sourceCursor),
+  repository.listAutomationRunPage(automationRunCursor),
 ]);
-const summarizeRun = (summary: Record<string, number>) =>
-  Object.entries(summary)
-    .map(([key, value]) => key + ": " + String(value))
-    .join(" · ");
+const automationRuns = automationRunPage.runs;
+const nextAutomationRunHref = automationRunPage.nextCursor
+  ? automationRunPageHref(automationRunPage.nextCursor)
+  : null;
+const sources = sourcePage.sources;
+const nextSourceHref = sourcePage.nextCursor
+  ? sourcePageHref(sourcePage.nextCursor)
+  : null;
 ---
 
 <StudioLayout title="來源管理">
@@ -39,6 +67,13 @@ const summarizeRun = (summary: Record<string, number>) =>
 
     <section class="source-panel" aria-labelledby="new-source-heading">
       <h2 id="new-source-heading">新增來源 <small>Add source</small></h2>
+      <p class="source-help" id="source-url-requirements">
+        網址：僅支援公開 HTTPS 網址，最多 2,048
+        個字元；不可包含登入資料、私人主機或非標準連接埠。 <span lang="en"
+          >URLs: Public HTTPS URLs only, up to 2,048 characters; no credentials,
+          private hosts, or non-standard ports.</span
+        >
+      </p>
       <form
         class="source-form"
         method="post"
@@ -52,31 +87,64 @@ const summarizeRun = (summary: Record<string, number>) =>
             required
           /></label
         >
-        <label
-          >Feed URL <input
+        <label>
+          Feed URL
+          <input
             name="feedUrl"
             type="url"
             inputmode="url"
+            maxlength={PUBLIC_HTTPS_URL_MAX_LENGTH}
+            aria-describedby="source-url-requirements"
+            aria-errormessage="new-source-feed-url-error"
+            data-source-url
             placeholder="https://example.com/feed.xml"
             required
-          /></label
-        >
-        <label
-          >網站 URL <small>Site URL</small><input
+          />
+          <small
+            class="source-url-error"
+            id="new-source-feed-url-error"
+            data-source-url-error
+            aria-live="polite"
+            hidden></small>
+        </label>
+        <label>
+          網站 URL <small>Site URL</small>
+          <input
             name="siteUrl"
             type="url"
             inputmode="url"
+            maxlength={PUBLIC_HTTPS_URL_MAX_LENGTH}
+            aria-describedby="source-url-requirements"
+            aria-errormessage="new-source-site-url-error"
+            data-source-url
             placeholder="https://example.com/"
-          /></label
-        >
-        <label
-          >條款 URL <small>Terms URL</small><input
+          />
+          <small
+            class="source-url-error"
+            id="new-source-site-url-error"
+            data-source-url-error
+            aria-live="polite"
+            hidden></small>
+        </label>
+        <label>
+          條款 URL <small>Terms URL</small>
+          <input
             name="termsUrl"
             type="url"
             inputmode="url"
+            maxlength={PUBLIC_HTTPS_URL_MAX_LENGTH}
+            aria-describedby="source-url-requirements"
+            aria-errormessage="new-source-terms-url-error"
+            data-source-url
             placeholder="https://example.com/terms"
-          /></label
-        >
+          />
+          <small
+            class="source-url-error"
+            id="new-source-terms-url-error"
+            data-source-url-error
+            aria-live="polite"
+            hidden></small>
+        </label>
         <label class="field--wide"
           >權利依據 <small>Rights basis</small><textarea
             name="rightsBasis"
@@ -119,14 +187,25 @@ const summarizeRun = (summary: Record<string, number>) =>
       <header>
         <h2 id="source-list-heading">
           已加入來源 <small>Saved sources</small>
-        </h2><span>{sources.length}</span>
+        </h2><span>本頁 {sources.length} <small lang="en">On page</small></span>
       </header>
       {
         sources.length === 0 ? (
-          <p class="source-empty">尚未加入來源。 Add a public feed to begin.</p>
+          <div class="source-empty">
+            <p>
+              {sourceCursor
+                ? "這個分頁已沒有來源。 This page no longer has sources."
+                : "尚未加入來源。 Add a public feed to begin."}
+            </p>
+            {sourceCursor && (
+              <a class="button" href={sourceLatestHref()}>
+                返回最新來源 <span lang="en">Return to latest sources</span>
+              </a>
+            )}
+          </div>
         ) : (
           <div class="source-grid">
-            {sources.map((source) => (
+            {sources.map((source, sourceIndex) => (
               <form
                 class="source-card"
                 method="post"
@@ -135,18 +214,19 @@ const summarizeRun = (summary: Record<string, number>) =>
                 data-source-id={source.id}
               >
                 <div class="source-card__meta">
-                  <strong>
-                    {source.status === "enabled"
-                      ? "啟用 Enabled"
-                      : "暫停 Paused"}
-                  </strong>
-                  <span>審核：{source.reviewStatus}</span>
+                  <strong>{formatSourceStatus(source.status)}</strong>
                   <span>
-                    最近同步 {formatHongKongDate(source.lastFetchedAt)}
+                    審核 <span lang="en">Review</span>：
+                    {formatSourceReviewStatus(source.reviewStatus)}
+                  </span>
+                  <span>
+                    最近同步 <span lang="en">Last sync</span>：
+                    {formatHongKongDate(source.lastFetchedAt)}
                   </span>
                   {source.lastErrorCode && (
                     <span class="source-card__error">
-                      狀態：{source.lastErrorCode}
+                      來源錯誤 <span lang="en">Source error</span>：
+                      {formatSourceError(source.lastErrorCode)}
                     </span>
                   )}
                 </div>
@@ -164,8 +244,20 @@ const summarizeRun = (summary: Record<string, number>) =>
                   <input
                     name="feedUrl"
                     type="url"
+                    inputmode="url"
+                    maxlength={PUBLIC_HTTPS_URL_MAX_LENGTH}
+                    aria-describedby="source-url-requirements"
+                    aria-errormessage={`saved-source-${sourceIndex}-feed-url-error`}
+                    data-source-url
                     value={source.feedUrl}
                     required
+                  />
+                  <small
+                    class="source-url-error"
+                    id={`saved-source-${sourceIndex}-feed-url-error`}
+                    data-source-url-error
+                    aria-live="polite"
+                    hidden
                   />
                 </label>
                 <label>
@@ -173,7 +265,19 @@ const summarizeRun = (summary: Record<string, number>) =>
                   <input
                     name="siteUrl"
                     type="url"
+                    inputmode="url"
+                    maxlength={PUBLIC_HTTPS_URL_MAX_LENGTH}
+                    aria-describedby="source-url-requirements"
+                    aria-errormessage={`saved-source-${sourceIndex}-site-url-error`}
+                    data-source-url
                     value={source.siteUrl ?? ""}
+                  />
+                  <small
+                    class="source-url-error"
+                    id={`saved-source-${sourceIndex}-site-url-error`}
+                    data-source-url-error
+                    aria-live="polite"
+                    hidden
                   />
                 </label>
                 <label>
@@ -181,7 +285,19 @@ const summarizeRun = (summary: Record<string, number>) =>
                   <input
                     name="termsUrl"
                     type="url"
+                    inputmode="url"
+                    maxlength={PUBLIC_HTTPS_URL_MAX_LENGTH}
+                    aria-describedby="source-url-requirements"
+                    aria-errormessage={`saved-source-${sourceIndex}-terms-url-error`}
+                    data-source-url
                     value={source.termsUrl ?? ""}
+                  />
+                  <small
+                    class="source-url-error"
+                    id={`saved-source-${sourceIndex}-terms-url-error`}
+                    data-source-url-error
+                    aria-live="polite"
+                    hidden
                   />
                 </label>
                 <label>
@@ -252,41 +368,77 @@ const summarizeRun = (summary: Record<string, number>) =>
           </div>
         )
       }
+      {
+        nextSourceHref && (
+          <nav class="source-more" aria-label="來源分頁 Source pagination">
+            <a class="button" href={nextSourceHref}>
+              載入較早來源 <span lang="en">Load older sources</span>
+            </a>
+          </nav>
+        )
+      }
     </section>
 
     <section class="run-list" aria-labelledby="run-list-heading">
       <header>
         <h2 id="run-list-heading">執行紀錄 <small>Automation runs</small></h2>
-        <span>{automationRuns.length}</span>
+        <span
+          >本頁 {automationRuns.length} <small lang="en">On page</small></span
+        >
       </header>
       {
         automationRuns.length === 0 ? (
-          <p class="source-empty">尚未有自動化執行紀錄。</p>
+          <div class="source-empty">
+            <p>
+              {automationRunCursor
+                ? "這個分頁已沒有執行紀錄。 This page no longer has automation runs."
+                : "尚未有自動化執行紀錄。 No automation runs yet."}
+            </p>
+            {automationRunCursor && (
+              <a class="button" href="/studio/sources#run-list-heading">
+                返回最新紀錄 <span lang="en">Return to latest runs</span>
+              </a>
+            )}
+          </div>
         ) : (
           <ol>
             {automationRuns.map((run) => (
               <li>
                 <div>
-                  <strong>
-                    {run.job === "source_ingestion"
-                      ? "來源同步 Source ingestion"
-                      : "Edition 產生 Edition generation"}
-                  </strong>
-                  <span data-run-status={run.status}>{run.status}</span>
+                  <strong>{formatAutomationJob(run.job)}</strong>
+                  <span data-run-status={run.status}>
+                    {formatAutomationRunStatus(run.status)}
+                  </span>
                 </div>
                 <small>
-                  {formatHongKongDate(run.scheduledAt)} · {run.trigger} · 嘗試{" "}
-                  {run.attemptCount}
+                  {formatHongKongDate(run.scheduledAt)} ·{" "}
+                  {formatAutomationTrigger(run.trigger)} · 嘗試{" "}
+                  <span lang="en">Attempts</span>：{run.attemptCount}
                 </small>
                 {Object.keys(run.summary).length > 0 && (
-                  <p>{summarizeRun(run.summary)}</p>
+                  <p>{formatAutomationRunSummary(run.summary)}</p>
                 )}
                 {run.errorCode && (
-                  <p class="source-card__error">{run.errorCode}</p>
+                  <p class="source-card__error">
+                    執行錯誤 <span lang="en">Run error</span>：
+                    {formatAutomationError(run.errorCode)}
+                  </p>
                 )}
               </li>
             ))}
           </ol>
+        )
+      }
+      {
+        nextAutomationRunHref && (
+          <nav
+            class="source-more"
+            aria-label="執行紀錄分頁 Automation run pagination"
+          >
+            <a class="button" href={nextAutomationRunHref}>
+              載入較早紀錄 <span lang="en">Load older runs</span>
+            </a>
+          </nav>
         )
       }
     </section>
@@ -370,6 +522,12 @@ const summarizeRun = (summary: Record<string, number>) =>
     margin: 0;
     font-size: var(--font-size-2);
   }
+  .source-help {
+    margin: var(--space-3) 0 0;
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    line-height: 1.65;
+  }
   .source-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -400,6 +558,14 @@ const summarizeRun = (summary: Record<string, number>) =>
     border-radius: var(--radius-sm);
     background: white;
     color: var(--space-ink);
+  }
+  input[aria-invalid="true"] {
+    border-color: #a23b3b;
+  }
+  .source-url-error {
+    color: #a23b3b;
+    font-weight: 620;
+    line-height: 1.5;
   }
   textarea {
     resize: vertical;
@@ -432,6 +598,10 @@ const summarizeRun = (summary: Record<string, number>) =>
   .source-list > header span {
     color: var(--space-primary-strong);
     font-weight: 750;
+  }
+  .source-list > header small {
+    color: var(--space-ink-faint);
+    font-size: 0.72em;
   }
   .run-list > header {
     display: flex;
@@ -495,11 +665,23 @@ const summarizeRun = (summary: Record<string, number>) =>
   .source-card .button {
     justify-self: start;
   }
+  .source-more {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-4);
+    border-top: 1px solid var(--space-border);
+  }
   .source-empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-4);
     margin: 0;
     padding: var(--space-7);
     color: var(--space-ink-muted);
     text-align: center;
+  }
+  .source-empty > p {
+    margin: 0;
   }
   @media (max-width: 64rem) {
     .source-form {

@@ -14,7 +14,10 @@ export const PUT: APIRoute = async ({ params, request }) => {
     const id = params.id ?? "";
     const input = parseEditionSaveInput(await readJsonBody(request));
     if (!id || !input) {
-      return jsonResponse({ error: "Edition 格式不正確。" }, { status: 400 });
+      return jsonResponse(
+        { error: "Edition 格式不正確。 Edition data is invalid." },
+        { status: 400 },
+      );
     }
     const edition = await new D1EditionRepository(getBindings().DB).saveEdition(
       id,

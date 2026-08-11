@@ -1,12 +1,22 @@
 ---
 import StudioLayout from "../../../layouts/StudioLayout.astro";
+import {
+  formatContentStatus,
+  formatEditionItemCount,
+} from "../../../lib/content-status";
 import { formatHongKongDate } from "../../../lib/dates";
+import {
+  editionPageHref,
+  parseEditionPageCursor,
+} from "../../../server/editions/pagination";
 import { D1EditionRepository } from "../../../server/editions/repository";
 import { getBindings } from "../../../server/platform/bindings";
 
-const editions = await new D1EditionRepository(
+const cursor = parseEditionPageCursor(Astro.url.searchParams);
+const page = await new D1EditionRepository(
   getBindings().DB,
-).listOwnerEditions();
+).listOwnerEditionPage(cursor);
+const nextHref = page.nextCursor ? editionPageHref(page.nextCursor) : null;
 ---
 
 <StudioLayout title="Editions">
@@ -22,33 +32,56 @@ const editions = await new D1EditionRepository(
       >
     </header>
     <p class="edition-status" aria-live="polite" data-edition-status></p>
-    <section class="edition-list">
+    <section id="edition-list" class="edition-list">
       <h2>草稿與已發佈內容 <small>Drafts and published</small></h2>
       {
-        editions.length === 0 ? (
-          <p class="edition-empty">
-            暫時未有 Edition。同步來源後建立今日草稿。
-          </p>
+        page.editions.length === 0 ? (
+          <div class="edition-empty">
+            <p>
+              {cursor
+                ? "這個分頁已沒有 Edition。 This page no longer has Editions."
+                : "暫時未有 Edition。同步來源後建立今日草稿。 No Editions yet. Sync sources, then generate today's draft."}
+            </p>
+            {cursor && (
+              <a class="button" href="/studio/editions#edition-list">
+                返回最新 Editions <span lang="en">Return to latest</span>
+              </a>
+            )}
+          </div>
         ) : (
-          <ul>
-            {editions.map((edition) => (
-              <li>
-                <a href={`/studio/editions/${encodeURIComponent(edition.id)}`}>
-                  <span>
-                    <strong>{edition.title}</strong>
-                    <small>
-                      {edition.status} · {edition.entries.length} items
-                      {edition.hasWorkingCopy ? " · 未發佈修改" : ""}
-                    </small>
-                  </span>
-                  <time datetime={edition.updatedAt}>
-                    {formatHongKongDate(edition.updatedAt)}
-                  </time>
-                  <b aria-hidden="true">›</b>
+          <>
+            <ul>
+              {page.editions.map((edition) => (
+                <li>
+                  <a
+                    href={`/studio/editions/${encodeURIComponent(edition.id)}`}
+                  >
+                    <span>
+                      <strong>{edition.title}</strong>
+                      <small>
+                        {formatContentStatus(edition.status)} ·{" "}
+                        {formatEditionItemCount(edition.entries.length)}
+                        {edition.hasWorkingCopy
+                          ? " · 未發佈修改 Unpublished changes"
+                          : ""}
+                      </small>
+                    </span>
+                    <time datetime={edition.updatedAt}>
+                      {formatHongKongDate(edition.updatedAt)}
+                    </time>
+                    <b aria-hidden="true">›</b>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            {nextHref && (
+              <div class="edition-more">
+                <a class="button" href={nextHref}>
+                  載入較早 Editions <span lang="en">Load older</span>
                 </a>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+          </>
         )
       }
     </section>
@@ -149,9 +182,21 @@ const editions = await new D1EditionRepository(
     font-size: var(--font-size--1);
   }
   .edition-empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-4);
     padding: var(--space-7);
     color: var(--space-ink-muted);
     text-align: center;
+  }
+  .edition-empty p {
+    margin: 0;
+  }
+  .edition-more {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-4);
+    border-top: 1px solid var(--space-border);
   }
   @media (max-width: 47.99rem) {
     .edition-workspace {

@@ -2,12 +2,19 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { formatHongKongDate } from "../../lib/dates";
 import { createExcerpt } from "../../server/content/markdown";
+import {
+  editionPageHref,
+  parseEditionPageCursor,
+  PUBLIC_EDITION_PAGE_SIZE,
+} from "../../server/editions/pagination";
 import { D1EditionRepository } from "../../server/editions/repository";
 import { getBindings } from "../../server/platform/bindings";
 
-const editions = await new D1EditionRepository(
+const cursor = parseEditionPageCursor(Astro.url.searchParams);
+const page = await new D1EditionRepository(
   getBindings().DB,
-).listPublicEditions();
+).listPublicEditionPage(cursor, PUBLIC_EDITION_PAGE_SIZE);
+const nextHref = page.nextCursor ? editionPageHref(page.nextCursor) : null;
 ---
 
 <BaseLayout
@@ -25,18 +32,38 @@ const editions = await new D1EditionRepository(
         publishing.
       </p>
     </header>
-    <section class="edition-list" aria-label="已發佈 Editions">
+    <section
+      id="edition-list"
+      class="edition-list"
+      aria-label="已發佈 Editions"
+    >
       {
-        editions.length === 0 ? (
+        page.editions.length === 0 ? (
           <div class="edition-empty">
             <>
-              <h2>暫時未有公開 Edition</h2>
-              <p>已發佈的整理會顯示在這裡。</p>
+              <h2>
+                {cursor ? "這個分頁已沒有 Edition" : "暫時未有公開 Edition"}
+              </h2>
+              <p>
+                {cursor
+                  ? "資料變動後，這個較舊分頁已變空。"
+                  : "已發佈的整理會顯示在這裡。"}
+              </p>
+              <p class="en-subline" lang="en">
+                {cursor
+                  ? "This older page became empty after the collection changed."
+                  : "Published editions will appear here."}
+              </p>
+              {cursor && (
+                <a class="button" href="/editions#edition-list">
+                  返回最新整理 <span lang="en">Return to latest Editions</span>
+                </a>
+              )}
             </>
           </div>
         ) : (
           <ol>
-            {editions.map((edition) => (
+            {page.editions.map((edition) => (
               <li>
                 <a href={`/editions/${edition.date}`}>
                   <span>
@@ -54,6 +81,18 @@ const editions = await new D1EditionRepository(
         )
       }
     </section>
+    {
+      nextHref && (
+        <nav
+          class="edition-pagination"
+          aria-label="Edition 分頁 Editions pagination"
+        >
+          <a class="button" href={nextHref}>
+            載入較早整理 <span lang="en">Load older Editions</span>
+          </a>
+        </nav>
+      )
+    }
   </div>
 </BaseLayout>
 
@@ -107,5 +146,13 @@ const editions = await new D1EditionRepository(
   }
   .edition-empty p {
     color: var(--space-ink-muted);
+  }
+  .edition-empty .button {
+    margin-top: var(--space-4);
+  }
+  .edition-pagination {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-5) var(--page-gutter);
   }
 </style>

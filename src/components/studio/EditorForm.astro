@@ -1,6 +1,36 @@
 ---
+import { POST_INPUT_LIMITS } from "../../config/publishing";
+import {
+  MEDIA_UPLOAD_LIMITS,
+  MEDIA_UPLOAD_MIME_TYPES,
+} from "../../config/media";
+import {
+  EDITOR_TAGS_INPUT_MAX_LENGTH,
+  getEditorAutofocusTarget,
+  getEditorBodyFeedback,
+  getEditorCategoryFeedback,
+  getEditorCharacterCount,
+  getEditorExcerptFeedback,
+  getEditorHeading,
+  getEditorSlugFeedback,
+  getEditorTagsFeedback,
+  getEditorTitleFeedback,
+} from "../../scripts/editor-input";
+import {
+  getPreviewHeaderContent,
+  getPreviewReadingTimeContent,
+  getPreviewTaxonomyContent,
+} from "../../scripts/preview-header";
+import { getPostVisibilitySummary } from "../../scripts/publish-confirmation";
+import { resolveInitialPostSaveState } from "../../scripts/post-save-state";
+import {
+  formatHongKongScheduleInput,
+  getScheduleActionState,
+  getScheduleInputFeedback,
+} from "../../scripts/schedule-confirmation";
 import { renderMarkdown } from "../../server/content/markdown";
 import type {
+  MediaRecord,
   PostKind,
   PostRecord,
   PostRevision,
@@ -8,24 +38,77 @@ import type {
 import StudioIcon from "./StudioIcon.astro";
 
 interface Props {
+  hasRevisionCursor?: boolean;
   kind: PostKind;
+  latestRevisionHref?: string | null;
+  media?: MediaRecord | null;
+  nextRevisionHref?: string | null;
   post?: PostRecord | null;
   revisions?: PostRevision[];
 }
 
-const { kind, post = null, revisions = [] } = Astro.props;
+const {
+  hasRevisionCursor = false,
+  kind,
+  latestRevisionHref = null,
+  media = null,
+  nextRevisionHref = null,
+  post = null,
+  revisions = [],
+} = Astro.props;
 const isArticle = kind === "article";
+const autofocusTarget = getEditorAutofocusTarget(kind, !post);
+const previewMedia = media && post?.heroMediaId === media.id ? media : null;
 const title = post?.title ?? "";
+const editorHeading = getEditorHeading({ kind, title });
+if (!editorHeading) throw new Error("Invalid editor heading kind");
+const titleFeedback = getEditorTitleFeedback({ kind, title });
+if (!titleFeedback) throw new Error("Invalid editor title feedback kind");
+const excerpt = post?.excerpt ?? "";
 const bodyMd = post?.bodyMd ?? "";
+const bodyFeedback = getEditorBodyFeedback({ bodyMd, kind });
+if (!bodyFeedback) throw new Error("Invalid editor body feedback kind");
+const category = post?.category?.name ?? "";
 const previewHtml = bodyMd
   ? renderMarkdown(bodyMd)
   : "<p>預覽會在這裡出現。</p>";
 const tags = post?.tags.map((tag) => tag.name).join(", ") ?? "";
+const categoryFeedback = getEditorCategoryFeedback(category);
+const excerptFeedback = getEditorExcerptFeedback(excerpt);
+const tagsFeedback = getEditorTagsFeedback(tags);
+const slugFeedback = getEditorSlugFeedback({
+  originalSlug: post?.slug ?? "",
+  slug: post?.slug ?? "",
+  title,
+});
 const endpoint = post ? `/api/studio/posts/${post.id}` : "/api/studio/posts";
 const method = post ? "PUT" : "POST";
-const scheduledValue = post?.scheduledAt?.slice(0, 16) ?? "";
+const scheduledValue = formatHongKongScheduleInput(post?.scheduledAt);
+const scheduleAction = getScheduleActionState(post?.status ?? null);
+const scheduleFeedback = getScheduleInputFeedback(scheduledValue);
 const usesWorkingCopy =
   post?.status === "published" || post?.status === "scheduled";
+const initialSaveState = resolveInitialPostSaveState(
+  !post ? "new" : post.hasWorkingCopy ? "working-copy" : "saved",
+);
+if (!initialSaveState) throw new Error("Invalid initial editor save state");
+const titleCount = getEditorCharacterCount(title, POST_INPUT_LIMITS.title);
+const excerptCount = getEditorCharacterCount(
+  excerpt,
+  POST_INPUT_LIMITS.excerpt,
+);
+const bodyCount = getEditorCharacterCount(bodyMd, POST_INPUT_LIMITS.bodyMd);
+const previewHeader = getPreviewHeaderContent({ excerpt, kind, title });
+const previewReadingTime = getPreviewReadingTimeContent(kind, bodyMd);
+const previewTaxonomy = getPreviewTaxonomyContent(
+  post?.category?.name ?? "",
+  tags,
+);
+const previewVisibility = getPostVisibilitySummary(
+  post?.visibility ?? "private",
+);
+if (!previewVisibility) throw new Error("Invalid editor preview visibility");
+const mediaLimitMebibytes = MEDIA_UPLOAD_LIMITS.fileBytes / 1024 / 1024;
 ---
 
 <form
@@ -36,11 +119,12 @@ const usesWorkingCopy =
   data-kind={kind}
   data-post-id={post?.id ?? ""}
   data-restore-target={usesWorkingCopy ? "working-copy" : "draft"}
+  novalidate
 >
   <header class="editor-header">
     <a href="/studio" class="editor-header__back" aria-label="返回 Studio">←</a>
     <div class="editor-header__title">
-      <h1>{title || (isArticle ? "未命名文章" : "快速筆記")}</h1>
+      <h1 data-editor-heading>{editorHeading}</h1>
       <span
         >{
           post?.hasWorkingCopy
@@ -54,7 +138,8 @@ const usesWorkingCopy =
       >
     </div>
     <p class="save-state" data-save-state aria-live="polite">
-      已儲存 <span lang="en">Saved</span>
+      {initialSaveState.label}
+      <span lang="en">{initialSaveState.labelEn}</span>
     </p>
     <div class="editor-header__actions">
       <button
@@ -68,8 +153,12 @@ const usesWorkingCopy =
         class="studio-button studio-button--primary"
         type="button"
         data-open-publish
+        aria-keyshortcuts="Meta+Enter Control+Enter"
       >
         <StudioIcon name="send" />發佈 <span lang="en">Publish</span>
+        <kbd class="editor-shortcut-hint" aria-hidden="true"
+          >⌘ / Ctrl + Enter</kbd
+        >
       </button>
     </div>
   </header>
@@ -87,48 +176,82 @@ const usesWorkingCopy =
     class="mobile-editor-tabs"
     role="tablist"
     aria-label="編輯模式 Editor mode"
+    aria-orientation="horizontal"
   >
     <button
+      id="editor-tab-write"
       class="is-active"
       type="button"
       role="tab"
+      aria-controls="editor-panel-write"
       aria-selected="true"
-      data-editor-tab="write">撰寫 <span>Write</span></button
+      tabindex="0"
+      data-editor-tab="write">撰寫 <span lang="en">Write</span></button
     >
     <button
+      id="editor-tab-preview"
       type="button"
       role="tab"
+      aria-controls="editor-panel-preview"
       aria-selected="false"
-      data-editor-tab="preview">預覽 <span>Preview</span></button
+      tabindex="-1"
+      data-editor-tab="preview">預覽 <span lang="en">Preview</span></button
     >
   </div>
 
   <div class="editor-grid">
-    <section class="write-pane" data-write-pane aria-label="撰寫 Write">
+    <section
+      id="editor-panel-write"
+      class="write-pane"
+      role="tabpanel"
+      aria-labelledby="editor-tab-write"
+      data-write-pane
+    >
       <div
         class="markdown-toolbar"
+        role="toolbar"
         aria-label="Markdown 工具列 Markdown toolbar"
+        aria-describedby="markdown-format-help"
       >
-        <button type="button" data-md-prefix="## " aria-label="標題 Heading"
-          >H</button
+        <button
+          type="button"
+          data-md-prefix="# "
+          data-md-mode="line"
+          data-md-placeholder="章節標題 Section heading"
+          data-md-line-format="heading"
+          aria-label="切換章節標題 Toggle section heading"
+          title="切換章節標題 Toggle section heading">H</button
         >
         <button
           type="button"
           data-md-prefix="**"
           data-md-suffix="**"
-          aria-label="粗體 Bold"><strong>B</strong></button
+          data-md-placeholder="粗體文字 Bold text"
+          data-md-inline-format="bold"
+          data-md-shortcut="bold"
+          aria-label="切換粗體 Toggle bold"
+          aria-keyshortcuts="Meta+B Control+B"
+          title="切換粗體 Toggle bold（⌘ / Ctrl + B）"
+          ><strong>B</strong></button
         >
         <button
           type="button"
           data-md-prefix="*"
           data-md-suffix="*"
-          aria-label="斜體 Italic"><em>I</em></button
+          data-md-placeholder="斜體文字 Italic text"
+          data-md-inline-format="italic"
+          data-md-shortcut="italic"
+          aria-label="切換斜體 Toggle italic"
+          aria-keyshortcuts="Meta+I Control+I"
+          title="切換斜體 Toggle italic（⌘ / Ctrl + I）"><em>I</em></button
         >
         <button
           type="button"
-          data-md-prefix="["
-          data-md-suffix="](https://)"
-          aria-label="連結 Link"
+          data-md-link
+          data-md-shortcut="link"
+          aria-label="加入、修改或移除連結 Add, edit, or remove link"
+          aria-keyshortcuts="Meta+K Control+K"
+          title="加入、修改或移除連結 Add, edit, or remove link（⌘ / Ctrl + K）"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true"
             ><path
@@ -136,7 +259,15 @@ const usesWorkingCopy =
             ></path></svg
           >
         </button>
-        <button type="button" data-md-prefix="> " aria-label="引用 Quote">
+        <button
+          type="button"
+          data-md-prefix="> "
+          data-md-mode="line"
+          data-md-placeholder="引用內容 Quote"
+          data-md-line-format="quote"
+          aria-label="切換引用 Toggle quote"
+          title="切換引用 Toggle quote"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true"
             ><path d="M7 17h4V9H5v5h2v3ZM16 17h4V9h-6v5h2v3Z"></path></svg
           >
@@ -144,7 +275,11 @@ const usesWorkingCopy =
         <button
           type="button"
           data-md-prefix="- "
-          aria-label="項目清單 Bulleted list"
+          data-md-mode="line"
+          data-md-placeholder="清單項目 List item"
+          data-md-list-format="bullet"
+          aria-label="切換項目清單 Toggle bulleted list"
+          title="切換項目清單 Toggle bulleted list"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true"
             ><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"
@@ -154,7 +289,11 @@ const usesWorkingCopy =
         <button
           type="button"
           data-md-prefix="1. "
-          aria-label="編號清單 Numbered list"
+          data-md-mode="line"
+          data-md-placeholder="清單項目 List item"
+          data-md-list-format="numbered"
+          aria-label="切換編號清單 Toggle numbered list"
+          title="切換編號清單 Toggle numbered list"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true"
             ><path d="M10 6h10M10 12h10M10 18h10M4 4v4M3 4h2M3 13h3l-3 4h3"
@@ -163,42 +302,88 @@ const usesWorkingCopy =
         </button>
         <button
           type="button"
-          data-md-prefix="```\n"
-          data-md-suffix="\n```"
-          aria-label="程式碼 Code block">&lt;/&gt;</button
+          data-md-code-block
+          data-md-placeholder="在此貼上程式碼 Paste code here"
+          aria-label="切換程式碼區塊 Toggle code block"
+          title="切換程式碼區塊 Toggle code block">&lt;/&gt;</button
         >
-        <button
-          type="button"
-          data-md-prefix="![替代文字]("
-          data-md-suffix=")"
-          aria-label="圖片 Image"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true"
-            ><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle
-              cx="9"
-              cy="9"
-              r="1.5"></circle><path d="m5.5 18 4.8-5 3.2 3 2.3-2.3 2.7 4.3"
-            ></path></svg
-          >
-        </button>
         <button
           type="button"
           data-md-prefix="\n---\n"
-          aria-label="分隔線 Separator">—</button
+          data-md-mode="insert"
+          aria-label="插入分隔線 Insert separator"
+          title="插入分隔線 Insert separator">—</button
         >
       </div>
 
       <div class="write-fields">
+        <p class="markdown-format-help" id="markdown-format-help">
+          選取普通文字後操作可加入連結；把游標放在現有連結內，可直接選取網址以便貼上替換。其他格式沒有選取時，會加入可直接取代的提示文字。
+          <span lang="en">
+            Select plain text to add a link. Place the cursor inside an existing
+            link to select its URL for replacement. Other formats insert a
+            replaceable prompt when nothing is selected.
+          </span>
+          <span>常用快捷鍵：⌘ / Ctrl + B 粗體、I 斜體、K 連結。</span>
+          <span lang="en">
+            Shortcuts: ⌘ / Ctrl + B bold, I italic, K link.
+          </span>
+          <span>
+            選取已連結文字或整段連結後再次操作，可移除連結並保留文字。
+          </span>
+          <span lang="en">
+            Place the cursor inside an existing link to edit its URL. Select
+            linked text or the whole link, then repeat the action to remove the
+            link and keep its text.
+          </span>
+          <span>
+            再次操作粗體、斜體、章節標題、引用、程式碼區塊或目前的清單可移除格式；選擇另一種行格式或清單可直接轉換。
+          </span>
+          <span lang="en">
+            Repeat bold, italic, a section heading, a quote, a code block, or
+            the current list to remove that format. Choose another line or list
+            format to convert it directly.
+          </span>
+          <span>
+            正文不會載入外部圖片連結；需要圖片時，請使用<a href="#media"
+              >封面媒體</a
+            >。
+          </span>
+          <span lang="en">
+            External image links are not loaded in the body. Use the
+            <a href="#media">Cover upload</a>.
+          </span>
+        </p>
         <label>
           <span>標題 {isArticle ? "Title" : "（選填） Optional title"}</span>
           <input
             name="title"
             value={title}
-            required={isArticle && post?.status !== "draft"}
+            maxlength={POST_INPUT_LIMITS.title}
+            aria-describedby="editor-title-feedback editor-title-count"
+            autofocus={autofocusTarget === "title"}
             placeholder={isArticle
               ? "為文章寫一個清晰標題…"
               : "為筆記加上標題…"}
           />
+          <small
+            id="editor-title-feedback"
+            class="editor-title-feedback"
+            data-editor-title-feedback
+            data-state={titleFeedback.state}
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {titleFeedback.label}
+          </small>
+          <small
+            id="editor-title-count"
+            class="editor-character-count"
+            data-editor-character-count
+            data-field-name="title"
+            data-limit={POST_INPUT_LIMITS.title}
+            data-state={titleCount.state}>{titleCount.label}</small
+          >
         </label>
         {
           isArticle && (
@@ -209,10 +394,32 @@ const usesWorkingCopy =
               <textarea
                 name="excerpt"
                 rows="2"
-                placeholder="簡短摘要會出現在文章列表。"
+                maxlength={POST_INPUT_LIMITS.excerpt}
+                aria-describedby="editor-excerpt-feedback editor-excerpt-count"
+                placeholder="給一般讀者的簡短摘要"
               >
-                {post?.excerpt ?? ""}
+                {excerpt}
               </textarea>
+              <small
+                id="editor-excerpt-feedback"
+                class="editor-excerpt-feedback"
+                data-editor-excerpt-feedback
+                data-state={excerptFeedback.state}
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {excerptFeedback.label}
+              </small>
+              <small
+                id="editor-excerpt-count"
+                class="editor-character-count"
+                data-editor-character-count
+                data-field-name="excerpt"
+                data-limit={POST_INPUT_LIMITS.excerpt}
+                data-state={excerptCount.state}
+              >
+                {excerptCount.label}
+              </small>
             </label>
           )
         }
@@ -221,27 +428,120 @@ const usesWorkingCopy =
           <textarea
             name="bodyMd"
             rows="24"
+            maxlength={POST_INPUT_LIMITS.bodyMd}
+            aria-describedby="editor-body-feedback editor-body-count"
             placeholder="記下一個值得保留的片刻。"
-            autofocus={!post}>{bodyMd}</textarea
+            autofocus={autofocusTarget === "bodyMd"}>{bodyMd}</textarea
           >
+          <small
+            id="editor-body-feedback"
+            class="editor-body-feedback"
+            data-editor-body-feedback
+            data-state={bodyFeedback.state}
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {bodyFeedback.label}
+          </small>
         </label>
         <div class="write-footer">
           <a
             href="https://www.markdownguide.org/basic-syntax/"
             rel="noopener noreferrer"
             target="_blank">Markdown 語法</a
-          ><span data-word-count>字數：{bodyMd.length}</span>
+          ><span
+            id="editor-body-count"
+            class="editor-character-count"
+            data-editor-character-count
+            data-field-name="bodyMd"
+            data-limit={POST_INPUT_LIMITS.bodyMd}
+            data-state={bodyCount.state}>{bodyCount.label}</span
+          >
         </div>
       </div>
     </section>
 
-    <section class="preview-pane" data-preview-pane aria-label="預覽 Preview">
-      <p class="pane-label">預覽 <span lang="en">Preview</span></p>
-      <article
-        class="markdown-preview"
-        data-preview-output
-        set:html={previewHtml}
-      />
+    <section
+      id="editor-panel-preview"
+      class="preview-pane"
+      role="tabpanel"
+      aria-labelledby="editor-tab-preview"
+      data-preview-pane
+    >
+      <p class="pane-label">
+        閱讀頁面預覽 <span lang="en">Reading page preview</span>
+      </p>
+      <aside
+        class="preview-visibility"
+        data-preview-visibility
+        data-visibility={previewVisibility.visibility}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <strong data-preview-visibility-label>{previewVisibility.label}</strong>
+        <span data-preview-visibility-effect>{previewVisibility.effect}</span>
+      </aside>
+      <article class="content-preview">
+        <header class="content-preview__header" aria-live="polite">
+          <p class="content-preview__kind">
+            {isArticle ? "文章" : "筆記"}
+            <span lang="en">{isArticle ? "Article" : "Note"}</span>
+          </p>
+          <h2 data-preview-title>{previewHeader.title}</h2>
+          <p
+            class="content-preview__excerpt"
+            data-preview-excerpt
+            hidden={!previewHeader.showExcerpt}
+          >
+            {previewHeader.excerpt}
+          </p>
+          <p
+            class="content-preview__reading-time"
+            data-preview-reading-time
+            hidden={!previewReadingTime.show}
+          >
+            <span data-preview-reading-time-label>
+              {previewReadingTime.label}
+            </span>
+            <span aria-hidden="true"> · </span>
+            <span lang="en" data-preview-reading-time-label-en>
+              {previewReadingTime.labelEn}
+            </span>
+          </p>
+        </header>
+        <figure
+          class="content-preview__cover"
+          data-preview-cover
+          hidden={!previewMedia}
+        >
+          <img
+            data-preview-cover-image
+            src={previewMedia
+              ? `/api/studio/media/${encodeURIComponent(previewMedia.id)}`
+              : undefined}
+            alt={previewMedia?.altText ?? ""}
+            width={previewMedia?.width}
+            height={previewMedia?.height}
+          />
+        </figure>
+        <div
+          class="markdown-preview"
+          data-preview-output
+          aria-live="polite"
+          set:html={previewHtml}
+        />
+        <footer
+          class="content-preview__taxonomy"
+          data-preview-taxonomy
+          hidden={!previewTaxonomy.show}
+          aria-live="polite"
+        >
+          <h3>整理 <small lang="en">Filed under</small></h3>
+          <p data-preview-taxonomy-items>
+            {previewTaxonomy.items.join(" · ")}
+          </p>
+        </footer>
+      </article>
     </section>
 
     <aside class="settings-pane" aria-label="發佈設定 Publish settings">
@@ -253,34 +553,71 @@ const usesWorkingCopy =
       <div class="settings-fields">
         <label
           ><span>可見性 <small>Visibility</small></span>
-          <select name="visibility">
+          <select
+            name="visibility"
+            aria-describedby="editor-visibility-feedback"
+          >
             <option
               value="private"
-              selected={post?.visibility !== "public" &&
-                post?.visibility !== "unlisted"}>私人 Private</option
+              selected={previewVisibility.visibility === "private"}
+              >私人 Private</option
             >
-            <option value="unlisted" selected={post?.visibility === "unlisted"}
+            <option
+              value="unlisted"
+              selected={previewVisibility.visibility === "unlisted"}
               >不公開列出 Unlisted</option
             >
-            <option value="public" selected={post?.visibility === "public"}
+            <option
+              value="public"
+              selected={previewVisibility.visibility === "public"}
               >公開 Public</option
             >
           </select>
-          <small>公開內容會出現在列表；私人內容只限 Studio。</small>
+          <small
+            id="editor-visibility-feedback"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            發佈後 <span lang="en">After publishing</span>：<span
+              data-editor-visibility-effect>{previewVisibility.effect}</span
+            >
+          </small>
         </label>
         <label
           ><span>分類 <small>Category</small></span><input
             name="category"
-            value={post?.category?.name ?? ""}
+            value={category}
+            maxlength={POST_INPUT_LIMITS.category}
+            aria-describedby="editor-category-feedback"
             placeholder="未分類"
-          /></label
+          /><small
+            id="editor-category-feedback"
+            class="editor-category-feedback"
+            data-editor-category-feedback
+            data-state={categoryFeedback.state}
+            aria-live="polite"
+            aria-atomic="true">{categoryFeedback.label}</small
+          ></label
         >
         <label
           ><span>標籤 <small>Tags</small></span><input
             name="tags"
             value={tags}
-            placeholder="以逗號分隔"
-          /></label
+            maxlength={EDITOR_TAGS_INPUT_MAX_LENGTH}
+            aria-describedby="editor-tags-hint editor-tags-feedback"
+            placeholder="以逗號分隔，包括 , 或 ，"
+          /><small id="editor-tags-hint"
+            >最多 {POST_INPUT_LIMITS.tags} 個，每個 {POST_INPUT_LIMITS.tag} 字元 ·
+            Up to {POST_INPUT_LIMITS.tags} tags, {POST_INPUT_LIMITS.tag} characters
+            each</small
+          ><small
+            id="editor-tags-feedback"
+            class="editor-tags-feedback"
+            data-editor-tags-feedback
+            data-state={tagsFeedback.state}
+            aria-live="polite"
+            aria-atomic="true">{tagsFeedback.label}</small
+          ></label
         >
         {
           isArticle && (
@@ -292,18 +629,49 @@ const usesWorkingCopy =
                 <input
                   name="slug"
                   value={post?.slug ?? ""}
+                  data-original-slug={post?.slug ?? ""}
+                  maxlength={POST_INPUT_LIMITS.slug}
+                  aria-describedby="editor-slug-feedback"
                   placeholder="由標題自動產生"
                 />
+                <small
+                  id="editor-slug-feedback"
+                  class="editor-slug-feedback"
+                  data-editor-slug-feedback
+                  data-state={slugFeedback.state}
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {slugFeedback.label}
+                </small>
               </>
             </label>
           )
         }
         <label
-          ><span>排程 <small>Schedule</small></span><input
+          ><span>排程 <small>香港時間 · Hong Kong time</small></span><input
             name="scheduledAt"
             type="datetime-local"
             value={scheduledValue}
-          /></label
+            disabled={!scheduleAction.allowed}
+            aria-describedby={scheduleAction.allowed
+              ? "editor-schedule-help editor-schedule-feedback"
+              : "editor-schedule-help"}
+          /><small id="editor-schedule-help">
+            {
+              scheduleAction.allowed
+                ? "時間會隨草稿或工作副本保存；只有按下「排程」才會生效。 The time is saved with the draft or working copy and takes effect only after Schedule."
+                : scheduleAction.reason
+            }
+          </small><small
+            id="editor-schedule-feedback"
+            class="editor-schedule-feedback"
+            data-editor-schedule-feedback
+            data-state={scheduleFeedback.state}
+            aria-live="polite"
+            aria-atomic="true"
+            hidden={!scheduleAction.allowed}>{scheduleFeedback.label}</small
+          ></label
         >
 
         <fieldset id="media" class="media-upload">
@@ -314,23 +682,36 @@ const usesWorkingCopy =
             value={post?.heroMediaId ?? ""}
           />
           <label
-            ><span>圖片 <small>PNG / JPEG, max 5 MB</small></span><input
+            ><span
+              >圖片 <small>PNG / JPEG, max {mediaLimitMebibytes} MiB</small
+              ></span
+            ><input
               data-media-file
               type="file"
-              accept="image/png,image/jpeg"
+              accept={MEDIA_UPLOAD_MIME_TYPES.join(",")}
             /></label
           >
           <label
             ><span>替代文字 <small>Alt text</small></span><input
               data-media-alt
-              maxlength="240"
+              maxlength={MEDIA_UPLOAD_LIMITS.altText}
               placeholder="描述圖片內容"
             /></label
           >
+          <p
+            class="media-selection-feedback"
+            data-media-selection-feedback
+            data-state="empty"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            尚未選擇待上傳圖片。 No upload selected.
+          </p>
           <button
             class="studio-button studio-button--quiet"
             type="button"
-            data-upload-media>上傳圖片 Upload</button
+            data-upload-media
+            disabled>上傳圖片 Upload</button
           >
           <button
             class="studio-button studio-button--quiet"
@@ -339,29 +720,48 @@ const usesWorkingCopy =
             disabled={!post?.heroMediaId}>清除封面 Clear cover</button
           >
           <p data-media-state aria-live="polite">
-            {post?.heroMediaId ? "已連結封面圖片。" : "尚未選擇圖片。"}
+            {
+              post?.heroMediaId
+                ? "已連結封面圖片。 Cover image linked."
+                : "尚未選擇圖片。 No image selected."
+            }
           </p>
           <small>
-            私人內容使用私人媒體；公開及不公開列出內容使用公開媒體。
+            封面顯示於閱讀頁頂部；私人內容使用私人媒體，公開及不公開列出內容使用公開媒體。
+            <span lang="en">
+              The cover appears at the top of the reading page. Private content
+              uses private media; public and unlisted content use public media.
+            </span>
           </small>
         </fieldset>
 
         <div class="settings-actions">
           <button
-            class="studio-button studio-button--quiet"
+            class="studio-button studio-button--quiet settings-action--wide-only"
             type="button"
             data-save-action="save"
+            aria-keyshortcuts="Meta+S Control+S"
             ><StudioIcon name="save" />{
               usesWorkingCopy
                 ? "儲存工作副本 Save working copy"
                 : "儲存草稿 Save"
-            }</button
+            }<kbd class="editor-shortcut-hint" aria-hidden="true"
+              >⌘ / Ctrl + S</kbd
+            ></button
           >
-          <button
-            class="studio-button studio-button--quiet"
-            type="button"
-            data-save-action="schedule">排程 Schedule</button
-          >
+          {
+            scheduleAction.allowed ? (
+              <button
+                class="studio-button studio-button--quiet settings-action--wide-only"
+                type="button"
+                data-save-action="schedule"
+              >
+                排程 Schedule
+              </button>
+            ) : (
+              <p class="schedule-action-note">{scheduleAction.reason}</p>
+            )
+          }
           {
             post && (
               <button
@@ -377,59 +777,134 @@ const usesWorkingCopy =
       </div>
 
       {
-        post && revisions.length > 0 && (
+        post && (revisions.length > 0 || hasRevisionCursor) && (
           <section class="revision-list">
-            <h2>
+            <h2 id="revision-list-heading">
               修訂版本 <small>Revisions</small>
             </h2>
-            <ul>
-              {revisions.map((revision, index) => (
-                <li>
-                  <span>
-                    <strong>修訂 {revisions.length - index}</strong>
-                    <small>
-                      {new Date(revision.createdAt).toLocaleString(
-                        "zh-Hant-HK",
-                        { timeZone: "Asia/Hong_Kong" },
-                      )}
-                    </small>
-                  </span>
-                  <button type="button" data-revision-id={revision.id}>
-                    {usesWorkingCopy
-                      ? "還原為工作副本 Restore to working copy"
-                      : "還原為草稿 Restore"}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {revisions.length === 0 ? (
+              <p class="revision-list__empty">
+                這個分頁已沒有修訂版本。 This page no longer has revisions.
+              </p>
+            ) : (
+              <ul>
+                {revisions.map((revision) => (
+                  <li>
+                    <span>
+                      <strong>
+                        修訂版本 <small lang="en">Revision</small>
+                      </strong>
+                      <small>
+                        {new Date(revision.createdAt).toLocaleString(
+                          "zh-Hant-HK",
+                          { timeZone: "Asia/Hong_Kong" },
+                        )}
+                      </small>
+                    </span>
+                    <button type="button" data-revision-id={revision.id}>
+                      {usesWorkingCopy
+                        ? "還原為工作副本 Restore to working copy"
+                        : "還原為草稿 Restore"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {(hasRevisionCursor || nextRevisionHref) && (
+              <nav
+                class="revision-pagination"
+                aria-label="修訂版本分頁 Revision pagination"
+              >
+                {hasRevisionCursor && latestRevisionHref && (
+                  <a
+                    class="studio-button studio-button--quiet"
+                    href={latestRevisionHref}
+                  >
+                    返回最新版本 <span lang="en">Latest revisions</span>
+                  </a>
+                )}
+                {nextRevisionHref && (
+                  <a
+                    class="studio-button studio-button--quiet"
+                    href={nextRevisionHref}
+                  >
+                    載入較舊版本 <span lang="en">Older revisions</span>
+                  </a>
+                )}
+              </nav>
+            )}
           </section>
         )
       }
     </aside>
   </div>
 
-  <div class="mobile-action-bar">
+  <div
+    class="mobile-action-bar"
+    data-action-count={scheduleAction.mobileActionCount}
+  >
     <button
       class="studio-button studio-button--quiet"
       type="button"
       data-save-action="save"
+      aria-keyshortcuts="Meta+S Control+S"
       ><StudioIcon name="save" />{usesWorkingCopy ? "儲存工作副本" : "儲存草稿"}
       <span>{usesWorkingCopy ? "Save working copy" : "Save draft"}</span
       ></button
     >
+    {
+      scheduleAction.allowed && (
+        <button
+          class="studio-button studio-button--quiet"
+          type="button"
+          data-save-action="schedule"
+        >
+          排程 <span>Schedule</span>
+        </button>
+      )
+    }
     <button
       class="studio-button studio-button--primary"
       type="button"
       data-open-publish
+      aria-keyshortcuts="Meta+Enter Control+Enter"
       ><StudioIcon name="send" />發佈 <span>Publish</span></button
     >
   </div>
 </form>
 
-<dialog class="publish-dialog" data-publish-dialog>
+<dialog
+  class="publish-dialog"
+  data-publish-dialog
+  aria-labelledby="publish-dialog-title"
+  aria-describedby="publish-dialog-intro"
+>
   <form method="dialog">
-    <h2>確認發佈 <small lang="en">Confirm publish</small></h2>
-    <p>發佈後會立即按照目前的可見性設定生效。</p>
+    <h2 id="publish-dialog-title">
+      確認發佈 <small lang="en">Confirm publish</small>
+    </h2>
+    <p id="publish-dialog-intro">
+      發佈前請核對內容及可見性。 Review the content and visibility before
+      publishing.
+    </p>
+    <dl class="publish-summary">
+      <div>
+        <dt>標題 <span lang="en">Title</span></dt>
+        <dd data-publish-title>—</dd>
+      </div>
+      <div>
+        <dt>內容 <span lang="en">Content</span></dt>
+        <dd data-publish-readiness>—</dd>
+      </div>
+      <div>
+        <dt>可見性 <span lang="en">Visibility</span></dt>
+        <dd data-publish-visibility>—</dd>
+      </div>
+      <div>
+        <dt>發佈後 <span lang="en">After publishing</span></dt>
+        <dd data-publish-effect>—</dd>
+      </div>
+    </dl>
     <div>
       <button class="studio-button studio-button--quiet" value="cancel"
         >取消 Cancel</button
@@ -537,12 +1012,34 @@ const usesWorkingCopy =
   .studio-button:hover {
     background-color: var(--space-surface-hover);
   }
+  .studio-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
   .studio-button--primary:hover {
     background: linear-gradient(
       135deg,
       var(--space-primary-strong),
       var(--space-blue-strong)
     );
+  }
+  .editor-shortcut-hint {
+    margin-left: var(--space-1);
+    padding: 0.22rem 0.38rem;
+    border: 1px solid var(--space-border-strong);
+    border-radius: 0.35rem;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--space-ink-muted);
+    font-family: var(--font-ui);
+    font-size: 0.62rem;
+    font-weight: 650;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .studio-button--primary .editor-shortcut-hint {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.16);
+    color: white;
   }
   .mobile-editor-tabs {
     display: none;
@@ -604,6 +1101,21 @@ const usesWorkingCopy =
     stroke-linejoin: round;
     stroke-width: 1.8;
   }
+  .markdown-format-help {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-sm);
+    background: var(--space-surface-blue);
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    line-height: 1.55;
+  }
+  .markdown-format-help span {
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--space-ink-faint);
+  }
   .write-fields {
     display: grid;
     gap: var(--space-5);
@@ -660,6 +1172,81 @@ const usesWorkingCopy =
   .write-footer a {
     color: var(--space-primary-strong);
   }
+  .editor-character-count {
+    display: block;
+    margin-top: var(--space-2);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    font-weight: 540;
+  }
+  .editor-character-count[data-state="near"] {
+    color: var(--space-primary-strong);
+    font-weight: 700;
+  }
+  .editor-character-count[data-state="limit"] {
+    color: #9a3030;
+    font-weight: 750;
+  }
+  .editor-body-feedback,
+  .editor-category-feedback,
+  .editor-excerpt-feedback,
+  .editor-tags-feedback,
+  .editor-title-feedback {
+    display: block;
+    margin-top: var(--space-2);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    font-weight: 540;
+  }
+  .editor-tags-feedback[data-state="notice"] {
+    color: var(--space-primary-strong);
+    font-weight: 700;
+  }
+  .editor-excerpt-feedback[data-state="ready"] {
+    color: var(--space-primary-strong);
+    font-weight: 650;
+  }
+  .editor-title-feedback[data-state="ready"] {
+    color: var(--space-primary-strong);
+    font-weight: 650;
+  }
+  .editor-body-feedback[data-state="ready"] {
+    color: var(--space-primary-strong);
+    font-weight: 650;
+  }
+  .editor-body-feedback[data-state="required"] {
+    color: #7b5819;
+    font-weight: 700;
+  }
+  .editor-title-feedback[data-state="required"] {
+    color: #7b5819;
+    font-weight: 700;
+  }
+  .editor-category-feedback[data-state="invalid"],
+  .editor-tags-feedback[data-state="invalid"] {
+    color: #9a3030;
+    font-weight: 750;
+  }
+  .editor-slug-feedback {
+    display: block;
+    margin-top: var(--space-2);
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    font-weight: 540;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+  .editor-slug-feedback[data-state="automatic"] {
+    color: var(--space-primary-strong);
+  }
+  .editor-slug-feedback[data-state="changed"] {
+    color: #7b5819;
+    font-weight: 750;
+  }
+  .write-footer .editor-character-count {
+    margin-top: 0;
+    text-align: right;
+  }
   .preview-pane {
     padding: var(--space-5) clamp(1.5rem, 3vw, 2.75rem);
   }
@@ -673,9 +1260,100 @@ const usesWorkingCopy =
     margin-left: 0.25em;
     color: var(--space-ink-faint);
   }
-  .markdown-preview {
+  .preview-visibility {
+    display: grid;
     max-width: 38rem;
-    margin: var(--space-6) auto;
+    gap: var(--space-1);
+    margin: var(--space-4) auto 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--space-surface-blue);
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    line-height: 1.55;
+  }
+  .preview-visibility strong {
+    color: var(--space-primary-strong);
+    font-size: var(--font-size-0);
+  }
+  .preview-visibility[data-visibility="public"] {
+    border-color: rgba(22, 120, 94, 0.35);
+    background: rgba(230, 247, 240, 0.82);
+  }
+  .preview-visibility[data-visibility="public"] strong {
+    color: #176f58;
+  }
+  .preview-visibility[data-visibility="unlisted"] {
+    border-color: rgba(158, 113, 28, 0.35);
+    background: rgba(255, 248, 220, 0.82);
+  }
+  .preview-visibility[data-visibility="unlisted"] strong {
+    color: #7b5819;
+  }
+  .content-preview {
+    max-width: 38rem;
+    margin: var(--space-5) auto var(--space-6);
+  }
+  .content-preview__header {
+    padding: clamp(1.25rem, 4vw, 2rem);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      145deg,
+      rgba(226, 245, 255, 0.78),
+      rgba(255, 251, 232, 0.58)
+    );
+  }
+  .content-preview__kind {
+    margin: 0;
+    color: var(--space-blue-strong);
+    font-size: var(--font-size--1);
+    font-weight: 720;
+  }
+  .content-preview__kind span {
+    margin-left: 0.35em;
+    color: var(--space-ink-faint);
+    font-size: 0.86em;
+  }
+  .content-preview__header h2 {
+    margin: var(--space-3) 0 0;
+    font-family: var(--font-reading);
+    font-size: var(--font-size-3);
+    letter-spacing: -0.04em;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  .content-preview__excerpt {
+    margin: var(--space-4) 0 0;
+    color: var(--space-ink-muted);
+    font-size: var(--font-size-0);
+    line-height: 1.7;
+  }
+  .content-preview__reading-time {
+    margin: var(--space-3) 0 0;
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    font-weight: 650;
+    line-height: 1.5;
+  }
+  .content-preview__cover {
+    margin: var(--space-4) 0 0;
+    overflow: hidden;
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-md);
+    background: var(--space-surface-blue);
+  }
+  .content-preview__cover img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 24rem;
+    object-fit: cover;
+  }
+  .markdown-preview {
+    margin-top: var(--space-6);
     font-family: var(--font-reading);
     font-size: var(--font-size-0);
     line-height: 1.85;
@@ -705,6 +1383,31 @@ const usesWorkingCopy =
     border-radius: var(--radius-sm);
     background: var(--space-canvas-blue);
     font-family: ui-monospace, monospace;
+  }
+  .content-preview__taxonomy {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--space-border);
+  }
+  .content-preview__taxonomy h3,
+  .content-preview__taxonomy p {
+    margin: 0;
+  }
+  .content-preview__taxonomy h3 {
+    font-size: var(--font-size-0);
+  }
+  .content-preview__taxonomy h3 small {
+    margin-left: 0.3em;
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+  }
+  .content-preview__taxonomy p {
+    margin-top: var(--space-3);
+    color: var(--space-teal-strong);
+    font-size: var(--font-size--1);
+    font-weight: 650;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
   }
   .settings-pane {
     min-width: 0;
@@ -745,6 +1448,15 @@ const usesWorkingCopy =
     font-size: 0.7rem;
     line-height: 1.45;
   }
+  .settings-fields .editor-schedule-feedback[data-state="expired"],
+  .settings-fields .editor-schedule-feedback[data-state="invalid"] {
+    color: #9a3030;
+    font-weight: 750;
+  }
+  .settings-fields .editor-schedule-feedback[data-state="ready"] {
+    color: #176f58;
+    font-weight: 700;
+  }
   .media-upload {
     display: grid;
     gap: var(--space-3);
@@ -759,9 +1471,31 @@ const usesWorkingCopy =
     color: var(--space-ink-faint);
     font-size: 0.72rem;
   }
+  .media-upload .media-selection-feedback[data-state="needs-alt"] {
+    color: var(--space-primary-strong);
+    font-weight: 650;
+  }
+  .media-upload .media-selection-feedback[data-state="invalid"] {
+    color: #9a3030;
+    font-weight: 750;
+  }
+  .media-upload .media-selection-feedback[data-state="ready"] {
+    color: #176f58;
+    font-weight: 700;
+  }
   .settings-actions {
     display: grid;
     gap: var(--space-2);
+  }
+  .schedule-action-note {
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-sm);
+    background: var(--space-surface-blue);
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    line-height: 1.55;
   }
   .revision-list {
     border-top: 1px solid var(--space-border-strong);
@@ -804,6 +1538,22 @@ const usesWorkingCopy =
     font-weight: 700;
     cursor: pointer;
   }
+  .revision-list li button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+  .revision-list__empty {
+    margin: var(--space-3) 0 0;
+    color: var(--space-ink-muted);
+    font-size: var(--font-size--1);
+    line-height: 1.55;
+  }
+  .revision-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
   .mobile-action-bar {
     display: none;
   }
@@ -834,6 +1584,33 @@ const usesWorkingCopy =
   }
   .publish-dialog p {
     color: var(--space-ink-muted);
+  }
+  .publish-summary {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-5) 0 0;
+  }
+  .publish-summary > div {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--space-border);
+    border-radius: var(--radius-md);
+    background: var(--space-surface-blue);
+  }
+  .publish-summary dt {
+    color: var(--space-ink-faint);
+    font-size: var(--font-size--1);
+    font-weight: 700;
+  }
+  .publish-summary dt span {
+    margin-left: 0.25em;
+  }
+  .publish-summary dd {
+    margin: 0;
+    color: var(--space-ink);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
   }
   .publish-dialog form > div {
     display: flex;
@@ -973,6 +1750,9 @@ const usesWorkingCopy =
       padding: var(--space-5) var(--space-4) 8rem;
     }
     .settings-actions {
+      grid-column: 1 / -1;
+    }
+    .settings-action--wide-only {
       display: none;
     }
     .mobile-action-bar {
@@ -982,12 +1762,34 @@ const usesWorkingCopy =
       bottom: 4.8rem;
       left: 0;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--space-3);
       padding: var(--space-3) var(--space-4);
       border-top: 1px solid var(--space-border);
       background: rgba(252, 254, 255, 0.96);
       backdrop-filter: blur(16px);
+    }
+    .mobile-action-bar[data-action-count="3"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+    .mobile-action-bar .studio-button {
+      min-width: 0;
+      flex-direction: column;
+      gap: 0.1rem;
+      padding: 0.5rem 0.25rem;
+      font-size: 0.78rem;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .mobile-action-bar .studio-button svg {
+      display: none;
+    }
+    .mobile-action-bar .studio-button span {
+      width: 100%;
+      font-size: 0.7rem;
+      font-weight: 620;
+      overflow-wrap: anywhere;
     }
     .editor-toast {
       right: var(--space-4);
