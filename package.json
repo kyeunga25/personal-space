@@ -26,8 +26,8 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run worker:types:check && npm run worker:dry-run"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "14.2.0",
-    "astro": "7.2.0",
+    "@astrojs/cloudflare": "14.2.1",
+    "astro": "7.2.1",
     "fast-xml-parser": "^5.10.1",
     "jose": "6.2.8",
     "marked": "18.0.9",
@@ -43,7 +43,7 @@
     "globals": "17.9.0",
     "prettier": "3.9.6",
     "prettier-plugin-astro": "0.14.1",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.67.0",
     "vitest": "4.1.10",
     "wrangler": "4.120.1"
