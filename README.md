@@ -6,6 +6,10 @@
 
 公開網站 / Public site: [space.k-y.cc](https://space.k-y.cc)
 
+| 可用性 / Availability                                           | 成熟度 / Maturity                               | 證據 / Evidence                                                                                                                                               |
+| --------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 公開閱讀；Studio 只限擁有者 / Public reading; owner-only Studio | Source `v0.8.0`; latest GitHub release `v0.7.0` | [入口網站 / Live](https://space.k-y.cc) · [專案文件 / Docs](docs/PROJECT_OVERVIEW.md) · [安全政策 / Security](SECURITY.md) · [版權 / Copyright](COPYRIGHT.md) |
+
 ## 專案簡介
 
 Personal Space 是一個由站主自行管理的發佈網站，集中整理筆記、文章、經審閱的
@@ -95,9 +99,10 @@ npm run preview
 遠端 migration、secret 更新及 deploy 都會改動你的 Cloudflare 環境。執行前請
 確認目前帳戶、Worker 名稱及目標資源。
 
-> **授權提醒：** repository 目前沒有獨立的開源 LICENSE。以下自部署內容是
+> **授權提醒：** repository 目前沒有獨立的開源 LICENSE；權利邊界見
+> [`COPYRIGHT.md`](COPYRIGHT.md)。以下自部署內容是
 > 技術說明，不等同授予複製、修改或再發佈權。除非你是權利人，否則應先取得
-> 明確授權；專案維護者亦應在公開邀請他人部署前選擇合適的 LICENSE。
+> 明確授權。
 
 ## 文檔
 
