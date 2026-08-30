@@ -309,7 +309,7 @@ const introCount = getEditorCharacterCount(
     font-weight: 650;
   }
   .editor-status[data-state="error"] {
-    color: #a23b3b;
+    color: var(--space-danger);
   }
   .working-copy-notice {
     padding: var(--space-3) var(--space-4);
@@ -354,7 +354,7 @@ const introCount = getEditorCharacterCount(
     font-weight: 700;
   }
   .edition-character-count[data-state="limit"] {
-    color: #9a3030;
+    color: var(--space-danger);
     font-weight: 750;
   }
   input[type="text"],
@@ -468,8 +468,8 @@ const introCount = getEditorCharacterCount(
   }
   .button--danger {
     margin-left: auto;
-    border-color: rgba(162, 59, 59, 0.38);
-    color: #8b3030;
+    border-color: rgba(155, 77, 88, 0.3);
+    color: var(--space-danger);
   }
   @media (max-width: 47.99rem) {
     .edition-editor {

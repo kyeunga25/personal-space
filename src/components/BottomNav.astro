@@ -39,17 +39,17 @@ const { pathname } = Astro.props;
     .bottom-nav {
       position: fixed;
       z-index: var(--z-navigation);
-      right: 0;
-      bottom: 0;
-      left: 0;
+      right: var(--space-3);
+      bottom: max(var(--space-2), env(safe-area-inset-bottom));
+      left: var(--space-3);
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      padding: var(--space-2) max(var(--space-2), env(safe-area-inset-right))
-        max(var(--space-2), env(safe-area-inset-bottom))
-        max(var(--space-2), env(safe-area-inset-left));
-      border-top: 1px solid var(--space-border);
-      background: rgba(239, 249, 255, 0.92);
-      backdrop-filter: blur(14px);
+      padding: var(--space-2);
+      border: 1px solid var(--space-border-strong);
+      border-radius: var(--radius-lg);
+      background: rgba(250, 250, 255, 0.9);
+      box-shadow: 0 18px 44px rgba(62, 75, 132, 0.16);
+      backdrop-filter: blur(20px);
     }
 
     .bottom-nav__link {
@@ -70,10 +70,10 @@ const { pathname } = Astro.props;
     .bottom-nav__link.is-active {
       background: linear-gradient(
         135deg,
-        var(--space-surface-primary),
-        var(--space-surface-blue)
+        var(--space-surface-yellow),
+        var(--space-surface-primary)
       );
-      color: var(--space-primary-strong);
+      color: var(--space-ink);
       box-shadow: var(--space-shadow-glow);
     }
 

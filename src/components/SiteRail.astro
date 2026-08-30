@@ -67,16 +67,20 @@ const { pathname } = Astro.props;
     height: 100svh;
     flex-direction: column;
     overflow-y: auto;
-    padding: var(--space-6) var(--space-5);
+    padding: var(--space-6) var(--space-5) var(--space-5);
     border-right: 1px solid var(--space-border-strong);
     background:
       radial-gradient(
-        circle at 10% 92%,
-        rgba(242, 183, 24, 0.16),
-        transparent 13rem
+        circle at 8% 88%,
+        rgba(250, 226, 164, 0.3),
+        transparent 15rem
       ),
-      rgba(237, 249, 255, 0.64);
-    backdrop-filter: blur(20px);
+      linear-gradient(
+        160deg,
+        rgba(249, 251, 255, 0.78),
+        rgba(238, 243, 253, 0.62)
+      );
+    backdrop-filter: blur(24px);
   }
 
   .site-rail__brand {
@@ -111,7 +115,7 @@ const { pathname } = Astro.props;
   }
 
   .site-rail__navigation {
-    margin-top: var(--space-7);
+    margin-top: 2.7rem;
   }
 
   ul {
@@ -128,6 +132,7 @@ const { pathname } = Astro.props;
     align-items: center;
     gap: var(--space-3);
     padding: 0 var(--space-3);
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
     color: var(--space-ink);
     font-size: var(--font-size-0);
@@ -136,22 +141,25 @@ const { pathname } = Astro.props;
     transition:
       color var(--motion-fast) ease,
       background-color var(--motion-fast) ease,
-      transform var(--motion-fast) ease;
+      border-color var(--motion-fast) ease,
+      transform var(--motion-fast) ease,
+      box-shadow var(--motion-fast) ease;
   }
 
   .site-rail__link:hover {
     background: var(--space-surface-hover);
     color: var(--space-primary-strong);
-    transform: translateX(2px);
+    transform: translateX(3px);
   }
 
   .site-rail__link.is-active {
     background: linear-gradient(
       135deg,
-      var(--space-primary),
-      var(--space-blue)
+      var(--space-surface-yellow),
+      var(--space-surface-primary)
     );
-    color: #ffffff;
+    border-color: rgba(142, 128, 191, 0.2);
+    color: var(--space-ink);
     box-shadow: var(--space-shadow-glow);
   }
 
@@ -162,7 +170,7 @@ const { pathname } = Astro.props;
   }
 
   .site-rail__link.is-active .site-rail__label small {
-    color: rgba(255, 255, 255, 0.78);
+    color: var(--space-primary-strong);
   }
 
   .site-rail__label small {
@@ -192,7 +200,7 @@ const { pathname } = Astro.props;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--space-border);
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.46);
+    background: rgba(255, 255, 255, 0.56);
     color: var(--space-ink);
     font-size: var(--font-size--1);
     font-weight: 720;
@@ -200,9 +208,14 @@ const { pathname } = Astro.props;
   }
 
   .site-rail__studio:hover {
-    border-color: var(--space-primary-soft);
-    background: var(--space-surface-hover);
+    border-color: var(--space-primary);
+    background: linear-gradient(
+      135deg,
+      var(--space-surface-yellow),
+      var(--space-surface-primary)
+    );
     color: var(--space-primary-strong);
+    box-shadow: var(--space-shadow-glow);
   }
 
   .site-rail__studio span,
@@ -221,7 +234,7 @@ const { pathname } = Astro.props;
     height: 0.5rem;
     border-radius: 50%;
     background: var(--space-yellow);
-    box-shadow: 0 0 0 0.22rem var(--space-surface-yellow);
+    box-shadow: 0 0 0 0.22rem rgba(248, 229, 167, 0.5);
   }
 
   @media (max-width: 47.99rem) {

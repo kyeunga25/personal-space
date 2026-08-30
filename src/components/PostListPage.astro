@@ -150,7 +150,13 @@ const emptyState = getPublicPostListEmptyState(kind);
   }
 
   .post-list__empty {
+    min-height: 24rem;
     padding: clamp(1.5rem, 4vw, 2.5rem);
+    background: linear-gradient(
+      145deg,
+      rgba(251, 252, 255, 0.62),
+      rgba(241, 240, 252, 0.52)
+    );
   }
 
   .post-list__empty h2 {
@@ -186,13 +192,17 @@ const emptyState = getPublicPostListEmptyState(kind);
 
   .post-row:hover,
   .post-row:focus-within {
-    background: var(--space-surface-hover);
-    box-shadow: inset 3px 0 var(--space-primary);
+    background: linear-gradient(
+      90deg,
+      rgba(255, 247, 219, 0.44),
+      rgba(237, 237, 252, 0.64)
+    );
+    box-shadow: inset 3px 0 var(--space-yellow);
   }
 
   .post-row--article:hover,
   .post-row--article:focus-within {
-    box-shadow: inset 3px 0 var(--space-blue);
+    box-shadow: inset 3px 0 var(--space-primary);
   }
 
   .post-row__meta {

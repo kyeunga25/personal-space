@@ -491,7 +491,7 @@ const nextSourceHref = sourcePage.nextCursor
   }
   .source-status[data-state="error"],
   .source-card__error {
-    color: #a23b3b;
+    color: var(--space-danger);
   }
   .source-panel,
   .source-list,
@@ -560,10 +560,10 @@ const nextSourceHref = sourcePage.nextCursor
     color: var(--space-ink);
   }
   input[aria-invalid="true"] {
-    border-color: #a23b3b;
+    border-color: var(--space-danger);
   }
   .source-url-error {
-    color: #a23b3b;
+    color: var(--space-danger);
     font-weight: 620;
     line-height: 1.5;
   }
@@ -638,7 +638,7 @@ const nextSourceHref = sourcePage.nextCursor
   }
   [data-run-status="failed"],
   [data-run-status="partial"] {
-    color: #a23b3b;
+    color: var(--space-danger);
   }
   .source-grid {
     display: grid;

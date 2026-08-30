@@ -129,12 +129,33 @@ const [posts, statusCounts] = await Promise.all([
     padding: clamp(1.5rem, 5vw, 4rem);
   }
   .studio-dashboard__header {
+    position: relative;
     display: flex;
     align-items: end;
     justify-content: space-between;
     gap: var(--space-6);
     padding-bottom: var(--space-7);
     border-bottom: 1px solid var(--space-border-strong);
+  }
+  .studio-dashboard__header::after {
+    position: absolute;
+    top: 0;
+    left: min(18rem, 34%);
+    width: 1.1rem;
+    height: 1.1rem;
+    background: var(--space-yellow);
+    clip-path: polygon(
+      50% 0,
+      61% 39%,
+      100% 50%,
+      61% 61%,
+      50% 100%,
+      39% 61%,
+      0 50%,
+      39% 39%
+    );
+    content: "";
+    opacity: 0.72;
   }
   h1 {
     margin: 0;
@@ -160,19 +181,31 @@ const [posts, statusCounts] = await Promise.all([
     padding: var(--space-2) var(--space-4);
     border: 1px solid var(--space-border-strong);
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.78);
     color: var(--space-ink);
     font-weight: 720;
     text-decoration: none;
+    transition:
+      border-color var(--motion-fast) ease,
+      background-color var(--motion-fast) ease,
+      transform var(--motion-fast) ease,
+      box-shadow var(--motion-fast) ease;
+  }
+  .dashboard-action:hover {
+    border-color: var(--space-primary);
+    background: var(--space-surface-hover);
+    box-shadow: var(--space-shadow-glow);
+    transform: translateY(-1px);
   }
   .dashboard-action--primary {
-    border-color: var(--space-primary);
+    border-color: rgba(142, 128, 191, 0.28);
     background: linear-gradient(
       135deg,
-      var(--space-primary),
-      var(--space-blue)
+      var(--space-surface-yellow),
+      var(--space-surface-primary)
     );
-    color: white;
+    color: var(--space-ink);
+    box-shadow: var(--space-shadow-glow);
   }
   .dashboard-action span,
   .dashboard-action small {
@@ -184,14 +217,17 @@ const [posts, statusCounts] = await Promise.all([
     font-weight: 520;
   }
   .dashboard-action--primary small {
-    color: rgba(255, 255, 255, 0.76);
+    color: var(--space-primary-strong);
   }
   .status-ribbon {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     margin-top: var(--space-7);
-    border-block: 1px solid var(--space-border-strong);
-    background: rgba(225, 244, 255, 0.56);
+    overflow: hidden;
+    border: 1px solid var(--space-border-strong);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.68);
+    box-shadow: var(--space-shadow-soft);
   }
   .status-ribbon > div {
     display: flex;
@@ -207,6 +243,12 @@ const [posts, statusCounts] = await Promise.all([
   .status-ribbon strong {
     font-size: var(--font-size-3);
     color: var(--space-primary-strong);
+  }
+  .status-ribbon > div:nth-child(2) strong {
+    color: var(--space-yellow-strong);
+  }
+  .status-ribbon > div:nth-child(3) strong {
+    color: var(--space-teal-strong);
   }
   .status-ribbon span,
   .status-ribbon small {
@@ -226,16 +268,17 @@ const [posts, statusCounts] = await Promise.all([
     border: 1px solid var(--space-border-strong);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.64);
-    box-shadow: var(--space-shadow-soft);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: var(--space-shadow-float);
   }
   .recent-content > header {
     padding: var(--space-4) var(--space-5);
     border-bottom: 1px solid var(--space-border);
     background: linear-gradient(
       135deg,
-      rgba(222, 242, 255, 0.72),
-      rgba(255, 249, 220, 0.42)
+      rgba(237, 243, 255, 0.8),
+      rgba(244, 240, 252, 0.66) 58%,
+      rgba(255, 248, 222, 0.62)
     );
   }
   h2 {
@@ -323,12 +366,18 @@ const [posts, statusCounts] = await Promise.all([
     gap: var(--space-4);
     margin-top: var(--space-6);
     padding: var(--space-5);
-    border-left: 3px solid var(--space-teal);
-    background: var(--space-surface-teal);
+    border: 1px solid var(--space-border);
+    border-left: 3px solid var(--space-primary);
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      135deg,
+      var(--space-surface-blue),
+      var(--space-surface-teal)
+    );
   }
   .privacy-note > :global(.studio-icon) {
     flex: 0 0 auto;
-    color: var(--space-teal-strong);
+    color: var(--space-primary-strong);
   }
   .privacy-note p {
     margin: var(--space-2) 0 0;

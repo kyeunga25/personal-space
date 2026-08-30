@@ -109,7 +109,11 @@ const emptyDescriptionEn =
     padding: var(--space-5) var(--page-gutter);
     overflow-x: auto;
     border-bottom: 1px solid var(--space-border-strong);
-    background: rgba(247, 252, 255, 0.7);
+    background: linear-gradient(
+      145deg,
+      rgba(250, 252, 255, 0.72),
+      rgba(241, 240, 252, 0.6)
+    );
     scrollbar-width: thin;
   }
 
@@ -118,16 +122,21 @@ const emptyDescriptionEn =
     min-width: 9rem;
     padding: var(--space-3) var(--space-4);
     border: 1px solid var(--space-border);
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.66);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.72);
     color: var(--space-ink-muted);
     text-decoration: none;
   }
 
   .archive-months a.active {
-    border-color: var(--space-primary);
-    background: var(--space-surface-primary);
-    color: var(--space-primary-strong);
+    border-color: rgba(142, 128, 191, 0.28);
+    background: linear-gradient(
+      135deg,
+      var(--space-surface-yellow),
+      var(--space-surface-primary)
+    );
+    color: var(--space-ink);
+    box-shadow: var(--space-shadow-glow);
   }
 
   .archive-months span,

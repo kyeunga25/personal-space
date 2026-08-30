@@ -108,8 +108,9 @@ const taxonomyLinks = buildPostTaxonomyLinks(post.category, post.tags);
     border-bottom: 1px solid var(--space-border);
     background: linear-gradient(
       145deg,
-      rgba(226, 245, 255, 0.78),
-      rgba(255, 251, 232, 0.58)
+      rgba(239, 246, 255, 0.82),
+      rgba(242, 239, 252, 0.7) 58%,
+      rgba(255, 248, 224, 0.68)
     );
   }
 
@@ -179,13 +180,13 @@ const taxonomyLinks = buildPostTaxonomyLinks(post.category, post.tags);
   }
 
   .reading-body {
-    max-width: 40rem;
+    max-width: 42rem;
     margin-inline: auto;
     padding: clamp(2rem, 6vw, 4.5rem) var(--page-gutter);
     color: var(--space-ink);
     font-family: var(--font-reading);
     font-size: var(--font-size-1);
-    line-height: 1.9;
+    line-height: 1.95;
   }
 
   .reading-body :global(h1),
@@ -213,7 +214,7 @@ const taxonomyLinks = buildPostTaxonomyLinks(post.category, post.tags);
   .reading-body :global(blockquote) {
     margin-inline: 0;
     padding-left: var(--space-5);
-    border-left: 3px solid var(--space-primary);
+    border-left: 3px solid var(--space-yellow);
     color: var(--space-ink-muted);
   }
 
@@ -222,7 +223,11 @@ const taxonomyLinks = buildPostTaxonomyLinks(post.category, post.tags);
     overflow-x: auto;
     border: 1px solid var(--space-border);
     border-radius: var(--radius-md);
-    background: rgba(230, 244, 255, 0.72);
+    background: linear-gradient(
+      145deg,
+      var(--space-surface-blue),
+      var(--space-surface-primary)
+    );
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.86em;
     line-height: 1.65;
