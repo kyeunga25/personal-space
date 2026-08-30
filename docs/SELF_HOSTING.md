@@ -1,5 +1,8 @@
 # Cloudflare 自部署指南 / Self-hosting Guide
 
+[返回 README](../README.md) · [文檔索引](README.md) ·
+[開發指南](DEVELOPMENT.md) · [專案狀態](STATUS.md)
+
 本指南說明如何以你自己的 Cloudflare 帳戶部署 Personal Space，同時避免把 secret、
 resource identifier、真實內容或私人營運資料提交到 Git。
 
@@ -24,12 +27,13 @@ Access 及 Cron 文件，不要只依賴本 repository 的版本記錄。
 ## 2. 取得程式碼與安裝
 
 ```bash
-git clone https://github.com/your-account/your-authorized-repository.git
+git clone https://github.com/kyeunga25/personal-space.git
 cd personal-space
 npm ci
 ```
 
-請把示例 repository URL 換成你獲授權使用的實際位置。
+只有在你已取得所需使用權時才繼續。Repository 可被公開 clone 不代表已授予部署、
+修改或再發佈權。
 
 不要從 production 匯出內容、資料庫或 R2 object 作為開發資料。自部署應從空白
 資源開始，只使用虛構測試資料驗證。
@@ -88,7 +92,7 @@ npx wrangler whoami
 ```
 
 確認顯示的是你預期的帳戶。不要把 `whoami`、建立資源或部署指令的完整輸出貼到
-公開 issue、README、CI log 或聊天內容，因為輸出可能包含帳戶或資源識別資料。
+公開 issue、README、CI log 或其他公開渠道，因為輸出可能包含帳戶或資源識別資料。
 
 ## 6. 建立你自己的 D1 與 R2
 
@@ -140,10 +144,11 @@ npx wrangler deploy --dry-run
 先列出待套用項目，再明確使用 `--remote`：
 
 ```bash
-npx wrangler d1 migrations list replace-with-your-d1-database-name --remote --config wrangler.self-host.jsonc
-npx wrangler d1 migrations apply replace-with-your-d1-database-name --remote --config wrangler.self-host.jsonc
+npx wrangler d1 migrations list DB --remote --config wrangler.self-host.jsonc
+npx wrangler d1 migrations apply DB --remote --config wrangler.self-host.jsonc
 ```
 
+`DB` 是應用程式使用的 binding 名稱；Wrangler 會從私人 config 解析實際 database。
 這一步只應對全新的自部署 database 執行。不要在不理解資料相容性、備份及 rollback
 方案時對已有 production 資料的 database 套用 migration。
 
@@ -280,6 +285,7 @@ npm run check
 - [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/)
 - [R2 getting started](https://developers.cloudflare.com/r2/get-started/)
 - [Cloudflare Access self-hosted applications](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/)
+- [Cloudflare Access application paths](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/)
 - [Workers Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
 - [Astro Cloudflare adapter（中文）](https://docs.astro.build/zh-cn/guides/integrations-guide/cloudflare/)
 - [GitHub push protection](https://docs.github.com/en/code-security/concepts/secret-security/push-protection)

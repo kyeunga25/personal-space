@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞 / Security vulnerability
+    url: https://github.com/kyeunga25/personal-space/security/policy
+    about: 請依安全政策私下回報，不要建立公開 issue。
+  - name: 自部署指南 / Self-hosting guide
+    url: https://github.com/kyeunga25/personal-space/blob/main/docs/SELF_HOSTING.md
+    about: 建立 D1、R2、Access 或部署前，先閱讀完整流程。

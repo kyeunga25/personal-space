@@ -1,36 +1,69 @@
 # 文檔索引 / Documentation
 
-這個目錄只保存適合公開 repository 的文檔。實際 Cloudflare 資源名稱、識別碼、
-Access 設定值、電郵、內容資料、logs、備份及未公開的營運細節不應出現在這裡。
+[返回 README](../README.md) · [English README](../README.en.md) ·
+[簡體中文 README](../README.zh-Hans.md)
+
+本目錄只保存適合公開 repository 的專案文檔。內容以繁體中文為主；根目錄 README
+提供完整英文及簡體中文入口。實際 Cloudflare 資源名稱、identifiers、Access 值、
+電郵、內容資料、logs、備份及未公開營運細節不應出現在這裡。
+
+## 建議閱讀順序
+
+| 讀者                         | 先閱讀                          | 接著閱讀                                                                |
+| ---------------------------- | ------------------------------- | ----------------------------------------------------------------------- |
+| 初次了解專案                 | [專案概覽](PROJECT_OVERVIEW.md) | [專案狀態](STATUS.md)                                                   |
+| 本地開發或提交 PR            | [開發指南](DEVELOPMENT.md)      | [貢獻指南](../CONTRIBUTING.md)                                          |
+| 在自己的 Cloudflare 帳戶部署 | [自部署指南](SELF_HOSTING.md)   | [安全政策](../SECURITY.md)                                              |
+| 回報安全問題                 | [安全政策](../SECURITY.md)      | GitHub Private vulnerability reporting                                  |
+| 追蹤版本變更                 | [更新記錄](../CHANGELOG.md)     | [GitHub Releases](https://github.com/kyeunga25/personal-space/releases) |
 
 ## 目前文檔
 
-- [專案概覽](PROJECT_OVERVIEW.md) — 產品用途、技術棧、資料責任及開發流程。
-- [Cloudflare 自部署指南](SELF_HOSTING.md) — 由本地檢查至 Workers、D1、R2、
-  Access 與自訂 domain 的完整公開安全流程。
-- [安全政策](../SECURITY.md) — 漏洞回報及部署安全要求。
-- [更新記錄](../CHANGELOG.md) — 適合公開的版本摘要。
+| 文件                                       | 內容                                             | 何時更新                       |
+| ------------------------------------------ | ------------------------------------------------ | ------------------------------ |
+| [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | 產品範圍、架構、資料責任及技術棧                 | 功能、平台或公開邊界改變時     |
+| [DEVELOPMENT.md](DEVELOPMENT.md)           | 本地設定、scripts、測試、目錄與變更流程          | 開發工具、指令或結構改變時     |
+| [SELF_HOSTING.md](SELF_HOSTING.md)         | Workers、D1、R2、Access、domain、驗證與 rollback | 部署設定或官方流程改變時       |
+| [STATUS.md](STATUS.md)                     | Source、Release、production 與成熟度定義         | 版本、Release 或公開狀態改變時 |
+| [SECURITY.md](../SECURITY.md)              | 漏洞回報與部署安全要求                           | 安全邊界或回報方法改變時       |
+| [CHANGELOG.md](../CHANGELOG.md)            | 公開安全的已發佈及未發佈變更                     | 每個可見產品變更或 Release     |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)      | 貢獻範圍、開發要求與 PR 清單                     | 貢獻流程改變時                 |
 
-`02-design`、`03-architecture` 與 `04-delivery` 內的版本文件是歷史設計／交付記錄。
-它們不應被當成目前 Cloudflare 帳戶、資源、政策或 production 狀態的證明。
+程式內部的 server module 約束另見 [`src/server/README.md`](../src/server/README.md)。
+
+## 歷史記錄
+
+以下文件保留當時版本的設計及交付決策，不代表目前 production 設定或最新操作
+方式。需要判斷現況時，以「目前文檔」、原始碼及直接驗證為準。
+
+| 歷史文件                                                                         | 對應內容                    |
+| -------------------------------------------------------------------------------- | --------------------------- |
+| [EDITORIAL_AUTOMATION_V0.7.0.md](03-architecture/EDITORIAL_AUTOMATION_V0.7.0.md) | v0.7.0 編輯自動化設計記錄   |
+| [PUBLIC_DISCOVERY_V0.5.0.md](04-delivery/PUBLIC_DISCOVERY_V0.5.0.md)             | v0.5.0 公開探索功能交付記錄 |
+| [SOURCE_EDITIONS_V0.6.0.md](04-delivery/SOURCE_EDITIONS_V0.6.0.md)               | v0.6.0 來源與選輯交付記錄   |
+| [HARDENING_V0.7.0.md](04-delivery/HARDENING_V0.7.0.md)                           | v0.7.0 安全與可靠性整理     |
 
 ## 文檔規則
 
-公開文檔可以描述產品功能、所用平台、通用部署步驟及安全原則，但不應加入：
+公開文檔可以描述產品功能、通用架構、所用平台、可重現的本地流程與一般安全
+原則，但不得加入：
 
 - 真實使用者、站主、來源或內容資料；
-- secret、token、cookie、憑證或真實電郵；
-- account、database、bucket、deployment、policy 或 audience identifier；
-- 完整資料庫組織、私人路由清單或內部營運拓撲；
-- production 查詢結果、logs、備份、資源用量或本機絕對路徑；
-- 尚未公開或未經驗證的部署聲稱。
+- secret、token、cookie、憑證、私人電郵或本機絕對路徑；
+- Cloudflare account、database、bucket、deployment、policy 或 audience identifier；
+- production 查詢結果、logs、備份、資源用量或完整內部拓撲；
+- 未公開或未經直接驗證的 deployment、traffic、version 或安全聲稱。
 
-範例應使用明確 placeholder 或虛構資料。若某項細節是完成部署所必需，應讓部署者
-在已被 Git 忽略的私人設定或 Cloudflare dashboard 中填寫，而不是提交到 repository。
+範例必須使用明確 placeholder 或虛構資料。完成部署所需的私人值應留在已被 Git
+忽略的設定或 Cloudflare dashboard，不應提交到 repository、issue 或 PR。
+
+所有相對連結、指令、版本與功能名稱都應在變更時重新核對。歷史文檔若不再適用，
+應明確標示其版本，不能靜默當作現行指南。
 
 ## English
 
-These documents are designed for a public repository. They explain the product,
-technology stack, and generic deployment procedure without publishing real
-resource identifiers, secrets, account data, content records, logs, backups,
-private topology, or database-level implementation details.
+These public-safe documents separate current guidance from versioned historical
+records. Start with the project overview, use the development guide for local
+work, and follow the self-hosting guide before changing a Cloudflare account.
+Never publish real content, owner details, secrets, resource identifiers, logs,
+backups, local absolute paths, or private operational topology.
