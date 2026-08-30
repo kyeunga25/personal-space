@@ -1,0 +1,91 @@
+name: 錯誤回報 / Bug report
+description: 回報可重現的功能、介面或文檔問題。
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝你的回報。請只使用合成或公開資料，移除 secret、私人內容、Cloudflare identifiers、完整 logs 及本機絕對路徑。
+        Thank you. Use synthetic or public data only, and remove secrets, private content, Cloudflare identifiers, complete logs, and local absolute paths.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 提交前確認 / Before submitting
+      options:
+        - label: 我已搜尋現有 issues，沒有找到相同問題。 / I searched existing issues for duplicates.
+          required: true
+        - label: 這不是安全漏洞；安全問題會依 SECURITY.md 私下回報。 / This is not a security vulnerability; security reports follow SECURITY.md privately.
+          required: true
+        - label: 內容不含 secret、私人資料或 Cloudflare identifiers。 / This report contains no secrets, private data, or Cloudflare identifiers.
+          required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: 發生位置 / Surface
+      options:
+        - 公開網站 / Public site
+        - Studio
+        - Local development
+        - Built-Worker preview
+        - Self-hosting documentation
+        - Other repository documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 問題摘要 / Summary
+      description: 簡潔描述實際問題。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 重現步驟 / Reproduction steps
+      description: 使用最小、可公開的步驟及合成資料。
+      placeholder: |
+        1. Go to ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期結果 / Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 實際結果 / Actual result
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: 例如 v0.8.0 或公開 commit SHA；不要填 deployment ID。
+      placeholder: v0.8.0
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境 / Environment
+      description: 可提供作業系統、Node.js 及瀏覽器版本；不要貼完整 whoami 或部署輸出。
+      placeholder: macOS; Node.js 24; Safari 26
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其他已清理資料 / Additional sanitized context
+      description: 只加入理解問題所需的最少截圖、錯誤片段或連結。

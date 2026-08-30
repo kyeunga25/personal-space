@@ -7,6 +7,16 @@ This file contains public-safe product changes only. It excludes production
 data, Cloudflare identifiers, detailed database organization, private Access
 configuration, and internal operational records.
 
+## [Unreleased]
+
+- 更新公開網站與 Studio 的共用視覺 token、層次、間距及響應式介面。
+- 重整多語 repository 入口、開發與狀態文檔，以及 GitHub 貢獻範本。
+
+- Refreshed shared visual tokens, hierarchy, spacing, and responsive interfaces
+  across the public site and Studio.
+- Reorganized multilingual repository entry points, development and status
+  documentation, and GitHub contribution templates.
+
 ## [0.8.0] - 2026-08-11
 
 - 改善 Markdown 快捷操作、可逆格式、分頁導覽、儲存回饋及高風險操作確認，讓一般

@@ -1,8 +1,25 @@
 {
   "name": "personal-space",
   "version": "0.8.0",
+  "description": "A bilingual publishing application for Cloudflare Workers with a protected owner Studio.",
   "private": true,
   "type": "module",
+  "homepage": "https://space.k-y.cc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyeunga25/personal-space.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kyeunga25/personal-space/issues"
+  },
+  "keywords": [
+    "astro",
+    "cloudflare-workers",
+    "cloudflare-d1",
+    "cloudflare-r2",
+    "publishing",
+    "typescript"
+  ],
   "engines": {
     "node": ">=22.22.3",
     "npm": ">=10.0.0"
