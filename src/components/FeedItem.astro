@@ -74,8 +74,12 @@ const {
   }
 
   .feed-item > a:hover {
-    background: var(--space-surface-hover);
-    box-shadow: inset 3px 0 var(--space-primary);
+    background: linear-gradient(
+      90deg,
+      rgba(255, 247, 219, 0.44),
+      rgba(237, 237, 252, 0.64)
+    );
+    box-shadow: inset 3px 0 var(--space-yellow);
   }
 
   .feed-item__icon {
@@ -88,13 +92,6 @@ const {
     background: var(--space-surface-primary);
     color: var(--space-primary);
     box-shadow: var(--space-shadow-glow);
-    clip-path: polygon(
-      0.65rem 0,
-      100% 0,
-      100% calc(100% - 0.65rem),
-      calc(100% - 0.65rem) 100%,
-      0 100%
-    );
   }
 
   .feed-item--longform .feed-item__icon {

@@ -57,15 +57,15 @@ const { pathname } = Astro.props;
     border-bottom: 1px solid var(--space-border-strong);
     background:
       radial-gradient(
-        circle at 76% 28%,
-        rgba(242, 183, 24, 0.2),
-        transparent 14rem
+        circle at 76% 30%,
+        rgba(250, 224, 154, 0.38),
+        transparent 17rem
       ),
       linear-gradient(
         135deg,
-        rgba(210, 238, 255, 0.88),
-        rgba(235, 249, 255, 0.78) 54%,
-        rgba(255, 250, 225, 0.72)
+        rgba(233, 243, 255, 0.9),
+        rgba(240, 239, 252, 0.82) 54%,
+        rgba(255, 248, 225, 0.78)
       );
   }
 
@@ -73,21 +73,21 @@ const { pathname } = Astro.props;
     position: absolute;
     z-index: 0;
     inset: 0 0 auto;
-    height: 19rem;
+    height: 20rem;
     overflow: hidden;
     background:
       linear-gradient(
         151deg,
         transparent 0 37%,
-        rgba(255, 255, 255, 0.72) 37.2% 43%,
+        rgba(255, 255, 255, 0.66) 37.2% 43%,
         transparent 43.2% 49%,
-        rgba(18, 108, 243, 0.14) 49.2% 49.55%,
+        rgba(127, 139, 212, 0.18) 49.2% 49.5%,
         transparent 49.8%
       ),
       linear-gradient(
         145deg,
         transparent 0 61%,
-        rgba(242, 183, 24, 0.42) 61.2% 61.5%,
+        rgba(232, 186, 77, 0.34) 61.2% 61.48%,
         transparent 61.7%
       );
   }
@@ -100,13 +100,13 @@ const { pathname } = Astro.props;
     height: 11rem;
     background-image: radial-gradient(
       circle,
-      rgba(22, 164, 232, 0.32) 0 1.15px,
+      rgba(132, 145, 216, 0.2) 0 1.05px,
       transparent 1.45px
     );
     background-size: 0.62rem 0.62rem;
     content: "";
     mask-image: linear-gradient(225deg, black, transparent 76%);
-    opacity: 0.64;
+    opacity: 0.5;
   }
 
   .profile-header__star {
@@ -136,7 +136,7 @@ const { pathname } = Astro.props;
     right: 5%;
     width: 4rem;
     height: 4rem;
-    background: rgba(255, 255, 255, 0.76);
+    background: rgba(255, 255, 255, 0.74);
   }
 
   .profile-header__star--three {
@@ -155,7 +155,7 @@ const { pathname } = Astro.props;
     height: 3.5rem;
     background: repeating-linear-gradient(
       to right,
-      rgba(18, 108, 243, 0.3) 0 0.28rem,
+      rgba(127, 139, 212, 0.24) 0 0.28rem,
       transparent 0.28rem 0.56rem
     );
     clip-path: polygon(
@@ -180,9 +180,9 @@ const { pathname } = Astro.props;
     z-index: 1;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--space-6);
+    gap: clamp(1.5rem, 4vw, 3rem);
     align-items: center;
-    padding: var(--space-8) clamp(1.5rem, 4vw, 2.25rem) var(--space-7);
+    padding: 4.75rem clamp(1.75rem, 5vw, 3.5rem) 3.5rem;
   }
 
   .profile-header__copy {
@@ -202,7 +202,7 @@ const { pathname } = Astro.props;
   }
 
   h1 small {
-    color: var(--space-blue-strong);
+    color: var(--space-primary-strong);
     font-size: 0.62em;
     font-weight: 720;
     letter-spacing: -0.02em;
@@ -231,8 +231,8 @@ const { pathname } = Astro.props;
     min-height: 4.6rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     border-top: 1px solid var(--space-border);
-    background: rgba(246, 252, 255, 0.44);
-    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(16px);
   }
 
   .profile-tabs a {
@@ -271,13 +271,17 @@ const { pathname } = Astro.props;
     color: var(--space-primary-strong);
     background: linear-gradient(
       135deg,
-      rgba(205, 235, 255, 0.68),
-      rgba(239, 250, 255, 0.42)
+      rgba(255, 245, 210, 0.72),
+      rgba(231, 229, 250, 0.66)
     );
   }
 
   .profile-tabs a.is-active::after {
-    background: linear-gradient(90deg, var(--space-primary), var(--space-blue));
+    background: linear-gradient(
+      90deg,
+      var(--space-yellow-vivid),
+      var(--space-primary)
+    );
   }
 
   .profile-tabs small {
@@ -287,7 +291,7 @@ const { pathname } = Astro.props;
 
   @media (max-width: 47.99rem) {
     .profile-header__cover {
-      height: 16rem;
+      height: 19rem;
     }
 
     .profile-header__cover::before {
@@ -304,33 +308,46 @@ const { pathname } = Astro.props;
     }
 
     .profile-header__identity {
-      display: block;
-      padding: 7.25rem var(--page-gutter) var(--space-6);
+      display: grid;
+      grid-template-columns: minmax(6.5rem, 7.5rem) minmax(0, 1fr);
+      gap: var(--space-5);
+      align-items: center;
+      padding: 4.5rem var(--page-gutter) var(--space-6);
     }
 
     .profile-header__identity :global(.brand-mark--avatar) {
       display: grid;
-      margin: 0 auto;
+      width: clamp(6.5rem, 29vw, 7.5rem);
+      height: clamp(6.5rem, 29vw, 7.5rem);
+      margin: 0;
     }
 
     .profile-header__copy {
-      padding-top: var(--space-6);
+      padding-top: 0;
     }
 
     h1 {
-      display: none;
+      display: block;
+      font-size: var(--font-size-3);
+      line-height: 1.12;
+    }
+
+    h1 small {
+      display: block;
+      margin-top: var(--space-2);
+      font-size: 0.58em;
     }
 
     .profile-header__copy > p {
-      max-width: 22ch;
-      font-size: var(--font-size-2);
-      font-weight: 790;
-      line-height: 1.42;
+      max-width: 26ch;
+      font-size: var(--font-size-0);
+      font-weight: 680;
+      line-height: 1.55;
     }
 
     .profile-header__copy .profile-header__english {
-      max-width: 34ch;
-      font-size: var(--font-size-0);
+      max-width: 30ch;
+      font-size: var(--font-size--1);
       font-weight: 470;
       line-height: 1.55;
     }
@@ -341,6 +358,7 @@ const { pathname } = Astro.props;
       overflow: hidden;
       border: 1px solid var(--space-border-strong);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      box-shadow: 0 -10px 34px rgba(81, 94, 152, 0.06);
     }
 
     .profile-tabs a {

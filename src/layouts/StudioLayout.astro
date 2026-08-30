@@ -18,7 +18,7 @@ const { contentKind = null, title } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content="#eef8ff" />
+    <meta name="theme-color" content="#f4f6fd" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} · Studio · {SITE.name}</title>
   </head>
@@ -34,7 +34,18 @@ const { contentKind = null, title } = Astro.props;
 
 <style is:global>
   .studio-body {
-    background: var(--space-canvas);
+    background:
+      radial-gradient(
+        circle at 76% 8%,
+        rgba(255, 237, 184, 0.36),
+        transparent 26rem
+      ),
+      linear-gradient(
+        145deg,
+        var(--space-canvas-blue),
+        var(--space-canvas) 46%,
+        var(--space-canvas-lavender)
+      );
   }
   .studio-shell {
     position: relative;
@@ -45,8 +56,10 @@ const { contentKind = null, title } = Astro.props;
   }
   .studio-shell > main {
     min-width: 0;
-    background: rgba(252, 254, 255, 0.75);
-    backdrop-filter: none;
+    border: 0;
+    background: rgba(255, 255, 255, 0.62);
+    box-shadow: none;
+    backdrop-filter: blur(20px);
   }
   @media (max-width: 47.99rem) {
     .studio-shell {

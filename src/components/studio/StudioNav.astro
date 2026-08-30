@@ -114,8 +114,12 @@ const items = [
     flex-direction: column;
     padding: var(--space-6) var(--space-4);
     border-right: 1px solid var(--space-border-strong);
-    background: rgba(238, 248, 255, 0.84);
-    backdrop-filter: blur(18px);
+    background: linear-gradient(
+      160deg,
+      rgba(249, 251, 255, 0.84),
+      rgba(238, 242, 253, 0.72)
+    );
+    backdrop-filter: blur(24px);
   }
 
   .studio-nav__brand {
@@ -158,6 +162,7 @@ const items = [
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-2) var(--space-3);
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
     color: var(--space-ink);
     text-decoration: none;
@@ -169,10 +174,11 @@ const items = [
   nav a.is-active {
     background: linear-gradient(
       135deg,
-      var(--space-primary),
-      var(--space-blue)
+      var(--space-surface-yellow),
+      var(--space-surface-primary)
     );
-    color: white;
+    border-color: rgba(142, 128, 191, 0.2);
+    color: var(--space-ink);
     box-shadow: var(--space-shadow-glow);
   }
   nav a > span,
@@ -190,7 +196,7 @@ const items = [
     font-weight: 520;
   }
   nav a.is-active small {
-    color: rgba(255, 255, 255, 0.78);
+    color: var(--space-primary-strong);
   }
   footer {
     display: flex;
