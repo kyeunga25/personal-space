@@ -10,8 +10,10 @@ resource identifier、真實內容或私人營運資料提交到 Git。
 > 遠端 D1 migration、secret 更新、Worker deploy、domain 及 Access policy 都會改動
 > 你的 Cloudflare 環境。先確認帳戶與目標，再執行標示為「遠端」的步驟。
 
-> Repository 目前沒有獨立的開源 LICENSE。本指南只提供技術步驟，不自行授予
-> 複製、修改或再發佈權。
+> Repository 的專案自有軟件依 AGPL-3.0-only 提供；本指南不授權品牌、使用者
+> 內容、私人營運資料或第三方材料。部署修改版本及透過網絡提供服務前，先閱讀
+> [`LICENSE`](../LICENSE) 與 [`LICENSING.md`](../LICENSING.md)，並準備履行
+> AGPL 的相應原始碼及告示義務。
 
 ## 1. 需要準備
 

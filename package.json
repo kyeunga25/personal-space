@@ -3,6 +3,7 @@
   "version": "0.8.0",
   "description": "A bilingual publishing application for Cloudflare Workers with a protected owner Studio.",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "homepage": "https://space.k-y.cc",
   "repository": {

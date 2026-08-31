@@ -14,10 +14,9 @@ management surface.
 [Changelog](CHANGELOG.md) ·
 [Releases](https://github.com/kyeunga25/personal-space/releases)
 
-> This repository exposes its source but does not currently grant an open-source
-> licence. Technical documentation and deployment instructions do not grant
-> permission to copy, modify, deploy, or redistribute the work. See
-> [Copyright and Usage](COPYRIGHT.md).
+> Repository-owned software and related technical documentation are available
+> under [GNU AGPL v3.0 only](LICENSE). Branding, user or operator data, and
+> third-party material are excluded; see [Licensing Scope](LICENSING.md).
 
 ## What this project is
 
@@ -175,10 +174,12 @@ content, personal data, Cloudflare identifiers, or local absolute paths.
 
 ## Copyright and usage
 
-Copyright © 2026 `kyeunga25`. All rights reserved.
+Copyright © 2026 `kyeunga25`.
 
-Unless an individual file states otherwise, this repository does not grant an
-open-source licence. Public visibility and GitHub forking do not grant permission
-to use, modify, deploy, or redistribute the work. See
-[`COPYRIGHT.md`](COPYRIGHT.md). Third-party packages and content remain subject
-to their respective terms.
+Repository-owned software, tests, build scripts, and related technical
+documentation are licensed under [`AGPL-3.0-only`](LICENSE). Operators of a
+modified version over a network must account for the corresponding-source duty
+in section 13. Branding, content and data supplied by users, authors, or
+operators, private configuration, and third-party material are excluded. Read
+[`LICENSING.md`](LICENSING.md), [`COPYRIGHT.md`](COPYRIGHT.md), and
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
