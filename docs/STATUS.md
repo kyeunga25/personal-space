@@ -104,10 +104,10 @@ Access audience 或完整營運輸出。需要這些資料的核對應在維護�
 - 隔離本機 D1／R2 smoke test 通過 Note、Article、preview、publish、working copy、
   revision、schedule、unlisted、archive、media、search、feeds、sitemap、source error
   及 Edition draft／empty-publish guard；
-- 本次 production 檢查保持唯讀，沒有建立內容、migration、secret、route 或 deploy。
+- 本次 production 檢查保持唯讀，沒有建立內容、migration、secret、route 或手動 deploy。
 
-這是指定日期的直接核對摘要，不代表未來狀態。文檔更新本身不改變 Cloudflare
-deployment 或 production traffic。
+這是指定日期的直接核對摘要，不代表未來狀態。文檔更新不改變網站 runtime；本次
+核對沒有手動執行 Cloudflare deploy。
 
 ## English summary
 
@@ -121,4 +121,5 @@ This file records only public-safe status. It never publishes Cloudflare account
 deployment, resource, traffic, Access, owner, or production-data identifiers.
 The 2026-09-01 review verified public routes, feeds, sitemap, health, Access
 interception, desktop/mobile presentation, and isolated synthetic content
-flows. Production remained read-only and was not redeployed for documentation.
+flows. Production verification remained read-only, and no manual Cloudflare
+deployment was performed for this documentation review.
