@@ -16,6 +16,7 @@
 | 修改介面或內容元件           | [設計系統](DESIGN.md)           | [開發指南](DEVELOPMENT.md)                                              |
 | 本地開發或提交 PR            | [開發指南](DEVELOPMENT.md)      | [貢獻指南](../CONTRIBUTING.md)                                          |
 | 在自己的 Cloudflare 帳戶部署 | [自部署指南](SELF_HOSTING.md)   | [驗證指南](VERIFICATION.md) · [安全政策](../SECURITY.md)                |
+| 核對授權及重用範圍           | [授權範圍](../LICENSING.md)     | [第三方告示](../THIRD_PARTY_NOTICES.md)                                 |
 | 回報安全問題                 | [安全政策](../SECURITY.md)      | GitHub Private vulnerability reporting                                  |
 | 追蹤版本變更                 | [更新記錄](../CHANGELOG.md)     | [GitHub Releases](https://github.com/kyeunga25/personal-space/releases) |
 
@@ -33,6 +34,8 @@
 | [SECURITY.md](../SECURITY.md)              | 漏洞回報與部署安全要求                            | 安全邊界或回報方法改變時       |
 | [CHANGELOG.md](../CHANGELOG.md)            | 公開安全的已發佈及未發佈變更                      | 每個可見產品變更或 Release     |
 | [CONTRIBUTING.md](../CONTRIBUTING.md)      | 貢獻範圍、開發要求與 PR 清單                      | 貢獻流程改變時                 |
+| [LICENSING.md](../LICENSING.md)            | AGPL 軟件範圍、排除內容及網絡使用提示             | 授權、品牌、內容或資料邊界改變時 |
+| [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) | 依賴、binary 及平台服務的獨立條款       | 依賴或平台服務改變時           |
 
 程式內部的 server module 約束另見 [`src/server/README.md`](../src/server/README.md)。
 

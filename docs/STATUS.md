@@ -17,7 +17,7 @@ Cloudflare account、deployment、traffic、resource 或 Access identifiers。
 | 公開網站       | 公開閱讀可用；健康端點回報應用版本                     | [網站](https://space.k-y.cc) · [健康檢查](https://space.k-y.cc/api/health)                                            |
 | Studio         | 單一部署者；需要 Cloudflare Access 及應用層 owner 核對 | [`SECURITY.md`](../SECURITY.md)                                                                                       |
 | 自部署         | 提供公開安全的手動 Cloudflare 流程                     | [`SELF_HOSTING.md`](SELF_HOSTING.md)                                                                                  |
-| 授權           | 沒有授予開源 LICENSE                                   | [`COPYRIGHT.md`](../COPYRIGHT.md)                                                                                     |
+| 授權           | 專案自有軟件採 AGPL-3.0-only；品牌、內容、資料及第三方材料排除 | [`LICENSE`](../LICENSE) · [`LICENSING.md`](../LICENSING.md)                                                        |
 
 `main` 的 `Unreleased` 項目可能比 `v0.8.0` tag 新，但仍維持 `v0.8.0` 應用版本，直至
 下一次明確 version bump。Release、部署及 production traffic 不會因更新 README

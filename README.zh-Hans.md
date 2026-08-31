@@ -13,8 +13,9 @@
 [版本记录](CHANGELOG.md) ·
 [Releases](https://github.com/kyeunga25/personal-space/releases)
 
-> 本 repository 公开源代码，但目前没有授予开源 LICENSE。技术文档与部署步骤不等于
-> 授予复制、修改、部署或再发布权；详见 [版权与使用权](COPYRIGHT.md)。
+> 本 repository 的项目自有软件及相关技术文档依
+> [GNU AGPL v3.0 only](LICENSE) 提供。品牌、用户／部署者数据与第三方内容不在
+> 授权范围内；详见 [授权范围](LICENSING.md)。
 
 ## 项目定位
 
@@ -162,8 +163,11 @@ identifiers 或本地绝对路径。
 
 ## 版权与使用权
 
-Copyright © 2026 `kyeunga25`. All rights reserved.
+Copyright © 2026 `kyeunga25`.
 
-除非单独文件另有明确授权，本 repository 没有授予开源 LICENSE。公开可读与可被
-GitHub fork 不等于授予使用、修改、部署或再发布权。详见
-[`COPYRIGHT.md`](COPYRIGHT.md)。第三方依赖及内容仍受各自条款约束。
+项目自有软件、测试、构建脚本及相关技术文档依
+[`AGPL-3.0-only`](LICENSE) 提供。通过网络提供修改版本时须留意 AGPL 第 13 节
+的相应源代码义务。品牌、用户／作者／部署者内容与数据、私人配置及第三方材料
+均不包含在授权内。请阅读 [`LICENSING.md`](LICENSING.md)、
+[`COPYRIGHT.md`](COPYRIGHT.md) 及
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
