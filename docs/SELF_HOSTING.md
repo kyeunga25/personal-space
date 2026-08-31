@@ -1,7 +1,8 @@
 # Cloudflare 自部署指南 / Self-hosting Guide
 
 [返回 README](../README.md) · [文檔索引](README.md) ·
-[開發指南](DEVELOPMENT.md) · [專案狀態](STATUS.md)
+[開發指南](DEVELOPMENT.md) · [驗證指南](VERIFICATION.md) ·
+[專案狀態](STATUS.md)
 
 本指南說明如何以你自己的 Cloudflare 帳戶部署 Personal Space，同時避免把 secret、
 resource identifier、真實內容或私人營運資料提交到 Git。
@@ -64,6 +65,8 @@ npm run preview
 ```
 
 `npm run preview` 使用本地 bindings；它不應連接 production D1、R2 或正式內容。
+如需真正建立 Note、Article、media、source 及 Edition，使用
+[驗證指南](VERIFICATION.md) 的獨立 `--persist-to` 流程，避免與日常本機資料混合。
 
 ## 4. 建立不受 Git 追蹤的部署設定
 
@@ -169,7 +172,9 @@ npm run deploy
 
 在 Cloudflare Zero Trust 建立 self-hosted application，只允許你信任的身分進入
 私人管理範圍。包含根路徑與子路徑時，要分別覆蓋 parent 及 wildcard；同時保護
-管理頁和相關寫入 API。不要公開 policy ID、audience、team domain 或允許的電郵。
+管理頁和相關寫入 API。此專案至少需要核對 `/studio`、`/studio/*`、
+`/api/studio` 及 `/api/studio/*`；如啟用其他私人 route，亦要以 parent 加 wildcard
+方式覆蓋。不要公開 policy ID、audience、team domain 或允許的電郵。
 
 應用程式需要的正式值只透過 Cloudflare secret 設定：
 
@@ -230,6 +235,9 @@ route／custom domain，更新 `PERSONAL_SPACE_SITE_URL`，然後使用第 9 節
 本地 build、CI、preview 與 production 是不同證據。只有直接檢查你自己的 live URL
 及 Cloudflare deployment 才能稱為自部署完成。
 
+完整 route matrix、Access parent／wildcard、瀏覽器 viewport、內容生命週期及媒體
+檢查見 [VERIFICATION.md](VERIFICATION.md)。
+
 ## 14. 更新與 rollback
 
 - 更新前閱讀 `CHANGELOG.md` 及 migration；
@@ -274,6 +282,8 @@ npm run check
 8. Keep R2 private, verify protected routes fail closed, and only then enable
    optional Cron Triggers.
 9. Review staged changes and enable GitHub push protection before publishing.
+10. Complete the isolated-local and live matrices in `VERIFICATION.md`; do not
+    treat CI or a successful upload as production proof.
 
 ## 官方參考 / Official references
 
@@ -287,5 +297,6 @@ npm run check
 - [Cloudflare Access self-hosted applications](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/)
 - [Cloudflare Access application paths](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/)
 - [Workers Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+- [Astro 部署至 Cloudflare（中文）](https://docs.astro.build/zh-cn/guides/deploy/cloudflare/)
 - [Astro Cloudflare adapter（中文）](https://docs.astro.build/zh-cn/guides/integrations-guide/cloudflare/)
 - [GitHub push protection](https://docs.github.com/en/code-security/concepts/secret-security/push-protection)

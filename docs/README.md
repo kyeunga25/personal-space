@@ -12,22 +12,27 @@
 | 讀者                         | 先閱讀                          | 接著閱讀                                                                |
 | ---------------------------- | ------------------------------- | ----------------------------------------------------------------------- |
 | 初次了解專案                 | [專案概覽](PROJECT_OVERVIEW.md) | [專案狀態](STATUS.md)                                                   |
+| 公開讀者或 Studio 使用者     | [使用指南](USAGE.md)            | [驗證指南](VERIFICATION.md)                                             |
+| 修改介面或內容元件           | [設計系統](DESIGN.md)           | [開發指南](DEVELOPMENT.md)                                              |
 | 本地開發或提交 PR            | [開發指南](DEVELOPMENT.md)      | [貢獻指南](../CONTRIBUTING.md)                                          |
-| 在自己的 Cloudflare 帳戶部署 | [自部署指南](SELF_HOSTING.md)   | [安全政策](../SECURITY.md)                                              |
+| 在自己的 Cloudflare 帳戶部署 | [自部署指南](SELF_HOSTING.md)   | [驗證指南](VERIFICATION.md) · [安全政策](../SECURITY.md)                |
 | 回報安全問題                 | [安全政策](../SECURITY.md)      | GitHub Private vulnerability reporting                                  |
 | 追蹤版本變更                 | [更新記錄](../CHANGELOG.md)     | [GitHub Releases](https://github.com/kyeunga25/personal-space/releases) |
 
 ## 目前文檔
 
-| 文件                                       | 內容                                             | 何時更新                       |
-| ------------------------------------------ | ------------------------------------------------ | ------------------------------ |
-| [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | 產品範圍、架構、資料責任及技術棧                 | 功能、平台或公開邊界改變時     |
-| [DEVELOPMENT.md](DEVELOPMENT.md)           | 本地設定、scripts、測試、目錄與變更流程          | 開發工具、指令或結構改變時     |
-| [SELF_HOSTING.md](SELF_HOSTING.md)         | Workers、D1、R2、Access、domain、驗證與 rollback | 部署設定或官方流程改變時       |
-| [STATUS.md](STATUS.md)                     | Source、Release、production 與成熟度定義         | 版本、Release 或公開狀態改變時 |
-| [SECURITY.md](../SECURITY.md)              | 漏洞回報與部署安全要求                           | 安全邊界或回報方法改變時       |
-| [CHANGELOG.md](../CHANGELOG.md)            | 公開安全的已發佈及未發佈變更                     | 每個可見產品變更或 Release     |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)      | 貢獻範圍、開發要求與 PR 清單                     | 貢獻流程改變時                 |
+| 文件                                       | 內容                                              | 何時更新                       |
+| ------------------------------------------ | ------------------------------------------------- | ------------------------------ |
+| [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | 產品範圍、架構、資料責任及技術棧                  | 功能、平台或公開邊界改變時     |
+| [USAGE.md](USAGE.md)                       | 公開閱讀、Studio、內容、媒體、來源及 Edition 操作 | 使用流程或介面文字改變時       |
+| [DESIGN.md](DESIGN.md)                     | 色彩角色、版面、元件、responsive 及可存取性       | 視覺 token、元件或互動改變時   |
+| [DEVELOPMENT.md](DEVELOPMENT.md)           | 本地設定、scripts、測試、目錄與變更流程           | 開發工具、指令或結構改變時     |
+| [SELF_HOSTING.md](SELF_HOSTING.md)         | Workers、D1、R2、Access、domain、驗證與 rollback  | 部署設定或官方流程改變時       |
+| [VERIFICATION.md](VERIFICATION.md)         | 本地功能、production 唯讀、瀏覽器與 release QA    | 功能、證據或發佈 gate 改變時   |
+| [STATUS.md](STATUS.md)                     | Source、Release、production 與成熟度定義          | 版本、Release 或公開狀態改變時 |
+| [SECURITY.md](../SECURITY.md)              | 漏洞回報與部署安全要求                            | 安全邊界或回報方法改變時       |
+| [CHANGELOG.md](../CHANGELOG.md)            | 公開安全的已發佈及未發佈變更                      | 每個可見產品變更或 Release     |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)      | 貢獻範圍、開發要求與 PR 清單                      | 貢獻流程改變時                 |
 
 程式內部的 server module 約束另見 [`src/server/README.md`](../src/server/README.md)。
 
@@ -63,7 +68,9 @@
 ## English
 
 These public-safe documents separate current guidance from versioned historical
-records. Start with the project overview, use the development guide for local
-work, and follow the self-hosting guide before changing a Cloudflare account.
-Never publish real content, owner details, secrets, resource identifiers, logs,
-backups, local absolute paths, or private operational topology.
+records. Start with the project overview, use the usage and design guides for
+the product interface, follow the development and verification guides for
+local work, and read the self-hosting guide before changing a Cloudflare
+account. Never publish real content, owner details, secrets, resource
+identifiers, logs, backups, local absolute paths, personal information, or
+private operational topology.

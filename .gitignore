@@ -23,6 +23,9 @@ wrangler.self-host.jsonc
 docs/*
 !docs/README.md
 !docs/PROJECT_OVERVIEW.md
+!docs/USAGE.md
+!docs/DESIGN.md
 !docs/DEVELOPMENT.md
 !docs/SELF_HOSTING.md
+!docs/VERIFICATION.md
 !docs/STATUS.md

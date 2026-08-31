@@ -113,6 +113,7 @@ npm run preview
 
 See the [development guide](docs/DEVELOPMENT.md) for commands, directory
 responsibilities, and the test strategy.
+See the [usage guide](docs/USAGE.md) for complete reader and Studio workflows.
 
 ## Self-hosting summary
 
@@ -151,8 +152,11 @@ one-click flow that would bypass those checks.
 | -------------------------------------------- | ----------------------------------------------------------- |
 | [Documentation index](docs/README.md)        | Reading order, current documents, and historical records    |
 | [Project overview](docs/PROJECT_OVERVIEW.md) | Product scope, architecture, data responsibility, and stack |
+| [Usage guide](docs/USAGE.md)                 | Public reading, Studio, content, media, and Editions        |
+| [Interface design](docs/DESIGN.md)           | Color roles, layouts, components, responsive and a11y rules |
 | [Development guide](docs/DEVELOPMENT.md)     | Local setup, commands, tests, and contribution workflow     |
 | [Self-hosting guide](docs/SELF_HOSTING.md)   | Workers, D1, R2, Access, domains, and rollback              |
+| [Verification guide](docs/VERIFICATION.md)   | Isolated local, read-only production, and release QA        |
 | [Project status](docs/STATUS.md)             | Version, maturity, and evidence definitions                 |
 | [Security policy](SECURITY.md)               | Private vulnerability reporting and deployment requirements |
 | [Changelog](CHANGELOG.md)                    | Public-safe release summaries                               |

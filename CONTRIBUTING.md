@@ -33,6 +33,10 @@ git check-ignore -v .dev.vars
 完整開發指令、目錄責任及 migration 規則見
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
 
+提交使用方式、介面或驗證相關變更前，亦請對照
+[`docs/USAGE.md`](docs/USAGE.md)、[`docs/DESIGN.md`](docs/DESIGN.md) 及
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md)。
+
 ## 可接受的變更
 
 - 可重現的 bug fix 及 regression test；
@@ -58,6 +62,8 @@ git check-ignore -v .dev.vars
 - 受保護功能在認證或設定缺失時 fail closed。
 - 新行為要有與風險相稱的測試；bug fix 優先加入 regression test。
 - 測試只使用合成資料，不連接 production D1、R2、feeds 或內容。
+- 介面變更應重用既有設計 tokens，保留鍵盤操作、清晰焦點及 reduced-motion
+  支援，並至少核對 desktop 與 390×844 viewport。
 - 使用者可見的功能、指令、版本或部署行為改變時，同步更新 README、current docs
   和 `CHANGELOG.md` 的 `Unreleased`。
 
@@ -103,6 +109,10 @@ pull request changes any remote environment. Never publish secrets, real content
 personal data, Cloudflare identifiers, Access settings, logs, backups, or local
 absolute paths. Report vulnerabilities privately through the process in
 [`SECURITY.md`](SECURITY.md).
+
+Keep user-facing changes consistent with [`docs/DESIGN.md`](docs/DESIGN.md) and
+verify them with the isolated, synthetic-data workflow in
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 
 This repository currently grants no open-source licence. A contribution does not
 grant permission to use, deploy, modify, or redistribute other repository content.

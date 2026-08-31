@@ -1,8 +1,9 @@
 # 專案概覽 / Project Overview
 
 [返回 README](../README.md) · [文檔索引](README.md) ·
-[目前狀態](STATUS.md) · [開發指南](DEVELOPMENT.md) ·
-[自部署指南](SELF_HOSTING.md)
+[使用指南](USAGE.md) · [設計系統](DESIGN.md) ·
+[開發指南](DEVELOPMENT.md) · [自部署指南](SELF_HOSTING.md) ·
+[驗證指南](VERIFICATION.md) · [目前狀態](STATUS.md)
 
 ## 1. 產品摘要
 
@@ -26,6 +27,9 @@ Personal Space `v0.8.0` 是一個由單一部署者管理的雙語全端發佈�
 | 來源與選輯 | RSS／Atom 擷取、權利審閱、人工排序及 Edition 發佈        | 不內置真實來源；部署者負責條款與版權核對    |
 | 排程       | 可選來源整理與 Edition generation                        | Cron 名稱與時間只留在部署者私人設定         |
 | 品質       | 格式、lint、型別、單元測試、build、Worker types、dry-run | 本地或 CI 通過不等於 production 已驗證      |
+
+實際讀者與 Studio 操作方式見 [使用指南](USAGE.md)；狀態、媒體、來源與 Edition 的
+可重現核對方式見 [驗證指南](VERIFICATION.md)。
 
 ## 3. 執行架構
 
@@ -76,6 +80,15 @@ flowchart TB
 - **fast-xml-parser**：可選 RSS／Atom 輸入解析。
 - **jose**：Cloudflare Access 簽署資料驗證。
 
+### 介面與內容
+
+- **Semantic design tokens**：色彩角色、字型、間距、圓角、focus 及 motion 基線。
+- **Astro components**：公開與 Studio 的 server-rendered layout、navigation 及狀態。
+- **Responsive shells**：wide、medium 及 390px 級 mobile 的導覽與內容排列。
+- **Bilingual copy**：繁體中文為主、英文輔助，保留正確語言及無障礙語意。
+
+具體介面規則見 [DESIGN.md](DESIGN.md)。
+
 ### Cloudflare
 
 - **Workers**：動態請求、API 及排程事件。
@@ -120,6 +133,7 @@ placeholder identifiers 及合成內容。
 | `src/pages`             | 公開頁面、Studio 頁面與 API routes            |
 | `src/components`        | 可重用公開及 Studio UI                        |
 | `src/layouts`           | 公開和受保護頁面的共用頁框                    |
+| `src/styles`            | 語意 tokens、全站樣式與 responsive 基線       |
 | `src/server/auth`       | Access 驗證與 route policy                    |
 | `src/server/publishing` | Notes／Articles domain、repository 與 service |
 | `src/server/editions`   | Sources、ingestion、Edition 與排程服務        |
@@ -142,8 +156,9 @@ placeholder identifiers 及合成內容。
 - R2 保持私人，所有公開媒體都經 Worker 與內容可見度檢查。
 - 自訂 domain 只在測試網址、Access、D1、R2、logs 與回復方案核對後連接。
 
-實際開發流程見 [DEVELOPMENT.md](DEVELOPMENT.md)，完整部署流程見
-[SELF_HOSTING.md](SELF_HOSTING.md)，狀態用語見 [STATUS.md](STATUS.md)。
+實際使用方式見 [USAGE.md](USAGE.md)，開發流程見 [DEVELOPMENT.md](DEVELOPMENT.md)，
+完整部署流程見 [SELF_HOSTING.md](SELF_HOSTING.md)，驗證矩陣見
+[VERIFICATION.md](VERIFICATION.md)，狀態用語見 [STATUS.md](STATUS.md)。
 
 ## 9. 技術與 AI 聲明
 
@@ -165,3 +180,7 @@ documentation. It must not contain real content, owner details, secrets,
 resource identifiers, exports, logs, backups, or private operational topology.
 Local checks, CI, releases, deployments, and live verification are distinct
 forms of evidence.
+
+Use `USAGE.md` for reader and Studio workflows, `DESIGN.md` for the observable
+interface system, `DEVELOPMENT.md` for local engineering, `SELF_HOSTING.md` for
+Cloudflare deployment, and `VERIFICATION.md` for reproducible QA boundaries.

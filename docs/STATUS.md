@@ -2,9 +2,10 @@
 
 [返回 README](../README.md) · [文檔索引](README.md) ·
 [更新記錄](../CHANGELOG.md) ·
+[驗證指南](VERIFICATION.md) ·
 [GitHub Releases](https://github.com/kyeunga25/personal-space/releases)
 
-最後核對：2026-08-30（香港時間）。本檔只記錄可公開驗證的產品狀態，不保存
+最後核對：2026-09-01（香港時間）。本檔只記錄可公開驗證的產品狀態，不保存
 Cloudflare account、deployment、traffic、resource 或 Access identifiers。
 
 ## 1. 狀態摘要
@@ -89,6 +90,25 @@ commit、Cloudflare deployment、traffic 與 live responses。
 本 repository 的公開文檔不保存 deployment ID、account ID、database ID、bucket 名稱、
 Access audience 或完整營運輸出。需要這些資料的核對應在維護者的受控環境進行。
 
+詳細命令、內容生命週期、媒體、Sources／Editions、route matrix 及 responsive QA 見
+[VERIFICATION.md](VERIFICATION.md)。
+
+## 6. 2026-09-01 公開安全核對摘要
+
+- GitHub repository、About homepage、topics、latest Release 及 `main` CI 可正常讀取；
+- 公開首頁、Notes、Articles、Editions、stream、archive、search 及 About 回 `200`；
+- RSS feeds 與 sitemap 回 `200` 及預期 XML content type；
+- `/api/health` 回 `200`、`no-store` 及 `v0.8.0`；不存在 route 回 `404`；
+- Studio parent、deep route 及寫入 API 在未登入時由 Cloudflare Access 攔截；
+- 1440×900 與 390×844 瀏覽器核對沒有 console error／warning 或水平 overflow；
+- 隔離本機 D1／R2 smoke test 通過 Note、Article、preview、publish、working copy、
+  revision、schedule、unlisted、archive、media、search、feeds、sitemap、source error
+  及 Edition draft／empty-publish guard；
+- 本次 production 檢查保持唯讀，沒有建立內容、migration、secret、route 或 deploy。
+
+這是指定日期的直接核對摘要，不代表未來狀態。文檔更新本身不改變 Cloudflare
+deployment 或 production traffic。
+
 ## English summary
 
 The source, local checks, CI, previews, GitHub Releases, Cloudflare deployments,
@@ -99,3 +119,6 @@ Cloudflare Access plus application-level owner verification.
 
 This file records only public-safe status. It never publishes Cloudflare account,
 deployment, resource, traffic, Access, owner, or production-data identifiers.
+The 2026-09-01 review verified public routes, feeds, sitemap, health, Access
+interception, desktop/mobile presentation, and isolated synthetic content
+flows. Production remained read-only and was not redeployed for documentation.
