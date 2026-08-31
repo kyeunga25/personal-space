@@ -1,7 +1,9 @@
 # 開發指南 / Development Guide
 
 [返回 README](../README.md) · [文檔索引](README.md) ·
-[專案概覽](PROJECT_OVERVIEW.md) · [自部署指南](SELF_HOSTING.md)
+[專案概覽](PROJECT_OVERVIEW.md) · [使用指南](USAGE.md) ·
+[設計系統](DESIGN.md) · [驗證指南](VERIFICATION.md) ·
+[自部署指南](SELF_HOSTING.md)
 
 本指南涵蓋不接觸 production 資料或 Cloudflare 資源的本地開發流程。遠端 migration、
 secret、domain 及 deploy 屬於另一個操作邊界，必須依 [自部署指南](SELF_HOSTING.md)
@@ -38,6 +40,10 @@ git check-ignore -v .dev.vars
 `LOCAL_STUDIO_BYPASS=true` 的組合下使用。`.dev.vars` 不得填入正式 owner 電郵、
 Access identifiers、token、production data 或任何其他 secret。
 
+建立 Note、Article、media、source 及 Edition 的操作順序見
+[使用指南](USAGE.md)。需要保留獨立 D1／R2 狀態作完整 smoke test 時，使用
+[驗證指南](VERIFICATION.md) 的隔離 `--persist-to` 流程，不要重用 production binding。
+
 ## 3. 常用 scripts
 
 | 指令                         | 用途                                       | 是否修改遠端 |
@@ -66,6 +72,7 @@ site origin，並會在通過 guard 後修改 Cloudflare environment。
 | `src/pages`      | Astro 頁面、redirects、feeds 與 API routes          |
 | `src/components` | 共用公開及 Studio components                        |
 | `src/layouts`    | 公開及 Studio layout shell                          |
+| `src/styles`     | 語意 tokens、全站視覺規則及 responsive 基線         |
 | `src/config`     | 公開安全的產品常數與 navigation                     |
 | `src/lib`        | 無 platform I/O 的小型 domain／presentation helpers |
 | `src/scripts`    | 可獨立測試的瀏覽器端 Studio 行為                    |
@@ -114,7 +121,22 @@ git check-ignore -v .dev.vars wrangler.self-host.jsonc
 所有測試資料必須合成且可公開。不要錄製 production response、複製真實內容或連接
 正式 D1／R2。修正 bug 時，先加入能重現問題的最小 regression test。
 
-## 7. D1 migration 規則
+## 7. 隔離功能 smoke test
+
+`npm run check` 主要驗證自動化 contract。需要證明實際內容生命週期時，另建暫存
+Wrangler persistence directory，從空白 D1 套用 migrations，並以
+`.dev.vars.example` 啟動 loopback Worker。至少核對：
+
+- Note 與 Article 的 draft、preview、publish、working copy、revision 及 archive；
+- private、unlisted、public 及未到期 scheduled 的探索邊界；
+- media 上載、內容關聯、受控讀取、cache 及 `ETag`；
+- search、stream、archive、taxonomy、RSS、sitemap、health 及 404；
+- source 權利狀態、一般化擷取錯誤及 Edition 空白發佈保護；
+- desktop 及 390×844 mobile 的 DOM、console、focus 及 overflow。
+
+完整命令、route matrix 與 expected results 見 [VERIFICATION.md](VERIFICATION.md)。
+
+## 8. D1 migration 規則
 
 - 新 schema 變更只新增下一個有序 migration，不修改已發佈 migration 的含義；
 - migration 必須能從全新本地 D1 依序套用；
@@ -123,7 +145,7 @@ git check-ignore -v .dev.vars wrangler.self-host.jsonc
 - migration rollback 依 Cloudflare 資料恢復能力和另行審閱的 forward fix 處理，
   不以刪除 database 或 migration history 作為一般做法。
 
-## 8. 變更與 PR 流程
+## 9. 變更與 PR 流程
 
 ```bash
 git status --short
@@ -134,14 +156,15 @@ git diff --cached
 
 1. 從最新 `main` 建立範圍明確的 branch。
 2. 保留不相關的 local changes，不做批量格式化或大範圍搬移。
-3. 同步更新受影響的測試、README、current docs 及 `CHANGELOG.md` 的 `Unreleased`。
+3. 同步更新受影響的測試、README、使用／設計／驗證文件及 `CHANGELOG.md` 的
+   `Unreleased`。
 4. Commit 使用短而直接的 `(action): (content)` 標題。
 5. PR 說明改動、驗證方式、公開安全檢查，以及是否包含 remote／deployment 變更。
 6. CI 通過後仍需按變更風險完成 preview 或 live verification；不要把 CI 當作 production 證明。
 
 完整貢獻要求見 [`CONTRIBUTING.md`](../CONTRIBUTING.md)。
 
-## 9. 更新依賴
+## 10. 更新依賴
 
 - 使用 repository 的 npm 與 lockfile；
 - 審閱 release notes、runtime 支援及 Cloudflare compatibility；
@@ -163,4 +186,6 @@ Use synthetic local data only. Keep `.dev.vars` and
 `wrangler.self-host.jsonc` ignored, never connect local tests to production D1
 or R2, add regression coverage for behavioural changes, and review the exact
 staged diff before opening a pull request. `npm run deploy` is a remote mutation
-and belongs to the separate self-hosting workflow.
+and belongs to the separate self-hosting workflow. Use the isolated local
+workflow in `VERIFICATION.md` for end-to-end D1, R2, Studio, publishing, and
+responsive checks.

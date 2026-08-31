@@ -11,11 +11,17 @@ configuration, and internal operational records.
 
 - 更新公開網站與 Studio 的共用視覺 token、層次、間距及響應式介面。
 - 重整多語 repository 入口、開發與狀態文檔，以及 GitHub 貢獻範本。
+- 新增公開閱讀、Studio、內容狀態、媒體、來源及 Editions 的完整使用指南。
+- 新增介面設計系統與隔離本機、production 唯讀、瀏覽器及 release 驗證手冊。
 
 - Refreshed shared visual tokens, hierarchy, spacing, and responsive interfaces
   across the public site and Studio.
 - Reorganized multilingual repository entry points, development and status
   documentation, and GitHub contribution templates.
+- Added complete usage guidance for public reading, Studio, content states,
+  media, sources, and Editions.
+- Added interface-system and verification guides for isolated local flows,
+  read-only production checks, browser QA, and releases.
 
 ## [0.8.0] - 2026-08-11
 

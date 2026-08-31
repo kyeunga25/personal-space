@@ -57,7 +57,8 @@ Repository 不內置真實來源清單，也不保證任何第三方內容可被
 
 自部署者應建立全新的 Cloudflare 資源、啟用 secret scanning／push protection、
 設定 Access 後才連接自訂 domain，並在每次發佈前審查 staged diff。完整流程見
-[`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)。
+[`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)，發佈前後的安全與功能核對表見
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md)。
 
 如 secret 曾進入 Git，即使後續 commit 已刪除，仍應立即在供應商端撤銷及輪替，
 並評估 repository 歷史是否需要由具權限的維護者另行處理。
@@ -81,5 +82,7 @@ untrusted input, and minimize logs. Local testing must use loopback-only
 development settings and synthetic data.
 
 Self-hosters should create fresh Cloudflare resources and follow
-[`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md). If a secret ever enters Git,
-revoke and rotate it immediately; deleting it from a later commit is not enough.
+[`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md), then use
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md) before and after release. If a
+secret ever enters Git, revoke and rotate it immediately; deleting it from a
+later commit is not enough.

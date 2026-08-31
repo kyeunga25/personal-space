@@ -104,6 +104,7 @@ npm run preview
 ```
 
 各指令、目錄責任與測試策略見 [開發指南](docs/DEVELOPMENT.md)。
+讀者與 Studio 的完整內容流程見 [使用指南](docs/USAGE.md)。
 
 ## 自行部署摘要
 
@@ -140,8 +141,11 @@ Access 設定、logs 或備份。它也沒有提供會略過這些核對的一�
 | ------------------------------------ | ------------------------------------------- |
 | [文檔索引](docs/README.md)           | 目前文檔、歷史記錄與閱讀順序                |
 | [專案概覽](docs/PROJECT_OVERVIEW.md) | 產品範圍、架構、資料責任與技術棧            |
+| [使用指南](docs/USAGE.md)            | 公開閱讀、Studio、內容、媒體與 Editions     |
+| [介面設計系統](docs/DESIGN.md)       | 色彩角色、版面、元件、responsive 與可存取性 |
 | [開發指南](docs/DEVELOPMENT.md)      | 本地環境、指令、測試與貢獻流程              |
 | [自部署指南](docs/SELF_HOSTING.md)   | Workers、D1、R2、Access、domain 及 rollback |
+| [驗證指南](docs/VERIFICATION.md)     | 隔離本機、production 唯讀及 release QA      |
 | [專案狀態](docs/STATUS.md)           | 版本、成熟度與證據定義                      |
 | [安全政策](SECURITY.md)              | 私人漏洞回報與部署安全要求                  |
 | [更新記錄](CHANGELOG.md)             | 公開安全的版本變更摘要                      |
